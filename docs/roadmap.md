@@ -46,4 +46,10 @@ Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement co
 - **Origine des noms** : fleuves, montagnes, anecdotes (pourquoi 2A/2B, pourquoi pas de 20).
 
 ### Plus tard
+- **D'autres atlas que la France** (idée de Léo, 2026-11-16) : pays, capitales, drapeaux…
+  - **Des atlas, pas des modes** : on choisit son atlas (France, puis Europe, puis Monde) et tout fonctionne pareil (Continuer, Défi, Entre amis, Entraînement), avec une carte, des étoiles et des médailles propres à chaque atlas. Pour un pays, les facettes seraient par exemple la carte, la capitale et le drapeau.
+  - **La France reste l'atlas principal**, ouvert par défaut. L'app garde le nom Hexa : c'est la marque d'origine.
+  - **Hexa qui voyage** plutôt que de nouvelles mascottes : la même mascotte avec une tenue par destination (béret, casque viking, chapeau de paille…), en lien avec les accessoires de mascotte prévus en Progression. Une seule identité forte.
+  - **Ordre** : après la refonte, une fois la France solide et quand des joueurs arrivent au bout. D'abord les contenus français (régions, chefs-lieux, gentilés), puis l'**Europe** comme premier atlas étranger.
+  - **Points de vigilance** : ne pas retomber dans « ça part dans tous les sens », ne pas diluer l'identité France, et le gros travail de données (cartes propres, territoires contestés, micro-États, drapeaux qui changent).
 - Application mobile Flutter (v2), branchée sur la même API et le même protocole WebSocket (`packages/game/src/protocol.ts`).
