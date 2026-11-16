@@ -11,7 +11,7 @@
 
 <main class="training">
   <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-  <div class="head"><Mascot mood="think" size={58} /><div><h1 class="title">Entraînement</h1><p>Pour réviser à ta façon. Chaque partie rapporte de l'XP et des plaques.</p></div></div>
+  <div class="head"><Mascot mood="think" size={58} /><div><h1 class="title">Entraînement</h1><p>Pour réviser à ta façon. Chaque partie rapporte de l’XP et des vignettes.</p></div></div>
   <div class="grid">
     {#each MODES as m (m.mode)}
       <button class="btn {m.color} mode" onclick={() => nav.go({ name: "setup", mode: m.mode })}><b>{m.nom}</b><small>{m.desc}</small></button>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { BADGES, DEP, MAX_TIER_POINTS, TOUR_REGIONS, platesOwned, tierPoints } from "@hexa/game";
-  import Plate from "../lib/ui/Plate.svelte";
+  import Vignette from "../lib/ui/Vignette.svelte";
   import Icon from "../lib/ui/Icon.svelte";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
@@ -19,13 +19,13 @@
 <main class="album">
   <header>
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-    <div class="seg"><button class:on={cur === "plaques"} onclick={() => (cur = "plaques")}>Plaques</button><button class:on={cur === "badges"} onclick={() => (cur = "badges")}>Badges</button></div>
+    <div class="seg"><button class:on={cur === "plaques"} onclick={() => (cur = "plaques")}>Vignettes</button><button class:on={cur === "badges"} onclick={() => (cur = "badges")}>Badges</button></div>
   </header>
 
   {#if cur === "plaques"}
     <div class="top">
       <div><span class="k">Ton album · {platesOwned(p)} départements</span><div class="riso big" data-t="{tierPoints(p)} / {MAX_TIER_POINTS}">{tierPoints(p)} / {MAX_TIER_POINTS}</div></div>
-      <p>Réussis un département sans faute pour gagner sa plaque : <b>bronze</b> avec 4 propositions, <b>argent</b> au clavier, <b>or</b> en expert. Celles d'outre-mer sont holographiques.</p>
+      <p>Réussis un département sans faute pour gagner sa vignette : <b>bronze</b> avec 4 propositions, <b>argent</b> au clavier, <b>or</b> en expert. Celles d'outre-mer sont holographiques.</p>
     </div>
     <div class="tabs">
       <button class="chip" class:on={!region} onclick={() => (region = null)}>Toutes</button>
@@ -37,7 +37,7 @@
         <div class="grid">
           {#each r.deps as c (c)}
             {@const tier = p.tiers[c] ?? 0}
-            <div class="st" class:miss={!tier}><Plate code={c} {tier} /><small>{tier ? DEP.get(c)?.nom : "À découvrir"}</small>{#if tier}<em class="tr t{tier}">{TIER[tier]}</em>{/if}</div>
+            <div class="st" class:miss={!tier}><Vignette code={c} {tier} />{#if tier}<em class="tr t{tier}">{TIER[tier]}</em>{/if}</div>
           {/each}
         </div>
       </section>
@@ -68,10 +68,11 @@
   section { display: flex; flex-direction: column; gap: 10px; }
   h2 { font-size: 19px; font-weight: 900; }
   h2 span { color: var(--soft); font-weight: 700; font-size: 15px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .st { background: #fff; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; box-shadow: 0 4px 0 var(--line); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 12px; }
+  .st { background: #fff; border-radius: 18px; padding: 16px 12px 12px; display: flex; flex-direction: column; gap: 6px; align-items: center; text-align: center; box-shadow: 0 4px 0 var(--line); }
+
   .st small { font-weight: 700; color: var(--soft); font-size: 13px; }
-  .st.miss { background: transparent; box-shadow: none; border: 2px dashed #d3cbb9; }
+  .st.miss { background: rgba(255, 255, 255, .45); box-shadow: none; }
   .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
   .bd { background: #fff; border-radius: 18px; padding: 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 4px 0 var(--line); }
   .bd > div { display: flex; flex-direction: column; gap: 2px; }
@@ -81,5 +82,5 @@
   .bd.off { background: transparent; box-shadow: none; border: 2px dashed #d7cfbe; }
   .bd.off .ico { background: var(--bg-2); box-shadow: none; color: var(--soft); }
   .tr { font-style: normal; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; color: #fff; }
-  .tr.t1 { background: #b0703c; } .tr.t2 { background: #8c97a8; } .tr.t3 { background: var(--yellow-d); }
+  .tr.t1 { background: #a86a35; } .tr.t2 { background: #7f8a99; } .tr.t3 { background: #c99a12; }
 </style>

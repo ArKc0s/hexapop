@@ -2,7 +2,7 @@
   import { DEP, OM_UNLOCK_STARS, OUTRE_MER, TOUR, TOUR_REGIONS, mastery, nextTourRegion, randomSeed, totalStars, tourRegionOf, tourState, DEPARTEMENTS } from "@hexa/game";
   import Map from "../lib/Map.svelte";
   import Stars from "../lib/ui/Stars.svelte";
-  import Plate from "../lib/ui/Plate.svelte";
+  import Vignette from "../lib/ui/Vignette.svelte";
   import Icon from "../lib/ui/Icon.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
   import { nav, inputPref } from "../lib/nav.svelte.ts";
@@ -83,7 +83,7 @@
               <li class:got={stars >= 2}><Icon name="star" size={16} /> Sans aucune faute</li>
               <li class:got={stars >= 3}><Icon name="star" size={16} /> En expert, 90 % ou plus (sous-préfectures et voisins)</li>
             </ul>
-            <div class="plates">{#each cur.deps as c (c)}<Plate code={c} tier={p.tiers[c] ?? 0} />{/each}</div>
+            <div class="plates">{#each cur.deps as c (c)}<Vignette code={c} tier={p.tiers[c] ?? 0} size="s" />{/each}</div>
             <div class="seg" role="group" aria-label="Façon de répondre">
               <button class:on={input === "choix"} onclick={() => (input = "choix")}>4 propositions</button>
               <button class:on={input === "libre"} onclick={() => (input = "libre")}>Au clavier</button>

@@ -31,7 +31,7 @@ export interface Profile {
   stars: Record<string, number>;
   /** Région de départ du Tour de France. */
   tourStart: string | null;
-  /** Palier de la plaque par département : 1 bronze (4 propositions), 2 argent (clavier), 3 or (expert). */
+  /** Palier de la vignette par département : 1 bronze (4 propositions), 2 argent (clavier), 3 or (expert). */
   tiers: Record<string, number>;
   badges: Record<string, number>;
   stats: { games: number; rounds: number; perfectRounds: number; bestCombo: number; dailyPlayed: number; duelsWon: number; marathons: number };
@@ -211,11 +211,11 @@ export const BADGES: BadgeDef[] = [
   { id: "combo10", nom: "Inarrêtable", desc: "Un combo ×10", test: (c) => c.bestCombo >= 10 },
   { id: "marathon", nom: "Marathonien", desc: "Terminer un Marathon des 101 départements", test: (c) => c.report.mode === "marathon" && c.report.results.length >= 101 },
   { id: "expert", nom: "Sous-préfet", desc: "Terminer une partie en expert", test: (c) => c.report.level === "expert" && c.report.results.length >= 5 },
-  { id: "outre-mer", nom: "Ultramarin", desc: "Collectionner les 5 plaques d'outre-mer", test: (_c, p) => DEPARTEMENTS.filter((d) => d.outreMer).every((d) => (p.tiers[d.code] ?? 0) > 0) },
+  { id: "outre-mer", nom: "Ultramarin", desc: "Collectionner les 5 vignettes d'outre-mer", test: (_c, p) => DEPARTEMENTS.filter((d) => d.outreMer).every((d) => (p.tiers[d.code] ?? 0) > 0) },
   { id: "album-50", nom: "Collectionneur", desc: "50 départements dans l'album", test: (_c, p) => platesOwned(p) >= 50 },
   { id: "album-101", nom: "Album complet", desc: "Les 101 départements dans l'album", test: (_c, p) => platesOwned(p) >= 101 },
-  { id: "argent-101", nom: "Tout en argent", desc: "Les 101 plaques au moins en argent", test: (_c, p) => DEPARTEMENTS.every((d) => (p.tiers[d.code] ?? 0) >= 2) },
-  { id: "or-101", nom: "Tout en or", desc: "Les 101 plaques en or", test: (_c, p) => DEPARTEMENTS.every((d) => (p.tiers[d.code] ?? 0) >= 3) },
+  { id: "argent-101", nom: "Tout en argent", desc: "Les 101 vignettes au moins en argent", test: (_c, p) => DEPARTEMENTS.every((d) => (p.tiers[d.code] ?? 0) >= 2) },
+  { id: "or-101", nom: "Tout en or", desc: "Les 101 vignettes en or", test: (_c, p) => DEPARTEMENTS.every((d) => (p.tiers[d.code] ?? 0) >= 3) },
   { id: "region-3", nom: "Chez soi", desc: "3 étoiles dans une région", test: (_c, p) => Object.values(p.stars).some((s) => s >= 3) },
   { id: "tour-complet", nom: "Tour de France", desc: "Au moins une étoile dans toutes les régions", test: (_c, p) => TOUR_REGIONS.every((r) => (p.stars[r.code] ?? 0) > 0) },
   { id: "serie-7", nom: "Une semaine", desc: "Jouer 7 jours d'affilée", test: (_c, p) => p.streak.count >= 7 },

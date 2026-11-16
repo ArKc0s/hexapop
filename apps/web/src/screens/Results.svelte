@@ -4,7 +4,7 @@
   import Map, { type Mark } from "../lib/Map.svelte";
   import Fiche from "../lib/Fiche.svelte";
   import Stars from "../lib/ui/Stars.svelte";
-  import Plate from "../lib/ui/Plate.svelte";
+  import Vignette from "../lib/ui/Vignette.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
   import Icon from "../lib/ui/Icon.svelte";
   import { nav, type PlayScreen } from "../lib/nav.svelte.ts";
@@ -76,8 +76,8 @@
       {/each}
       {#if r.upgrades.length}
         {@const tierName = ["", "bronze", "argent", "or"][r.upgrades[0].tier]}
-        <div class="rw plates"><div><span class="k">{r.upgrades.length} plaque{r.upgrades.length > 1 ? "s" : ""} {tierName}{r.newPlates.length ? ` · ${r.newPlates.length} nouvelle${r.newPlates.length > 1 ? "s" : ""}` : ""}</span>
-          <div class="pl">{#each r.upgrades.slice(0, 8) as u (u.code)}<Plate code={u.code} tier={u.tier} />{/each}{#if r.upgrades.length > 8}<span class="more">+{r.upgrades.length - 8}</span>{/if}</div></div></div>
+        <div class="rw plates"><div><span class="k">{r.upgrades.length} vignette{r.upgrades.length > 1 ? "s" : ""} {tierName}{r.newPlates.length ? ` · ${r.newPlates.length} nouvelle${r.newPlates.length > 1 ? "s" : ""}` : ""}</span>
+          <div class="pl">{#each r.upgrades.slice(0, 8) as u (u.code)}<Vignette code={u.code} tier={u.tier} size="s" />{/each}{#if r.upgrades.length > 8}<span class="more">+{r.upgrades.length - 8}</span>{/if}</div></div></div>
       {/if}
     </div>
 
