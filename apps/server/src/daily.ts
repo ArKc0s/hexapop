@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { DAILY_EPOCH, DAILY_ROUNDS, DEP, type GameConfig, type RoundResult } from "@hexa/game";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
@@ -18,6 +18,24 @@ export function dailyConfig(day: string): GameConfig {
 export function gridOf(results: (RoundResult | undefined)[]): number[] {
   return results.map((r) => (!r ? 0 : r.accuracy >= 0.999 ? 2 : r.accuracy > 0 ? 1 : 0));
 }
+
+// Résultats joués en invité, rattachables à un compte après connexion (usage unique, jusqu'à minuit).
+interface Claim { day: string; points: number; accuracy: number; elapsedMs: number; grid: number[]; at: number }
+const claims = new Map<string, Claim>();
+export function newClaim(c: Omit<Claim, "at">): string {
+  const id = randomBytes(18).toString("base64url");
+  claims.set(id, { ...c, at: now() });
+  return id;
+}
+/** Rattache un résultat d'invité : seulement le jour même et si le compte n'a pas déjà joué. */
+export function redeemClaim(id: string, userId: number): { rank: number; players: number } | "expired" | "already" {
+  const c = claims.get(id);
+  claims.delete(id);
+  if (!c || c.day !== today()) return "expired";
+  if (!startDaily(c.day, userId)) return "already";
+  return saveDaily(c.day, userId, c.points, c.accuracy, c.elapsedMs, c.grid) ?? "already";
+}
+setInterval(() => { const d = today(); for (const [k, v] of claims) if (v.day !== d) claims.delete(k); }, 3_600_000).unref();
 
 export function hasPlayed(day: string, userId: number): boolean {
   return !!db.prepare("SELECT 1 FROM daily_results WHERE day = ? AND user_id = ?").get(day, userId);

@@ -13,6 +13,7 @@
   import { rankFor } from "../lib/rank.ts";
   import { DEPARTEMENTS, mastery } from "@hexa/game";
   import { progress } from "../lib/progress.svelte.ts";
+  import SaveCard from "../lib/ui/SaveCard.svelte";
 
   let { play, results, rewards }: { play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards } = $props();
 
@@ -95,6 +96,7 @@
       {/if}
       <button class="link" onclick={() => nav.go({ name: "home" })}>Accueil</button>
     </div>
+    <SaveCard then={{ name: "home" }} />
     <p class="quests k">Quêtes du jour : {quests.filter((q) => (profile.data.quests.progress[q.id] ?? 0) >= q.target).length}/3</p>
   </section>
 

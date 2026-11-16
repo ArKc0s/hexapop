@@ -46,7 +46,12 @@ export function screenFromHash(): Screen {
   if (k === "verifier") return { name: "account", view: "verify", token: v };
   if (k === "nouveau-mdp") return { name: "account", view: "reset", token: v };
   // Retour de connexion via Google, Discord, Twitch ou Apple
-  if (k === "oauth-ok") return v.startsWith("lie-") && v !== "lie-auto" ? { name: "account", view: "profile", notice: v } : { name: "home" };
+  if (k === "oauth-ok") {
+    if (v.startsWith("lie-") && v !== "lie-auto") return { name: "account", view: "profile", notice: v };
+    let back = "";
+    try { back = sessionStorage.getItem("hexa.returnTo") ?? ""; sessionStorage.removeItem("hexa.returnTo"); } catch { /* rien */ }
+    return back === "#defi" ? { name: "daily" } : { name: "home" };
+  }
   if (k === "oauth-erreur") return { name: "account", view: "login", oauthError: v };
   return { name: "home" };
 }

@@ -3,7 +3,8 @@
   import { onDestroy } from "svelte";
   import LiveRound from "../lib/LiveRound.svelte";
   import { live } from "../lib/socket.svelte.ts";
-  import { api, session } from "../lib/api.svelte.ts";
+  import { api, session, GUEST_DAILY } from "../lib/api.svelte.ts";
+  import SaveCard from "../lib/ui/SaveCard.svelte";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { progress } from "../lib/progress.svelte.ts";
@@ -14,6 +15,9 @@
   interface DailyInfo { day: string; number: number; played: boolean; mine: { points: number; elapsedMs: number; grid: string; finished: number } | null; rank: { rank: number; players: number } | null }
 
   let info = $state<DailyInfo | null>(null);
+  // Invité : un seul essai par jour sur cet appareil ; le résultat est gardé pour l'afficher et le rattacher.
+  interface GuestDaily { day: string; points: number; elapsedMs: number; grid: number[]; claim?: string }
+  let guest = $state<GuestDaily | null>((() => { try { return JSON.parse(localStorage.getItem(GUEST_DAILY) ?? "null"); } catch { return null; } })());
   let board = $state<Board | null>(null);
   let started = $state(false);
   let copied = $state(false);
@@ -27,6 +31,13 @@
     live.connect(session.me?.pseudo ?? "", () => live.create("daily"));
   }
   $effect(() => { if (live.daily) loadBoard(); });
+  $effect(() => {
+    const o = live.daily;
+    if (!o || session.me || (guest && guest.day === o.day)) return;
+    guest = { day: o.day, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim };
+    try { localStorage.setItem(GUEST_DAILY, JSON.stringify(guest)); } catch { /* rien */ }
+  });
+  const guestToday = $derived(!session.me && !!guest && guest.day === info?.day ? guest : null);
   // XP, plaques et badges du défi : une seule fois.
   let rewards = $state<Rewards | null>(null);
   $effect(() => {
@@ -40,10 +51,10 @@
   const total = $derived(live.room?.players[0]?.score ?? 0);
   const EMOJI = ["🟪", "🟨", "🟦"];
   const outcome = $derived(live.daily);
-  const grid = $derived(outcome ? outcome.grid : info?.mine?.grid ? [...info.mine.grid].map(Number) : []);
+  const grid = $derived(outcome ? outcome.grid : info?.mine?.grid ? [...info.mine.grid].map(Number) : guestToday ? guestToday.grid : []);
   const shareText = $derived.by(() => {
-    const pts = outcome?.points ?? info?.mine?.points ?? 0;
-    const ms = outcome?.elapsedMs ?? info?.mine?.elapsedMs ?? 0;
+    const pts = outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0;
+    const ms = outcome?.elapsedMs ?? info?.mine?.elapsedMs ?? guestToday?.elapsedMs ?? 0;
     const n = outcome?.number ?? info?.number;
     return `HEXA #${n} · défi du jour\n${grid.map((g) => EMOJI[g]).join("")}\n${pts.toLocaleString("fr-FR")} pts · ${Math.round(ms / 1000)} s\n${location.origin}`;
   });
@@ -69,7 +80,7 @@
     <p class="err" role="alert">{live.error.message}</p>
   {/if}
 
-  {#if !started && !(info?.played)}
+  {#if !started && !(info?.played) && !guestToday}
     <section class="intro">
       <Mascot mood="happy" size={70} />
       <h1 class="title">Défi du jour</h1>
@@ -85,16 +96,16 @@
     <p class="wait">Préparation du défi…</p>
   {/if}
 
-  {#if outcome || (!started && info?.played)}
+  {#if outcome || (!started && (info?.played || guestToday))}
     <section class="end">
       <div class="card">
-        <span class="riso scoreline" data-t={String(outcome?.points ?? info?.mine?.points ?? 0)}>{outcome?.points ?? info?.mine?.points ?? 0}</span>
+        <span class="riso scoreline" data-t={String(outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0)}>{outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0}</span>
         <div class="grid" aria-label="Résultat case par case">{#each grid as g, i (i)}<i class="g{g}"></i>{/each}</div>
         {#if outcome?.rank || info?.rank}
           {@const r = outcome?.rank ? { rank: outcome.rank, players: outcome.players } : info?.rank}
           <p><b>{r?.rank}{r?.rank === 1 ? "er" : "e"}</b> sur {r?.players} joueur{(r?.players ?? 0) > 1 ? "s" : ""} aujourd'hui</p>
         {:else if !session.me}
-          <p>Score non classé (invité).</p>
+          <p>Score pas encore classé.</p>
         {/if}
         {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.upgrades.length ? ` · ${rewards.upgrades.length} vignette${rewards.upgrades.length > 1 ? "s" : ""} pour l'album` : ""}</p>{/if}
         <button class="btn pink big" onclick={share}>{copied ? "Copié !" : "Partager"}</button>
@@ -102,7 +113,9 @@
     </section>
   {/if}
 
-  {#if board && (outcome || info?.played)}
+  {#if (outcome || guestToday) && !session.me}<div class="savewrap"><SaveCard daily then={{ name: "daily" }} /></div>{/if}
+
+  {#if board && (outcome || info?.played || guestToday)}
     <section class="boards">
       <div>
         <h2 class="label">Classement du jour</h2>
@@ -159,4 +172,5 @@
   .xp { font-weight: 800; color: var(--green-d); }
   .card { box-shadow: 0 6px 0 var(--line) !important; border: 0 !important; background: #fff !important; border-radius: 28px !important; }
   .lb li.me { background: #fff4c2 !important; }
+  .savewrap { display: flex; justify-content: center; }
 </style>

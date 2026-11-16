@@ -11,7 +11,7 @@ import {
   type QuestionPayload, type RoomKind, type RoomSettings, type RoundResult, type ServerMsg,
 } from "@hexa/game";
 import { now } from "./db.ts";
-import { dailyConfig, dailyNumber, gridOf, rankOf, saveDaily, startDaily, today } from "./daily.ts";
+import { dailyConfig, dailyNumber, gridOf, newClaim, rankOf, saveDaily, startDaily, today } from "./daily.ts";
 
 /** Délai entre l'annonce d'une question et le départ du chrono, pour que tout le monde la reçoive. */
 const LEAD_MS = 400;
@@ -386,6 +386,7 @@ export class Room {
         rank ??= rankOf(this.day, seat.userId);
       }
       const daily: DailyOutcome = { day: this.day, number: dailyNumber(this.day), points, accuracy, elapsedMs, grid, saved, rank: rank?.rank, players: rank?.players };
+      if (!seat?.userId) daily.claim = newClaim({ day: this.day, points, accuracy, elapsedMs, grid });
       this.broadcast({ t: "end", ranking, daily });
     } else if (this.kind === "coop") {
       this.broadcast({ t: "end", ranking, team: { ...this.team, stars: teamStars(this.team.accuracy, this.team.lives) } });

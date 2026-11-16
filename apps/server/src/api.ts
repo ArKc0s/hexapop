@@ -4,10 +4,10 @@ import { DEP, mergeProfiles, sanitizeProfile, type Progress } from "@hexa/game";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
 import {
-  consumeEmailToken, createSession, deleteSession, emailToken, hashPassword, rateLimit, userFromSession, verifyPassword, type User,
+  consumeEmailToken, createSession, deleteSession, emailToken, hashPassword, rateLimit, touchSession, userFromSession, verifyPassword, type User,
 } from "./auth.ts";
 import { resetMail, sendMail, verifyMail } from "./mail.ts";
-import { dailyNumber, leaderboard, rankOf, today } from "./daily.ts";
+import { dailyNumber, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
 import { stats } from "./rooms.ts";
 import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
 
@@ -160,9 +160,12 @@ const routes: Record<string, Handler> = {
     json(res, 200, { ok: true, token: sess.token }, { "set-cookie": setCookie(sess.token, sess.expiresAt) });
   },
 
-  "GET /api/me": (_req, res, user) => {
+  "GET /api/me": (req, res, user) => {
     const u = need(user, 401, "auth_required", "Non connecté.");
-    json(res, 200, { user: publicUser(u) });
+    // Session glissante : chaque visite repousse l'expiration (60 jours) du cookie et de la session.
+    const t = sessionToken(req);
+    const exp = t ? touchSession(t) : null;
+    json(res, 200, { user: publicUser(u) }, exp && !req.headers.authorization ? { "set-cookie": setCookie(t!, exp) } : {});
   },
 
   "PATCH /api/me": async (req, res, user) => {
@@ -263,6 +266,16 @@ const routes: Record<string, Handler> = {
     const day = today();
     const mine = user ? db.prepare("SELECT points, accuracy, elapsed_ms AS elapsedMs, grid, finished FROM daily_results WHERE day = ? AND user_id = ?").get(day, user.id) : null;
     json(res, 200, { day, number: dailyNumber(day), played: !!mine, mine: mine ?? null, rank: user ? rankOf(day, user.id) : null });
+  },
+
+  /** Rattacher au compte un défi joué juste avant en invité. */
+  "POST /api/daily/claim": async (req, res, user) => {
+    const u = need(user, 401, "auth_required", "Connecte-toi d'abord.");
+    const b = await body(req);
+    const r = redeemClaim(s(b.claim), u.id);
+    need(r !== "expired", 410, "claim_expired", "Ce résultat ne peut plus être rattaché (il date d'un autre jour).");
+    need(r !== "already", 409, "daily_done", "Ton compte a déjà un résultat pour le défi d'aujourd'hui.");
+    json(res, 200, { ok: true, rank: r });
   },
 
   "GET /api/daily/leaderboard": (req, res) => {

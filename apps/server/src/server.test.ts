@@ -306,3 +306,31 @@ test("en équipe : vies communes, fin quand l'équipe n'a plus de vie", { timeou
   assert.equal(end.team.stars, 0);
   a.ws.close(); b.ws.close();
 });
+
+test("défi joué en invité, rattaché au compte après inscription (une seule fois)", { timeout: 60_000 }, async () => {
+  const c = new Client();
+  await c.open();
+  c.send({ t: "hello", v: PROTOCOL_VERSION, name: "Invite" });
+  await c.wait("welcome");
+  c.send({ t: "create", kind: "daily" });
+  for (let i = 0; i < 10; i++) {
+    const q = (await c.wait("question", (m) => m.q.index === i)).q;
+    c.send({ t: "answer", index: i, answer: perfect(q) });
+    await c.wait("round", (m) => m.summary.index === i);
+    c.send({ t: "next" });
+  }
+  const end = await c.wait("end");
+  assert.equal(end.daily?.saved, false);
+  assert.ok(end.daily?.claim, "un jeton de rattachement est fourni à l'invité");
+  c.ws.close();
+  const reg = await post("/api/auth/register", { email: "claim@example.com", pseudo: "Claimer", password: "motdepasse" });
+  const { token } = await reg.json();
+  let r = await post("/api/daily/claim", { claim: end.daily!.claim }, token);
+  assert.equal(r.status, 200);
+  const { rank } = await r.json();
+  assert.ok(rank.rank >= 1);
+  r = await post("/api/daily/claim", { claim: end.daily!.claim }, token);
+  assert.equal(r.status, 410, "jeton à usage unique");
+  const me = await (await fetch(BASE + "/api/daily", { headers: { authorization: `Bearer ${token}` } })).json();
+  assert.equal(me.played, true);
+});

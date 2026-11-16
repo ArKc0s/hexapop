@@ -136,6 +136,8 @@ export interface DailyOutcome {
   rank?: number;
   players?: number;
   saved: boolean;
+  /** Joué en invité : jeton à usage unique pour rattacher ce résultat au compte après connexion. */
+  claim?: string;
 }
 
 export const DAILY_ROUNDS = 10;

@@ -81,6 +81,7 @@ class Session {
   /** Fusionne la progression locale et celle du compte (le serveur garde le plus avancé). */
   async syncProgress() {
     if (!this.me) return;
+    await claimGuestDaily();
     const [r, p] = await Promise.all([
       api<{ progress: Progress }>("PUT", "/progress", { progress: progress.data }),
       api<{ profile: Profile }>("PUT", "/profile", { profile: profile.data }),
@@ -90,6 +91,16 @@ class Session {
   }
 }
 export const session = new Session();
+
+/** Défi joué en invité aujourd'hui : on le rattache au compte qui vient de se connecter. */
+export const GUEST_DAILY = "hexa.dailyGuest";
+async function claimGuestDaily() {
+  let saved: { day: string; claim?: string } | null = null;
+  try { saved = JSON.parse(localStorage.getItem(GUEST_DAILY) ?? "null"); } catch { /* rien */ }
+  if (!saved?.claim) return;
+  try { await api("POST", "/daily/claim", { claim: saved.claim }); } catch { /* expiré ou déjà joué : on abandonne */ }
+  try { localStorage.setItem(GUEST_DAILY, JSON.stringify({ ...saved, claim: undefined })); } catch { /* rien */ }
+}
 
 let pending: ReturnType<typeof setTimeout> | null = null;
 const scheduleSync = () => {

@@ -7,7 +7,9 @@ class Install {
   /** Déjà ouvert comme une appli installée (pas de barre de navigateur). */
   standalone = $state(typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true));
   /** iPhone / iPad : pas de bouton d'installation possible, seulement « Partager → Sur l'écran d'accueil ». */
-  ios = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
+  ios = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  /** Navigateur iPhone autre que Safari (Brave, Chrome, Firefox…) : l'ajout à l'écran d'accueil n'y est pas toujours proposé. */
+  iosOther = this.ios && (/crios|fxios|edgios|opt\//i.test(navigator.userAgent) || !!(navigator as { brave?: unknown }).brave);
   mobile = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   dismissed = $state((() => { try { return localStorage.getItem(KEY) === "1"; } catch { return false; } })());
   private deferred: InstallPromptEvent | null = null;

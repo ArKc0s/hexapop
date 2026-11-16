@@ -76,7 +76,8 @@
     {#if install.suggest}
       <div class="card install">
         <div><b>Hexa en plein écran</b><p>Ajoute-le à ton écran d'accueil : il s'ouvrira comme une appli, sans barre de navigateur.</p>
-          {#if !install.canPrompt && install.ios}<p class="how">Touche <span class="share" aria-label="Partager"><svg width="14" height="16" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 11V1M3.5 4.5 7 1l3.5 3.5M4 7H2v10h10V7h-2" /></svg></span> <b>Partager</b>, puis <b>Sur l'écran d'accueil</b>.</p>{/if}
+          {#if !install.canPrompt && install.ios}<p class="how">{install.iosOther ? "Dans Safari, touche " : "Touche "}<span class="share" aria-label="Partager"><svg width="14" height="16" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 11V1M3.5 4.5 7 1l3.5 3.5M4 7H2v10h10V7h-2" /></svg></span> <b>Partager</b>, puis <b>Sur l'écran d'accueil</b>.</p>
+            {#if install.iosOther}<p class="how">Si ton navigateur ne le propose pas, ouvre hexapop.app dans Safari pour l'installer.</p>{/if}{/if}
         </div>
         <div class="ia">
           {#if install.canPrompt}<button class="btn small" onclick={() => install.prompt()}>Installer</button>{/if}

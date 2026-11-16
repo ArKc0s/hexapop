@@ -12,6 +12,7 @@
   import { profile } from "../lib/profile.svelte.ts";
   import { progress } from "../lib/progress.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
+  import SaveCard from "../lib/ui/SaveCard.svelte";
 
   const room = $derived(live.room);
   const me = $derived(room?.players.find((p) => p.id === live.you));
@@ -91,6 +92,7 @@
         {/each}
       </ol>
       {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.upgrades.length ? ` · ${rewards.upgrades.length} vignette${rewards.upgrades.length > 1 ? "s" : ""} pour l'album` : ""}</p>{/if}
+      <SaveCard />
       <div class="cta">
         {#if me?.host}<button class="btn big" onclick={() => live.send({ t: "rematch" })}>Rejouer ensemble</button>{:else}<span class="hint">L'hôte peut relancer une partie.</span>{/if}
         <button class="btn white big" onclick={leave}>Accueil</button>
@@ -106,6 +108,7 @@
         {/each}
       </ol>
       {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.upgrades.length ? ` · ${rewards.upgrades.length} vignette${rewards.upgrades.length > 1 ? "s" : ""} pour l'album` : ""}{rewards.newBadges.length ? " · nouveau badge !" : ""}</p>{/if}
+      <SaveCard />
       <div class="cta">
         {#if me?.host}<button class="btn big" onclick={() => live.send({ t: "rematch" })}>Revanche</button>{:else}<span class="hint">L'hôte peut lancer une revanche.</span>{/if}
         <button class="btn white big" onclick={leave}>Accueil</button>

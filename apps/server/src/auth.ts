@@ -50,6 +50,16 @@ export function userFromSession(token: string | undefined): User | null {
   if (row) db.prepare("UPDATE users SET last_seen_at = ? WHERE id = ? AND COALESCE(last_seen_at, 0) < ?").run(now(), row.id, now() - 3_600_000);
   return row ?? null;
 }
+/** Prolonge une session encore valide (au plus une écriture par jour) ; renvoie la nouvelle échéance. */
+export function touchSession(token: string): number | null {
+  const row = db.prepare("SELECT expires_at FROM sessions WHERE token_hash = ? AND expires_at > ?").get(sha(token), now()) as { expires_at: number } | undefined;
+  if (!row) return null;
+  const next = now() + SESSION_DAYS * 86_400_000;
+  if (next - row.expires_at < 86_400_000) return row.expires_at;
+  db.prepare("UPDATE sessions SET expires_at = ? WHERE token_hash = ?").run(next, sha(token));
+  return next;
+}
+
 export function deleteSession(token: string) {
   db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(sha(token));
 }
