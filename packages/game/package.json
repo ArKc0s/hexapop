@@ -1,0 +1,8 @@
+{
+  "name": "@hexa/game",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "test": "node --test src/*.test.ts" },
+  "dependencies": { "@hexa/data": "workspace:*" }
+}

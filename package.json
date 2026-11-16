@@ -10,6 +10,7 @@
     "data": "node data/scripts/build.mjs"
   },
   "devDependencies": {
-    "mapshaper": "^0.7.101"
+    "mapshaper": "^0.7.101",
+    "typescript": "^5.9.3"
   }
 }
