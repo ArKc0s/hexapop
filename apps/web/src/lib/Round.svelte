@@ -278,7 +278,15 @@
       {@render children?.()}
     {/if}
 
-    <div class="actions">
+    <div class="actions" class:v-ok={result && result.accuracy >= 0.999} class:v-mid={result && result.accuracy > 0 && result.accuracy < 0.999} class:v-ko={result && result.accuracy === 0}>
+      {#if result && feedback}
+        <!-- Mobile : verdict toujours visible dans la barre du bas, sans faire défiler -->
+        <div class="verdict" aria-live="polite">
+          <Mascot mood={feedback.mood} size={40} />
+          <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : "Raté"}</b>{#if result.accuracy < 0.999}<small>{d.nom} ({d.code})</small>{/if}</span>
+          <span class="vp tabnum">+{result.points}</span>
+        </div>
+      {/if}
       {#if !result}
         <button class="btn big" onclick={submit} disabled={submitted}>{submitted ? "Envoyé" : "Valider"} <kbd>↵</kbd></button>
       {:else}
@@ -337,7 +345,21 @@
   .st.on span, .st.on b { color: #fff; }
   .st.done:not(.on) b { color: var(--blue); }
   .timer.top { padding: 4px 0 2px; }
+  .verdict { display: none; }
   @media (max-width: 900px) {
+    /* Le verdict passe dans la barre du bas ; le bloc mascotte du panneau devient inutile */
+    .react { display: none; }
+    .actions { flex-wrap: wrap; }
+    .verdict { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .vt { flex: 1; display: flex; flex-direction: column; line-height: 1.15; }
+    .vt b { font-weight: 900; font-size: 18px; }
+    .vt small { font-weight: 700; font-size: 13px; opacity: .85; }
+    .vp { font-family: var(--f-pop); font-size: 26px; }
+    .actions.v-ok { background: #e3f0fb; }
+    .actions.v-ok .vt b, .actions.v-ok .vp { color: var(--blue-d); }
+    .actions.v-mid { background: #fff6cc; }
+    .actions.v-ko { background: #ffe1ef; }
+    .actions.v-ko .vt b { color: var(--pink-d); }
     .round { grid-template-columns: 1fr; gap: 10px; }
     .mapwrap { position: sticky; top: 0; z-index: 2; background: var(--bg); margin: 0 -16px; padding: 2px 16px 6px; }
     .mapwrap :global(.map) { max-height: 38vh; }
