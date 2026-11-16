@@ -123,9 +123,11 @@ Le joueur peut **redescendre d'un niveau** pour le défi s'il le veut (« Défi 
 Quand une région a toutes ses étoiles de base, ses facettes expert (sous-préfectures, voisins) s'ouvrent. Un département maîtrisé en expert gagne une **couronne**. On continue de progresser après 100 %, sans jamais avoir eu à cocher « expert ».
 
 ### 4.4 Le rendez-vous quotidien
-Les **3 quêtes** sont remplacées par **un objectif du jour** simple et réglable : 1 séance (≈ 2 min), 3 séances, ou 5 séances. Il alimente la **série** (et son joker). Le défi du jour compte comme une séance.
+**La série : une séance par jour suffit, toujours.** Une séance de Continuer (≈ 2 min), une partie d'Entraînement, le défi du jour ou une partie entre amis : n'importe laquelle garde la flamme allumée. La barre ne bouge jamais, et le joker de la semaine rattrape un jour oublié.
 
-C'est la même rétention que les quêtes (une raison de revenir chaque jour, une flamme à ne pas casser) sans la dispersion : un seul objectif, et il fait apprendre. Les autres raisons de revenir existent déjà : les étoiles qui pâlissent (notification), le défi du jour, les amis.
+Les **3 quêtes** sont retirées. À la place, un **objectif personnel facultatif**, que le joueur fixe lui-même s'il en a envie (par exemple 3 séances par jour) : l'atteindre fait passer la flamme du jour en doré, le manquer **ne coûte rien**. Il n'a aucun effet sur la série.
+
+Les raisons de revenir : la flamme à ne pas casser, les étoiles qui pâlissent (notification), le défi du jour, les amis.
 
 ### 4.5 Le Hall of Fame
 Pour les comptes connectés, trois tableaux :
@@ -141,7 +143,7 @@ Pour les comptes connectés, trois tableaux :
 | Aujourd'hui | Demain |
 |---|---|
 | XP et niveaux 1, 2, 3… | **retirés** (remplacés par « Ta France » et les 3 niveaux de joueur) — voir question 2 |
-| 3 quêtes du jour | **remplacées** par un objectif du jour |
+| 3 quêtes du jour | **retirées** ; objectif personnel facultatif, sans effet sur la série |
 | Étoiles de région du Tour | **remplacées** par les étoiles des départements de la région |
 | Vignettes bronze / argent / or et Album | **remplacées** par les étoiles et la couronne ; l'Album fusionne avec l'Atlas |
 | Rangs | **gardés**, calculés à partir de « Ta France » |
@@ -189,7 +191,7 @@ On garde l'Entraînement, et il devient **beaucoup plus précis** : un seul écr
 Exemples : un débutant coche « on me donne le nom » + « je le place » pour apprendre la carte seule ; un joueur qui révise ses numéros coche « on me donne la carte » + « je donne le numéro ». Ici les combinaisons à deux inconnues restent possibles, puisque c'est le joueur qui les choisit. L'Entraînement fait gagner des étoiles comme Continuer.
 
 ### Accueil
-Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcentage et l'objectif du jour, puis le défi et Entre amis. Entraînement, Atlas, Hall of Fame et profil en secondaire.
+Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcentage et la série, puis le défi et Entre amis. Entraînement, Atlas, Hall of Fame et profil en secondaire.
 
 ---
 
@@ -198,7 +200,7 @@ Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcen
 **Première minute**
 1. Ouverture : pas de compte, pas de menu. La mascotte : « Tu viens d'où ? » → il touche son département sur la carte (ou « passer »).
 2. Première séance tout de suite : les 3 ou 4 départements autour de chez lui, montrés puis demandés en questions simples à propositions. Impossible d'échouer franchement.
-3. Fin de séance : « 4 étoiles ! Ta France : 1 % », sa région commence à se colorer, l'objectif du jour est rempli, la série démarre.
+3. Fin de séance : « 4 étoiles ! Ta France : 1 % », sa région commence à se colorer, la série démarre.
 
 **Après la première séance** : la proposition de sauvegarder (compte), puis d'activer les rappels (« on te dit quand tes étoiles pâlissent »).
 
@@ -224,7 +226,7 @@ Personne ne doit perdre ce qu'il a gagné :
 
 1. **Entraînement** avec les réglages « on te donne / on te demande », les deux formats (question simple, fiche complète), propositions ou clavier changeable en cours de partie, carte à 4 départements surlignés. À côté de l'existant : on teste en vrai sans rien casser. *(Répond directement au retour du testeur.)*
 2. **Les étoiles par facette, « Ta France » et les 3 niveaux**, avec la migration des profils.
-3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif du jour. On retire alors le Tour de France (remplacé par Continuer), les quêtes, l'XP et les vignettes.
+3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif personnel facultatif. On retire alors le Tour de France (remplacé par Continuer), les quêtes, l'XP et les vignettes.
 4. **Défi du jour par niveau** (classements séparés) et **Entre amis** à la nouvelle règle, handicap par niveau.
 5. **Facettes expert** et couronnes, puis **Hall of Fame**.
 
@@ -237,7 +239,7 @@ Chaque étape est jouable et déployable seule.
 | # | Question | Décision |
 |---|---|---|
 | 1 | Une seule chose par question ? | **Non : deux formats.** Questions simples pour découvrir, fiche complète (avec semi-bon) pour consolider, et au choix à l'Entraînement. |
-| 2 | Retirer l'XP, les niveaux, les quêtes ? | **Quêtes → un objectif du jour.** XP : proposition de la retirer (« Ta France » + 3 niveaux de joueur la remplacent) ; **à confirmer par Léo**. |
+| 2 | Retirer l'XP, les niveaux, les quêtes ? | **Quêtes retirées** ; la série se garde avec une seule séance par jour, objectif personnel facultatif à côté. XP : proposition de la retirer (« Ta France » + 3 niveaux de joueur la remplacent) ; **à confirmer par Léo**. |
 | 3 | Chrono en solo ? | **Retiré.** Reste au défi et entre amis. |
 | 4 | Le défi fait gagner des étoiles ? | **Non.** Ses erreurs reviennent quand même en séance. |
 | 5 | Entre amis ? | **On garde Duel, Soirée et Équipe.** |
@@ -267,3 +269,5 @@ Les réponses décident des ajustements avant de retirer l'ancien système.
   → 3 niveaux de joueur, défi du jour à ton niveau avec classement par niveau (sections 4.2 et 5). Étapes 2 et 4.
 - **2026-11-16, Léo** : aime être interrogé sur toutes les infos (on peut avoir « semi-bon ») ; ne veut pas perdre le choix clavier / propositions (« parfois on a la flemme de taper ») ; tient à la soirée ; demande sur quoi reposerait le Hall of Fame.
   → Deux formats de tour (3.1), préférence de réponse (3.2), trois formats entre amis (5), Hall of Fame (4.5).
+- **2026-11-16, Léo** : un objectif du jour à 1, 3 ou 5 séances pour garder sa série, « frustrant ».
+  → Une séance par jour suffit toujours pour la série ; l'objectif devient personnel, facultatif et sans effet sur la série (4.4).
