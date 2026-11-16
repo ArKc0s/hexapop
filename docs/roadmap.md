@@ -23,6 +23,11 @@ Constat de Léo (2026-11-16) : « c'est bien, mais pas assez intuitif et ça par
 - **À définir** : le parcours du nouveau joueur (première minute, première séance, premier retour le lendemain), le nombre de modes vraiment utiles et leur promesse en une phrase, des règles communes (un tour se joue toujours de la même façon), ce qui relève du solo, du multi, du défi.
 - **Livrable** : une carte des modes, la règle d'un tour, le parcours du nouveau joueur ; tests avec des débutants (dont la copine de Léo !) avant de recoder.
 
+### 3. Déployer sans couper les parties
+- **Problème** : une mise à jour redémarre le serveur, ce qui coupe les salons en cours (duels, équipes, battle royale) ; aujourd'hui le script de déploiement refuse simplement de redémarrer s'il y a des joueurs, ce qui bloque les mises à jour pendant les soirées.
+- **Pistes** : un mode « vidange » (le serveur n'ouvre plus de nouveaux salons, prévient les joueurs, attend la fin des parties puis redémarre de lui-même) ; ou deux instances en relais derrière le proxy (la nouvelle prend les nouveaux salons pendant que l'ancienne finit les siens) ; ou la sauvegarde de l'état des salons pour reprendre la partie après redémarrage (les clients se reconnectent déjà automatiquement).
+- **Livrable** : une mise à jour possible à tout moment, sans partie coupée, avec un message clair aux joueurs (« nouvelle version dans 2 minutes »).
+
 ## Prochaines versions
 
 ### Progression
