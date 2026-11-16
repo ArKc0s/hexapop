@@ -6,10 +6,33 @@ export type Screen =
   | { name: "setup"; mode: SoloMode }
   | { name: "play"; config: GameConfig; title: string; learn: boolean }
   | { name: "results"; config: GameConfig; title: string; questions: Question[]; results: RoundResult[]; learn: boolean }
-  | { name: "atlas" };
+  | { name: "atlas" }
+  | { name: "account"; view?: "login" | "register" | "forgot" | "reset" | "verify" | "profile"; token?: string; then?: Screen }
+  | { name: "daily" }
+  | { name: "lobby"; join?: string }
+  | { name: "live" }
+  | { name: "stage"; code: string };
 
 class Nav {
   screen = $state<Screen>({ name: "home" });
-  go(s: Screen) { this.screen = s; window.scrollTo(0, 0); }
+  go(s: Screen) {
+    this.screen = s;
+    window.scrollTo(0, 0);
+    // Garde un lien partageable pour les salons, nettoie le reste.
+    const hash = s.name === "lobby" && s.join ? `#salon=${s.join}` : s.name === "stage" ? `#plateau=${s.code}` : "";
+    if (location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
+  }
 }
 export const nav = new Nav();
+
+/** Écran de départ selon le lien ouvert (#salon=ABCD, #plateau=ABCD, #verifier=…, #nouveau-mdp=…). */
+export function screenFromHash(): Screen {
+  const m = /^#([\w-]+)=([\w-]+)$/.exec(location.hash);
+  if (!m) return { name: "home" };
+  const [, k, v] = m;
+  if (k === "salon") return { name: "lobby", join: v.toUpperCase() };
+  if (k === "plateau") return { name: "stage", code: v.toUpperCase() };
+  if (k === "verifier") return { name: "account", view: "verify", token: v };
+  if (k === "nouveau-mdp") return { name: "account", view: "reset", token: v };
+  return { name: "home" };
+}

@@ -254,6 +254,19 @@ export class Room {
     this.schedule(review, () => (last ? this.finish() : this.ask(this.qi + 1)));
   }
 
+  rematch(c: Conn) {
+    if (this.kind === "daily" || this.phase !== "ended") return;
+    if (!this.isHost(c)) return fail(c, "not_host", "Seul l'hôte peut relancer.");
+    for (const [id, s] of this.seats) {
+      if (!s.conn) { this.seats.delete(id); continue; }
+      s.info.score = 0; s.info.eliminated = false; s.info.answered = false; s.results = [];
+    }
+    this.questions = []; this.qi = -1;
+    this.phase = "lobby";
+    this.lastActivity = now();
+    this.broadcastRoom();
+  }
+
   /** Défi du jour : le joueur demande la question suivante après avoir lu la correction. */
   next(c: Conn) {
     if (this.kind !== "daily" || this.phase !== "review" || !this.seats.has(c.playerId)) return;
@@ -338,6 +351,7 @@ export function handle(c: Conn, msg: ClientMsg) {
     case "start": return c.room?.start(c);
     case "answer": return c.room?.answer(c, Number(msg.index), msg.answer);
     case "next": return c.room?.next(c);
+    case "rematch": return c.room?.rematch(c);
     case "leave": return c.room?.leave(c);
     default: return fail(c, "bad_request", "Message inconnu.");
   }

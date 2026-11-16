@@ -67,6 +67,8 @@ export type ClientMsg =
   | { t: "answer"; index: number; answer: Omit<Answer, "elapsedMs"> }
   /** Défi du jour uniquement : passer à la question suivante. */
   | { t: "next" }
+  /** Hôte, partie terminée : revenir au salon avec les mêmes joueurs. */
+  | { t: "rematch" }
   | { t: "leave" };
 
 // ---------- serveur -> client ----------
