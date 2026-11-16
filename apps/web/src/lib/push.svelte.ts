@@ -67,7 +67,6 @@ class Push {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* rien */ }
     if (this.endpoint) await api("POST", "/push/prefs", { endpoint: this.endpoint, prefs: p });
   }
-  async test() { if (this.endpoint) await api("POST", "/push/test", { endpoint: this.endpoint }); }
   dismiss() { this.dismissed = true; try { localStorage.setItem(DISMISS_KEY, "1"); } catch { /* rien */ } }
 
   /** Signale au serveur le dernier jour joué, la série et les départements qui s'effacent. */

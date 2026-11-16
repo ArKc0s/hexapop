@@ -51,7 +51,6 @@
       <p class="fine">Au maximum une notification par jour, tous rappels confondus. Réglages propres à cet appareil.</p>
     </div>
     <div class="actions">
-      <button class="btn white" disabled={busy} onclick={() => run(() => push.test(), "Notification envoyée : regarde ton téléphone.")}>Envoyer un test</button>
       <button class="link danger" disabled={busy} onclick={() => run(() => push.unsubscribe(), "Rappels coupés sur cet appareil.")}>Tout couper</button>
     </div>
   {/if}
