@@ -275,7 +275,7 @@
         <div class="bubble">{feedback.text}</div>
         <span class="pts tabnum" class:zero={result.points === 0}>+{result.points}</span>
       </div>
-      <Fiche code={q.code} expert={has("sousPrefectures") || has("limitrophes")} />
+      <div class="fichebox"><Fiche code={q.code} expert={has("sousPrefectures") || has("limitrophes")} /></div>
       {@render children?.()}
     {/if}
 
@@ -363,7 +363,8 @@
        panneau de réponses en bas (seul lui défile), barre d'action toujours visible. */
     .round { display: flex; flex-direction: column; align-items: stretch; gap: 6px; flex: 1; min-height: 0; width: 100%; }
     .panel, .mapwrap { width: auto; align-self: stretch; }
-    .mapwrap { position: relative; flex: 1 1 0; min-height: 150px; display: flex; flex-direction: column; gap: 2px; }
+    .mapwrap { position: relative; top: 0; flex: 1 1 0; min-height: 150px; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+    .panel { flex-shrink: 0; }
     .mapwrap :global(.wrap) { flex: 1; min-height: 0; display: flex; }
     .mapwrap :global(.map) { width: 100%; height: 100%; max-height: none; }
     .maphead { min-height: 0; }
@@ -385,6 +386,10 @@
     .choices { gap: 6px; }
     .opt { padding: 9px 11px; font-size: 15px; }
     .actions { position: sticky; bottom: 0; z-index: 3; background: var(--card); margin: auto -16px 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); flex-wrap: wrap; gap: 8px; }
+    /* À la correction, la fiche du bas suffit : on retire question, propositions et fiche détaillée
+       (le classement d'un tour multijoueur, passé en enfant, reste visible) */
+    .round.review .clue, .round.review .fields, .round.review .fichebox { display: none; }
+    .round.review .panel { padding-top: 0; }
     /* Le verdict et la correction passent dans la barre du bas */
     .react { display: none; }
     .verdict { display: flex; align-items: center; gap: 10px; width: 100%; }
