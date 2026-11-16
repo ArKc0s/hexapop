@@ -1,6 +1,6 @@
 # Hexa · Conception du jeu (refonte des modes et de la progression)
 
-Document de travail, à valider avant de coder. **Version 2 du 2026-11-16** (intègre les retours de jeu de Léo et des testeurs, voir section 11).
+Document de travail. **Version 2 du 2026-11-16, toutes les décisions tranchées** (intègre les retours de jeu de Léo et des testeurs, voir section 11).
 Il couvre les chantiers 1 (progression) et 2 (modes et mécaniques) de la [feuille de route](roadmap.md) : ils se conçoivent ensemble, parce que chaque mode nourrit la progression et que la progression décide de ce qu'on joue ensuite.
 
 ---
@@ -142,7 +142,7 @@ Pour les comptes connectés, trois tableaux :
 
 | Aujourd'hui | Demain |
 |---|---|
-| XP et niveaux 1, 2, 3… | **retirés** (remplacés par « Ta France » et les 3 niveaux de joueur) — voir question 2 |
+| XP et niveaux 1, 2, 3… | **retirés** (remplacés par « Ta France » et les 3 niveaux de joueur) |
 | 3 quêtes du jour | **retirées** ; objectif personnel facultatif, sans effet sur la série |
 | Étoiles de région du Tour | **remplacées** par les étoiles des départements de la région |
 | Vignettes bronze / argent / or et Album | **remplacées** par les étoiles et la couronne ; l'Album fusionne avec l'Atlas |
@@ -239,11 +239,11 @@ Chaque étape est jouable et déployable seule.
 | # | Question | Décision |
 |---|---|---|
 | 1 | Une seule chose par question ? | **Non : deux formats.** Questions simples pour découvrir, fiche complète (avec semi-bon) pour consolider, et au choix à l'Entraînement. |
-| 2 | Retirer l'XP, les niveaux, les quêtes ? | **Quêtes retirées** ; la série se garde avec une seule séance par jour, objectif personnel facultatif à côté. XP : proposition de la retirer (« Ta France » + 3 niveaux de joueur la remplacent) ; **à confirmer par Léo**. |
+| 2 | Retirer l'XP, les niveaux, les quêtes ? | **Tout retiré.** « Ta France » et les 3 niveaux de joueur remplacent l'XP ; la série se garde avec une seule séance par jour, objectif personnel facultatif à côté. |
 | 3 | Chrono en solo ? | **Retiré.** Reste au défi et entre amis. |
 | 4 | Le défi fait gagner des étoiles ? | **Non.** Ses erreurs reviennent quand même en séance. |
 | 5 | Entre amis ? | **On garde Duel, Soirée et Équipe.** |
-| 6 | Nom des étoiles ? | Étoiles par défaut ; habillage « tampons de passeport » **à trancher**. |
+| 6 | Nom des étoiles ? | **Étoiles.** |
 | 7 | Clavier ou propositions ? | **Gardé** comme préférence changeable à tout moment ; propositions de plus en plus piégeuses. |
 | 8 | Expert trop dur pour les amateurs ? | **3 niveaux de joueur** ; l'expert s'ouvre région par région ; défi du jour à ton niveau. |
 
