@@ -41,5 +41,6 @@ Pas de traitement de données sensibles, pas de profilage, pas de publicité, pa
 - [x] Identité de l'éditeur : nom et email publiés. Choix assumé de ne pas publier d'adresse ni de téléphone : non strictement conforme à la LCEN pour un site auto-hébergé ; solution conforme possible plus tard via un hébergeur tiers (VPS), qui permet l'anonymat.
 - [ ] Créer l'adresse `contact@hexapop.app` (ou une redirection OVH).
 - [x] Journaux Caddy : `roll_keep_for 8760h` ajouté (2026-11-16, LXC 109).
-- [ ] Sauvegarde quotidienne chiffrée (restic → Backblaze, `sauvegarde.sh quotidien` sur pve01, tag `hexapop`) : script en place, clé SSH à commande forcée à autoriser sur infra. Restauration : voir `apps/server/src/backup.ts`.
+- [x] Sauvegarde quotidienne chiffrée : restic → Backblaze B2 via `sauvegarde.sh quotidien` sur pve01 (tag `hexapop`, rétention 7 j / 4 sem. / 6 mois, alerte Gatus). Clé pve01 à commande forcée dans `authorized_keys` d'infra. Restauration testée le 2026-11-16 :
+      `restic dump --tag hexapop latest /root/sauvegarde/tmp-hexapop.db > hexa.db`, puis arrêter le conteneur, remplacer `/home/infra/hexapop/data/hexa.db` (supprimer `-wal`/`-shm`) et relancer.
 - [ ] En cas de violation de données : notification à la CNIL sous 72 h (art. 33) et aux joueurs si risque élevé.
