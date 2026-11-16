@@ -17,6 +17,7 @@
   import Album from "./screens/Album.svelte";
   import Reminders from "./screens/Reminders.svelte";
   import { push } from "./lib/push.svelte.ts";
+  import PushPrompt from "./lib/ui/PushPrompt.svelte";
 
   nav.screen = screenFromHash();
   // Retour de connexion externe : on nettoie l'adresse (le lien ne doit pas se rejouer).
@@ -43,3 +44,5 @@
 {:else if nav.screen.name === "stage"}<Stage code={nav.screen.code} />
 {:else if nav.screen.name === "legal"}<Legal doc={nav.screen.doc} />
 {/if}
+
+<PushPrompt />

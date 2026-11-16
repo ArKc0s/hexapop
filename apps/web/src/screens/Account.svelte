@@ -3,6 +3,7 @@
   import { nav, type Screen } from "../lib/nav.svelte.ts";
   import { api, session, ApiError } from "../lib/api.svelte.ts";
   import ProviderIcon from "../lib/ui/ProviderIcon.svelte";
+  import RemindersPanel from "../lib/ui/RemindersPanel.svelte";
 
   type View = "login" | "register" | "forgot" | "reset" | "verify" | "profile";
   let { view = "login", token, then, notice, oauthError }: { view?: View; token?: string; then?: Screen; notice?: string; oauthError?: string } = $props();
@@ -167,6 +168,11 @@
       <p class="fine">Lie tes comptes pour te connecter en un clic. Si un service te connecte avec la même adresse email vérifiée, il est lié automatiquement.</p>
     </section>
 
+    <section class="rem">
+      <h2 class="k">Rappels sur cet appareil</h2>
+      <RemindersPanel />
+    </section>
+
     <button class="btn white" onclick={() => session.logout().then(() => nav.go({ name: "home" }))}>Se déconnecter</button>
 
     <section class="card box">
@@ -221,5 +227,6 @@
   .fine { font-size: 14px; color: var(--soft); }
   .fine .link { font-weight: 700; }
   .danger { color: var(--pink-d) !important; align-self: flex-start; margin-top: 6px; }
+  .rem { display: flex; flex-direction: column; gap: 8px; }
   .danger-box { border: 2px solid var(--pink); border-radius: 18px; padding: 14px; margin-top: 8px; }
 </style>

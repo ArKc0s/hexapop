@@ -6,7 +6,7 @@ import { profile } from "./profile.svelte.ts";
 import { progress } from "./progress.svelte.ts";
 
 export interface PushPrefs { daily: boolean; hour: number; streak: boolean; comeback: boolean }
-const PREFS_KEY = "hexa.push.prefs", DISMISS_KEY = "hexa.push.dismissed";
+const PREFS_KEY = "hexa.push.prefs", DISMISS_KEY = "hexa.push.dismissed", ASKED_KEY = "hexa.push.asked";
 
 function b64ToBytes(b64: string) {
   const s = atob((b64 + "=".repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/"));
@@ -21,6 +21,12 @@ class Push {
   prefs = $state<PushPrefs>((() => { try { return { daily: true, hour: 18, streak: true, comeback: true, ...JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") }; } catch { return { daily: true, hour: 18, streak: true, comeback: true }; } })());
   dismissed = $state((() => { try { return localStorage.getItem(DISMISS_KEY) === "1"; } catch { return false; } })());
   available = $state(false);
+  /** La demande unique (à la connexion) a déjà été faite sur cet appareil. */
+  asked = $state((() => { try { return localStorage.getItem(ASKED_KEY) === "1"; } catch { return false; } })());
+  markAsked() {
+    this.asked = true; this.dismiss();
+    try { localStorage.setItem(ASKED_KEY, "1"); } catch { /* rien */ }
+  }
 
   async init() {
     if (!this.supported) return;
