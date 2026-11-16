@@ -34,22 +34,40 @@ Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement co
 ## Prochaines versions
 
 ### Progression
-- **Niveaux qui débloquent des récompenses cosmétiques** : accessoires pour la mascotte, styles de plaque, thèmes de carte. Visibles par les autres joueurs en multi.
+- **Récompenses cosmétiques** liées aux médailles et à « Ta France » (plus d'XP) : accessoires pour la mascotte, thèmes de carte. Visibles par les autres joueurs en multi.
 - **Ligues hebdomadaires** : groupes d'une trentaine de joueurs, montée et descente chaque semaine. À lancer quand il y aura assez de joueurs.
-- **Hall of Fame** : records du Marathon 101, meilleurs scores du défi, meilleurs départements de cœur.
+- **Hall of Fame** : défini dans [`conception.md`](conception.md) (défi par niveau, Marathon, Légendes).
 - **Page « Nouveautés »** (notes de version) accessible depuis l'accueil.
 
-### Nouveaux contenus (chacun avec sa propre progression)
-- **Mode Voisins** : nommer tous les voisins d'un département, à part du mode expert si celui-ci devient trop chargé.
-- **Gentilés** : Finistériens, Ardéchois… (données à sourcer et vérifier : pas dans le COG de l'INSEE).
-- **Chefs-lieux de région**.
-- **Origine des noms** : fleuves, montagnes, anecdotes (pourquoi 2A/2B, pourquoi pas de 20).
+### Les atlas (décidé avec Léo le 2026-11-16)
+Hexa reste un jeu sur la France, mais d'autres cartes pourront s'ajouter sous forme d'**atlas**. Un atlas = **une carte + une liste de choses à apprendre + des facettes** (ce qu'on apprend sur chaque chose), et tout y fonctionne pareil : Continuer, Défi, Entre amis, Entraînement, étoiles, médailles bronze / argent / or.
+
+**Les règles**
+1. **L'atlas France ne grossit jamais.** Son contenu est figé : le placer, le numéro, la préfecture ; en expert les sous-préfectures et les voisins (or). Tout nouveau contenu est soit un **autre atlas**, soit de la **lecture** (fiches, « Le savais-tu ? » à la correction), soit rien.
+2. **Une liste plate, sans sous-atlas.** France, Régions de France, Europe… sont tous au même niveau. Pas d'« Europe › Régions › Gentilés ».
+3. **Les facettes d'un atlas sont fixées dès sa création**, base et expert compris, et ne bougent plus ensuite.
+4. **Peu d'atlas au total** (une demi-douzaine au plus). Un atlas n'entre que s'il tient en une phrase, intéresse assez de joueurs et repose sur des données propres.
+5. **Rien n'est verrouillé.** Tous les atlas sont accessibles dès le premier jour depuis « Autres atlas » dans le profil. On ne les met simplement pas en avant au début : l'accueil d'un nouveau joueur ne montre que la France ; après sa première région en bronze, la mascotte présente les autres atlas une fois, puis un sélecteur apparaît sur l'accueil.
+6. **Chaque atlas progresse indépendamment** (ses étoiles, ses médailles, son pourcentage). Ne pas jouer à un atlas ne coûte rien ailleurs, aucun atlas n'en débloque un autre.
+7. **La série et le défi du jour sont communs** : une partie dans n'importe quel atlas garde la flamme ; le défi du jour reste celui de la France (un défi par atlas : à voir plus tard).
+8. **Hexa qui voyage** plutôt que de nouvelles mascottes : la même mascotte avec une tenue par atlas (béret, casque viking, chapeau de paille…). L'app garde le nom Hexa et la France reste l'atlas principal, ouvert par défaut.
+
+**Les atlas envisagés, dans l'ordre**
+
+| # | Atlas | Promesse | Base / expert | Taille |
+|---|---|---|---|---|
+| 1 | **France** (principal) | « Les 101 départements par cœur » | carte, numéro, préfecture / sous-préfectures, voisins | 101 |
+| 2 | **Régions de France** | « Les régions, leur capitale, ce qu'elles contiennent » | carte, chef-lieu / départements qui la composent | 18 |
+| 3 | **Europe** | « Tous les pays d'Europe » | carte, capitale, drapeau / voisins, nationalité | ≈ 45 |
+| 4 | **Gentilés de France** | « Comment s'appellent les habitants ? » | régions (Bretons…) puis départements / préfectures (Quimpérois…) | ≈ 220 |
+| 5 | **Monde** | « Tous les pays du monde » | carte, capitale, drapeau / continent, voisins | ≈ 195 |
+| (6) | **Fleuves et montagnes** *(possible)* | « D'où viennent les noms des départements » | le fleuve ou le massif qui donne son nom au département, et où il est | à définir |
+
+- **Pourquoi cet ordre** : Régions est petit, finissable en quelques jours, ses données sont déjà dans le COG de l'INSEE : idéal pour roder le système d'atlas. L'Europe intéresse beaucoup plus de monde que les gentilés. Le Monde est le plus gros chantier de données et le plus concurrencé. Fleuves et montagnes demande une interaction nouvelle (désigner un fleuve), à concevoir.
+- **Gentilés : France uniquement.** En Europe et dans le Monde, l'équivalent est la nationalité, déjà dans l'expert. Les habitants des villes étrangères (Berlinois…) : non, trop niche et données douteuses. Les données des gentilés français sont à sourcer et vérifier (absentes du COG).
+- **Ce qui ne devient pas un atlas** : l'origine des noms et les anecdotes (pourquoi 2A / 2B, pourquoi pas de 20) vont dans les fiches et le « Le savais-tu ? » ; les régions des pays étrangers (Länder, provinces…) ne se feraient que sur vraie demande des joueurs.
+- **Quand** : après la refonte (étapes 1 à 5 de la conception), une fois la France solide et quand des joueurs arrivent au bout.
+- **Points de vigilance** : ne pas retomber dans « ça part dans tous les sens », ne pas diluer l'identité France, le travail de données (cartes propres, territoires contestés, micro-États, drapeaux qui changent).
 
 ### Plus tard
-- **D'autres atlas que la France** (idée de Léo, 2026-11-16) : pays, capitales, drapeaux…
-  - **Des atlas, pas des modes** : on choisit son atlas (France, puis Europe, puis Monde) et tout fonctionne pareil (Continuer, Défi, Entre amis, Entraînement), avec une carte, des étoiles et des médailles propres à chaque atlas. Pour un pays, les facettes seraient par exemple la carte, la capitale et le drapeau.
-  - **La France reste l'atlas principal**, ouvert par défaut. L'app garde le nom Hexa : c'est la marque d'origine.
-  - **Hexa qui voyage** plutôt que de nouvelles mascottes : la même mascotte avec une tenue par destination (béret, casque viking, chapeau de paille…), en lien avec les accessoires de mascotte prévus en Progression. Une seule identité forte.
-  - **Ordre** : après la refonte, une fois la France solide et quand des joueurs arrivent au bout. D'abord les contenus français (régions, chefs-lieux, gentilés), puis l'**Europe** comme premier atlas étranger.
-  - **Points de vigilance** : ne pas retomber dans « ça part dans tous les sens », ne pas diluer l'identité France, et le gros travail de données (cartes propres, territoires contestés, micro-États, drapeaux qui changent).
 - Application mobile Flutter (v2), branchée sur la même API et le même protocole WebSocket (`packages/game/src/protocol.ts`).

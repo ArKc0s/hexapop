@@ -70,7 +70,7 @@ On découpe le savoir en **facettes**. Un département, c'est :
 | Sous-préfectures | Brest, Châteaulin, Morlaix | expert |
 | Voisins | Côtes-d'Armor, Morbihan | expert |
 
-Soit **101 × 3 = 303 facettes de base**, puis 202 facettes expert. Les futurs contenus de la feuille de route (chefs-lieux de région, gentilés…) deviennent simplement **de nouvelles facettes**, sans nouveau mode.
+Soit **101 × 3 = 303 facettes de base**, puis 202 facettes expert. Cette liste est **figée** : les futurs contenus (régions et chefs-lieux, gentilés, Europe…) seront d'**autres atlas**, chacun avec sa propre carte et sa propre progression, et jamais de nouvelles facettes de la France (voir « Les atlas » dans la [feuille de route](roadmap.md)).
 
 **Jamais deux inconnues.** Une question donne un **indice** que le joueur peut connaître, et chaque champ demandé ne dépend que de cet indice. L'indice est le **nom** ou le **département qui clignote sur la carte** ; le **numéro** ou la **préfecture** ne servent d'indice que si le joueur les connaît déjà pour ce département (facette déjà gagnée). Ainsi « place le 87 » n'arrive qu'à quelqu'un qui sait que le 87 est la Haute-Vienne.
 
