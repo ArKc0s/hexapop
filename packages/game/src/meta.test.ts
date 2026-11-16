@@ -5,7 +5,7 @@ import type { RoundResult } from "./round.ts";
 
 const T = (day: string, h = 12) => Date.parse(`${day}T${String(h).padStart(2, "0")}:00:00+01:00`);
 const res = (code: string, acc: number, ms = 4000): RoundResult => ({ code, accuracy: acc, points: 0, elapsedMs: ms, fields: [{ field: "nom", score: acc, expected: "" }, { field: "prefecture", score: acc, expected: "" }] });
-const report = (over: Partial<GameReport>): GameReport => ({ mode: "eclair", level: "normal", results: [], now: T("2026-11-16"), ...over });
+const report = (over: Partial<GameReport>): GameReport => ({ mode: "eclair", level: "normal", input: "choix", results: [], now: T("2026-11-16"), ...over });
 
 test("niveaux", () => {
   assert.equal(levelInfo(0).level, 1);
@@ -76,11 +76,25 @@ test("fusion et nettoyage de profils", () => {
   const a = applyGame(emptyProfile(), report({ results: [res("29", 1)] })).profile;
   const b = applyGame(emptyProfile(), report({ results: [res("13", 1), res("69", 1)] })).profile;
   const m = mergeProfiles(a, b);
-  assert.deepEqual(m.plates.sort(), ["13", "29", "69"]);
+  assert.deepEqual(Object.keys(m.tiers).sort(), ["13", "29", "69"]);
   assert.equal(m.xp, Math.max(a.xp, b.xp));
-  const s = sanitizeProfile({ xp: -5, plates: ["29", "XX", 3], stars: { "53": 9, nope: 2 }, badges: { fake: 1, premier: 5 } });
+  const s = sanitizeProfile({ xp: -5, plates: ["29", "XX", 3], tiers: { "13": 7, "ZZ": 2 }, stars: { "53": 9, nope: 2 }, badges: { fake: 1, premier: 5 } });
   assert.equal(s.xp, 0);
-  assert.deepEqual(s.plates, ["29"]);
+  assert.deepEqual(s.tiers, { "29": 1, "13": 3 }, "ancien format converti en bronze, paliers bornés");
   assert.deepEqual(s.stars, { "53": 3 });
   assert.deepEqual(Object.keys(s.badges), ["premier"]);
+});
+
+test("paliers : bronze au QCM, argent au clavier, or en expert, jamais de recul", () => {
+  let { profile, rewards } = applyGame(emptyProfile(), report({ input: "choix", results: [res("29", 1)] }));
+  assert.equal(profile.tiers["29"], 1);
+  assert.deepEqual(rewards.newPlates, ["29"]);
+  ({ profile, rewards } = applyGame(profile, report({ input: "libre", results: [res("29", 1)] })));
+  assert.equal(profile.tiers["29"], 2);
+  assert.deepEqual(rewards.newPlates, []);
+  assert.deepEqual(rewards.upgrades, [{ code: "29", tier: 2 }]);
+  ({ profile } = applyGame(profile, report({ input: "choix", results: [res("29", 1)] })));
+  assert.equal(profile.tiers["29"], 2, "pas de recul");
+  ({ profile } = applyGame(profile, report({ level: "expert", input: "choix", results: [res("29", 1)] })));
+  assert.equal(profile.tiers["29"], 3);
 });

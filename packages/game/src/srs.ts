@@ -44,3 +44,13 @@ export function pickSession(progress: Progress, all: string[], n: number, now: n
 export function mastery(progress: Progress, all: string[]): number {
   return all.filter((c) => (progress[c]?.box ?? 0) >= MASTERED_BOX).length;
 }
+
+/**
+ * Un département « à réviser » pâlit sur la carte : en retard sur sa révision d'au moins
+ * son propre intervalle (au minimum un jour). Les connaissances solides tiennent longtemps.
+ */
+export function isFading(progress: Progress, code: string, now: number): boolean {
+  const s = progress[code];
+  if (!s) return false;
+  return now - s.due > Math.max(DAY, INTERVALS[s.box] ?? DAY);
+}

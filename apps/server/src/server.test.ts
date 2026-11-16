@@ -206,9 +206,9 @@ test("profil de jeu : fusion côté serveur et nettoyage", async () => {
   const { token } = await r.json();
   const put = (profile: unknown) => fetch(BASE + "/api/profile", { method: "PUT", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ profile }) }).then((x) => x.json());
   await put({ xp: 300, plates: ["29", "56"], stars: { "53": 2 } });
-  const m = await put({ xp: 120, plates: ["13", "ZZ"], stars: { "53": 1, "93": 3 } });
+  const m = await put({ xp: 120, tiers: { "13": 2, "29": 3, "ZZ": 1 }, stars: { "53": 1, "93": 3 } });
   assert.equal(m.profile.xp, 300);
-  assert.deepEqual(m.profile.plates.sort(), ["13", "29", "56"]);
+  assert.deepEqual(m.profile.tiers, { "13": 2, "29": 3, "56": 1 }, "ancien format fusionné avec les paliers");
   assert.deepEqual(m.profile.stars, { "53": 2, "93": 3 });
 });
 

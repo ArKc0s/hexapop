@@ -76,3 +76,14 @@ test("répétition espacée", () => {
   assert.equal(pick[0], "13");
   assert.equal(pick.length, 10);
 });
+
+import { isFading } from "./srs.ts";
+test("un département pâlit quand sa révision est très en retard", () => {
+  const DAY = 86_400_000;
+  const p = { "29": { box: 1, due: 0, seen: 1, correct: 1 }, "13": { box: 6, due: 0, seen: 9, correct: 9 } };
+  assert.equal(isFading(p, "29", DAY / 2), false);
+  assert.equal(isFading(p, "29", 2 * DAY), true);
+  assert.equal(isFading(p, "13", 30 * DAY), false, "connaissance solide : tient plus longtemps");
+  assert.equal(isFading(p, "13", 61 * DAY), true);
+  assert.equal(isFading(p, "75", 1e12), false);
+});

@@ -5,6 +5,7 @@
   import { api, session } from "../lib/api.svelte.ts";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
+  import { progress } from "../lib/progress.svelte.ts";
   import Mascot from "../lib/ui/Mascot.svelte";
   import type { Rewards } from "@hexa/game";
 
@@ -28,7 +29,10 @@
   // XP, plaques et badges du défi : une seule fois.
   let rewards = $state<Rewards | null>(null);
   $effect(() => {
-    if (live.daily && !rewards && live.myResults.length) rewards = profile.record({ mode: "daily", level: "normal", results: live.myResults, now: Date.now() });
+    if (live.daily && !rewards && live.myResults.length) {
+      progress.record(live.myResults);
+      rewards = profile.record({ mode: "daily", level: "normal", input: "libre", results: live.myResults, now: Date.now() });
+    }
   });
   onDestroy(() => { if (live.room?.kind === "daily") live.leave(); });
 
@@ -90,7 +94,7 @@
         {:else if !session.me}
           <p>Score non classé (invité).</p>
         {/if}
-        {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.newPlates.length ? ` · ${rewards.newPlates.length} plaque${rewards.newPlates.length > 1 ? "s" : ""} pour l'album` : ""}</p>{/if}
+        {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.upgrades.length ? ` · ${rewards.upgrades.length} plaque${rewards.upgrades.length > 1 ? "s" : ""} pour l'album` : ""}</p>{/if}
         <button class="btn pink big" onclick={share}>{copied ? "Copié !" : "Partager"}</button>
       </div>
     </section>

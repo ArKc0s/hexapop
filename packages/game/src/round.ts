@@ -59,7 +59,7 @@ export interface GameConfig {
 }
 
 export const POINTS_PER_FIELD = 100;
-export const DEFAULT_DURATION: Record<Level, number> = { normal: 20_000, expert: 45_000 };
+export const DEFAULT_DURATION: Record<Level, number> = { normal: 20_000, expert: 60_000 };
 
 export function fieldsFor(d: Departement, hint: Hint, level: Level): Field[] {
   const base: Field[] = ["carte", "nom", "numero", "prefecture"];

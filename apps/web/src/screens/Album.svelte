@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BADGES, DEP, TOUR_REGIONS } from "@hexa/game";
+  import { BADGES, DEP, MAX_TIER_POINTS, TOUR_REGIONS, platesOwned, tierPoints } from "@hexa/game";
   import Plate from "../lib/ui/Plate.svelte";
   import Icon from "../lib/ui/Icon.svelte";
   import { nav } from "../lib/nav.svelte.ts";
@@ -11,7 +11,8 @@
   let region = $state<string | null>(null);
   const p = $derived(profile.data);
   const shown = $derived(TOUR_REGIONS.filter((r) => !region || r.code === region));
-  const got = (codes: string[]) => codes.filter((c) => p.plates.includes(c)).length;
+  const got = (codes: string[]) => codes.reduce((n, c) => n + (p.tiers[c] ?? 0), 0);
+  const TIER = ["À découvrir", "Bronze", "Argent", "Or"];
   const fmt = (t: number) => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 </script>
 
@@ -23,20 +24,20 @@
 
   {#if cur === "plaques"}
     <div class="top">
-      <div><span class="k">Ton album</span><div class="riso big" data-t="{p.plates.length} / 101">{p.plates.length} / 101</div></div>
-      <p>Chaque département réussi sans faute ajoute sa plaque. Celles d'outre-mer sont holographiques.</p>
+      <div><span class="k">Ton album · {platesOwned(p)} départements</span><div class="riso big" data-t="{tierPoints(p)} / {MAX_TIER_POINTS}">{tierPoints(p)} / {MAX_TIER_POINTS}</div></div>
+      <p>Réussis un département sans faute pour gagner sa plaque : <b>bronze</b> avec 4 propositions, <b>argent</b> au clavier, <b>or</b> en expert. Celles d'outre-mer sont holographiques.</p>
     </div>
     <div class="tabs">
       <button class="chip" class:on={!region} onclick={() => (region = null)}>Toutes</button>
-      {#each TOUR_REGIONS as r (r.code)}<button class="chip" class:on={region === r.code} onclick={() => (region = r.code)}>{r.nom} {got(r.deps)}/{r.deps.length}</button>{/each}
+      {#each TOUR_REGIONS as r (r.code)}<button class="chip" class:on={region === r.code} onclick={() => (region = r.code)}>{r.nom} {got(r.deps)}/{r.deps.length * 3}</button>{/each}
     </div>
     {#each shown as r (r.code)}
       <section>
-        <h2>{r.nom} <span>{got(r.deps)}/{r.deps.length}</span></h2>
+        <h2>{r.nom} <span>{got(r.deps)}/{r.deps.length * 3}</span></h2>
         <div class="grid">
           {#each r.deps as c (c)}
-            {@const has = p.plates.includes(c)}
-            <div class="st" class:miss={!has}><Plate code={c} missing={!has} /><small>{has ? DEP.get(c)?.nom : "À découvrir"}</small></div>
+            {@const tier = p.tiers[c] ?? 0}
+            <div class="st" class:miss={!tier}><Plate code={c} {tier} /><small>{tier ? DEP.get(c)?.nom : "À découvrir"}</small>{#if tier}<em class="tr t{tier}">{TIER[tier]}</em>{/if}</div>
           {/each}
         </div>
       </section>
@@ -79,4 +80,6 @@
   .ico { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex: none; background: var(--yellow); box-shadow: 0 3px 0 var(--yellow-d); }
   .bd.off { background: transparent; box-shadow: none; border: 2px dashed #d7cfbe; }
   .bd.off .ico { background: var(--bg-2); box-shadow: none; color: var(--soft); }
+  .tr { font-style: normal; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; color: #fff; }
+  .tr.t1 { background: #b0703c; } .tr.t2 { background: #8c97a8; } .tr.t3 { background: var(--yellow-d); }
 </style>

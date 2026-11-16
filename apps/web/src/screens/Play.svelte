@@ -27,7 +27,7 @@
   }
   function finish() {
     if (play.learn) progress.record(results);
-    const rewards = profile.record({ mode: play.mode, level: play.config.level, results, region: play.region, now: Date.now() });
+    const rewards = profile.record({ mode: play.mode, level: play.config.level, input: play.config.input, results, region: play.region, now: Date.now() });
     nav.go({ name: "results", play, questions, results, rewards });
   }
   function next() {

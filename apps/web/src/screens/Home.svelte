@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { DEPARTEMENTS, dayKey, levelInfo, liveStreak, mastery, nextTourRegion, questsFor, totalStars } from "@hexa/game";
+  import { DEPARTEMENTS, MAX_TIER_POINTS, dayKey, isFading, levelInfo, liveStreak, mastery, nextTourRegion, platesOwned, questsFor, totalStars } from "@hexa/game";
   import Map from "../lib/Map.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
   import Icon from "../lib/ui/Icon.svelte";
@@ -20,14 +20,15 @@
   const quests = $derived(questsFor(dayKey(Date.now())).map((q) => ({ ...q, done: Math.min(q.target, p.quests.day === dayKey(Date.now()) ? (p.quests.progress[q.id] ?? 0) : 0) })));
   const questsLeft = $derived(quests.filter((q) => q.done < q.target).length);
   const next = $derived(nextTourRegion(p));
-  const pct = $derived(Math.round((p.plates.length / 101) * 100));
-  const fills = $derived(Object.fromEntries([
-    ...Object.keys(progress.data).map((c) => [c, "var(--tint-ok)"]),
-    ...p.plates.map((c) => [c, "var(--blue)"]),
-  ]));
+  // Maîtrise réelle : bronze 1, argent 2, or 3 points ; un département à réviser ne compte qu'à moitié.
+  const fading = $derived(all.filter((c) => (p.tiers[c] ?? 0) > 0 && isFading(progress.data, c, Date.now())));
+  const pct = $derived(Math.floor((all.reduce((n, c) => n + (p.tiers[c] ?? 0) * (fading.includes(c) ? 0.5 : 1), 0) / MAX_TIER_POINTS) * 100));
+  const TIER_FILL = ["", "#e6b98e", "#b4bfcd", "#f5c518"];
+  const fills = $derived(Object.fromEntries(all.filter((c) => p.tiers[c]).map((c) => [c, fading.includes(c) ? "var(--tint-ko)" : TIER_FILL[p.tiers[c]]])));
 
   const hello = $derived.by(() => {
     if (!p.stats.games) return "Salut ! Moi c'est Hexa. On fait le tour de France ensemble ?";
+    if (fading.length >= 5) return `${fading.length} départements commencent à s'effacer de ta carte. Une petite révision ?`;
     if (streak > 0 && !playedToday) return `Une partie aujourd'hui pour garder ta série de ${streak} jour${streak > 1 ? "s" : ""} !`;
     if (questsLeft) return `Encore ${questsLeft} quête${questsLeft > 1 ? "s" : ""} du jour à boucler.`;
     if (next) return `Prochaine étape : ${next.nom}.`;
@@ -85,7 +86,7 @@
     <nav class="menu" aria-label="Autres modes">
       <button onclick={() => nav.go({ name: "tour" })}>Tour de France <span>{totalStars(p)} ★</span></button>
       <button onclick={() => nav.go({ name: "training" })}>Entraînement</button>
-      <button onclick={() => nav.go({ name: "album" })}>Album <span>{p.plates.length}/101</span></button>
+      <button onclick={() => nav.go({ name: "album" })}>Album <span>{platesOwned(p)}/101</span></button>
       <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
     </nav>
   </section>
@@ -102,8 +103,12 @@
         <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
       </div>
     </div>
-    <Map {fills} interactive={false} label="Ta France : départements collectionnés" />
-    <div class="legend"><span><i style="background:var(--tint-ok)"></i>croisé</span><span><i style="background:var(--blue)"></i>dans l'album</span></div>
+    <Map {fills} interactive={false} label="Ta France : maîtrise de chaque département" />
+    <div class="legend">
+      <span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
+      <span><i style="background:var(--tint-ko)"></i>à réviser</span>
+      {#if fading.length}<button class="link" onclick={() => nav.go({ name: "setup", mode: "apprendre" })}>Réviser ({fading.length})</button>{/if}
+    </div>
   </section>
 
   <footer>
@@ -142,7 +147,7 @@
   .pct { font-family: var(--f-pop); font-size: 44px; line-height: 1; }
   .acc { display: flex; gap: 8px; align-items: center; }
   .snd { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; }
-  .legend { display: flex; gap: 16px; font-size: 13px; font-weight: 700; color: var(--soft); justify-content: flex-end; }
+  .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 13px; font-weight: 700; color: var(--soft); justify-content: flex-end; }
   .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
   footer { grid-column: 1 / -1; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--soft); padding-top: 14px; }
   footer .link { font-weight: 600; color: var(--soft); }

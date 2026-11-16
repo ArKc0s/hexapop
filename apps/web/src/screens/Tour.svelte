@@ -83,7 +83,7 @@
               <li class:got={stars >= 2}><Icon name="star" size={16} /> Sans aucune faute</li>
               <li class:got={stars >= 3}><Icon name="star" size={16} /> En expert, 90 % ou plus (sous-préfectures et voisins)</li>
             </ul>
-            <div class="plates">{#each cur.deps as c (c)}<Plate code={c} missing={!p.plates.includes(c)} />{/each}</div>
+            <div class="plates">{#each cur.deps as c (c)}<Plate code={c} tier={p.tiers[c] ?? 0} />{/each}</div>
             <div class="seg" role="group" aria-label="Façon de répondre">
               <button class:on={input === "choix"} onclick={() => (input = "choix")}>4 propositions</button>
               <button class:on={input === "libre"} onclick={() => (input = "libre")}>Au clavier</button>

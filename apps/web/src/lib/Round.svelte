@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dep, type Answer, type ChoiceField, type Field, type Question, type RoundResult } from "@hexa/game";
+  import { dep, DEPARTEMENTS, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type Question, type RoundResult } from "@hexa/game";
   import Map, { type Mark } from "./Map.svelte";
   import Fiche from "./Fiche.svelte";
   import { onDestroy, type Snippet } from "svelte";
@@ -29,7 +29,7 @@
   const feedback = $derived.by(() => {
     if (!result) return null;
     if (result.accuracy >= 0.999) return { mood: combo >= 5 ? "wow" : "happy", text: combo >= 3 ? `Combo ×${combo} ! ${PRAISE[combo % PRAISE.length]}` : PRAISE[q.index % PRAISE.length] } as const;
-    if (result.accuracy > 0) return { mood: "think", text: `Presque ! C'était ${d.nom} (${d.code}).` } as const;
+    if (result.accuracy > 0) return { mood: "think", text: `Presque ! ${Math.round(result.accuracy * 100)} % de bon, la correction est juste au-dessus.` } as const;
     return { mood: "sad", text: `Raté : ${d.nom} (${d.code}). Tu le retiendras !` } as const;
   });
   $effect(() => {
@@ -47,14 +47,26 @@
   let sousPrefs = $state<string[]>([]);
   let spDraft = $state("");
   let submitted = $state(false);
-  let manualTarget = $state<"carte" | "limitrophes" | null>(null);
+  let nearDraft = $state("");
+  let nearError = $state("");
 
-  const mapTarget = $derived.by(() => {
-    if (manualTarget) return manualTarget;
-    if (has("carte") && !sel) return "carte";
-    if (has("limitrophes")) return "limitrophes";
-    return has("carte") ? "carte" : null;
-  });
+  // La carte ne sert qu'à placer le département ; les voisins se tapent (nom ou numéro).
+  const mapTarget = $derived(has("carte") ? "carte" : null);
+
+  /** Retrouve un département à partir d'un nom ou d'un numéro tapé. */
+  function findDep(raw: string) {
+    const v = raw.trim();
+    if (!v) return null;
+    // Exact d'abord (« Loiret » ne doit pas tomber sur « Loire »), puis tolérant aux fautes.
+    return DEPARTEMENTS.find((x) => sameCode(v, x.code)) ?? DEPARTEMENTS.find((x) => normalize(x.nom) === normalize(v)) ?? DEPARTEMENTS.find((x) => sameName(v, x.nom)) ?? null;
+  }
+  function addNear() {
+    const found = findDep(nearDraft);
+    if (!found) { nearError = `« ${nearDraft.trim()} » : département introuvable`; return; }
+    nearError = "";
+    if (!near.includes(found.code)) near = [...near, found.code];
+    nearDraft = "";
+  }
 
   // ---- chrono ----
   let now = $state(performance.now());
@@ -67,12 +79,7 @@
 
   function pick(code: string) {
     if (result || submitted) return;
-    if (mapTarget === "carte") { sel = sel === code ? null : code; manualTarget = null; return; }
-    if (mapTarget === "limitrophes") {
-      const self = q.hint === "carte" ? q.code : sel;
-      if (code === self) return;
-      near = near.includes(code) ? near.filter((c) => c !== code) : [...near, code];
-    }
+    if (mapTarget === "carte") sel = sel === code ? null : code;
   }
 
   function addSousPref() {
@@ -84,6 +91,8 @@
   function submit() {
     if (submitted || result) return;
     if (spDraft.trim()) addSousPref();
+    if (nearDraft.trim()) addNear();
+    nearDraft = ""; nearError = "";
     submitted = true;
     const a: Answer = { elapsedMs: Math.round(performance.now() - startedAt) };
     if (has("carte")) a.carte = sel ?? undefined;
@@ -99,7 +108,6 @@
     const m: Record<string, Mark> = { ...history };
     if (!result) {
       if (q.hint === "carte") m[q.code] = "hint";
-      for (const c of near) m[c] = "near";
       if (sel) m[sel] = "sel";
       return m;
     }
@@ -133,22 +141,13 @@
     if (f === "carte") return `${d.nom} (${d.code})`;
     return Array.isArray(v) ? (v.length ? v.join(", ") : "aucune") : v;
   }
-  const mapHelp = $derived(
-    result ? "" : mapTarget === "carte" ? "Touche le département sur la carte" : mapTarget === "limitrophes" ? `Touche ses ${d.limitrophes.length} voisins` : "",
-  );
+  const mapHelp = $derived(result ? "" : mapTarget === "carte" ? "Touche le département sur la carte" : "");
 </script>
 
 <div class="round" class:review={!!result}>
   <div class="mapwrap">
     <div class="maphead">
-      {#if !result && has("carte") && has("limitrophes")}
-        <div class="seg" role="group" aria-label="Ce que tu touches sur la carte">
-          <button class:on={mapTarget === "carte"} onclick={() => (manualTarget = "carte")}>Le département {sel ? "✓" : ""}</button>
-          <button class:on={mapTarget === "limitrophes"} onclick={() => (manualTarget = "limitrophes")}>Ses voisins · {near.length}/{d.limitrophes.length}</button>
-        </div>
-      {:else}
-        <span class="help">{mapHelp}</span>
-      {/if}
+      <span class="help">{mapHelp}</span>
     </div>
     <Map {marks} interactive={!result && !!mapTarget} onpick={pick} />
   </div>
@@ -219,8 +218,15 @@
       {#if has("limitrophes")}
         {@const r = fieldResult("limitrophes")}
         <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
-          <span class="label">{LABELS.limitrophes} · {d.limitrophes.length} à toucher</span>
-          <span class="state">{#if r}{r.score === 1 ? "Tous trouvés" : `${Math.round(r.score * 100)} % · ${expectedLabel("limitrophes", r.expected)}`}{:else}{near.length} sélectionné{near.length > 1 ? "s" : ""}{/if}</span>
+          <label class="label" for="in-near">{LABELS.limitrophes} · {d.limitrophes.length} à trouver, nom ou numéro</label>
+          {#if near.length}
+            <div class="tags">{#each near as c (c)}<button class="chip" class:good={r && d.limitrophes.includes(c)} class:bad={r && !d.limitrophes.includes(c)} disabled={!!result} onclick={() => (near = near.filter((x) => x !== c))}>{dep(c).nom} ({c}){result ? "" : " ×"}</button>{/each}</div>
+          {/if}
+          <input id="in-near" class="field" autocomplete="off" spellcheck="false" placeholder="ex. Morbihan ou 56, puis Entrée"
+            bind:value={nearDraft} disabled={!!result || submitted} oninput={() => (nearError = "")}
+            onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (nearDraft.trim()) addNear(); else enter(e); } }} />
+          {#if nearError}<span class="nerr">{nearError}</span>{/if}
+          {#if r && r.score < 1}<span class="exp">{expectedLabel("limitrophes", r.expected)}</span>{/if}
         </div>
       {/if}
     </div>
@@ -275,6 +281,9 @@
   .opt.wrong { background: var(--pink); color: #fff; box-shadow: 0 3px 0 var(--pink-d); animation: shake .35s; }
   .opt:disabled { cursor: default; }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags .chip.good { background: var(--blue); color: #fff; }
+  .tags .chip.bad { background: var(--pink); color: #fff; }
+  .nerr { color: var(--pink-d); font-weight: 700; font-size: 14px; animation: shake .3s; }
   .react { display: flex; align-items: center; gap: 12px; }
   .react .bubble { flex: 1; }
   .pts { font-family: var(--f-pop); font-size: 30px; color: var(--blue); animation: pop-in .4s cubic-bezier(.2, 1.6, .4, 1); }

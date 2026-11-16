@@ -74,9 +74,10 @@
       {#each r.questsDone as id (id)}
         <div class="rw"><span class="ico quest"><Icon name="check" size={24} /></span><div><span class="k">Quête du jour · +50 XP</span><b>{questLabel(id)}</b></div></div>
       {/each}
-      {#if r.newPlates.length}
-        <div class="rw plates"><div><span class="k">{r.newPlates.length} nouvelle{r.newPlates.length > 1 ? "s" : ""} plaque{r.newPlates.length > 1 ? "s" : ""} pour l'album</span>
-          <div class="pl">{#each r.newPlates.slice(0, 8) as c (c)}<Plate code={c} />{/each}{#if r.newPlates.length > 8}<span class="more">+{r.newPlates.length - 8}</span>{/if}</div></div></div>
+      {#if r.upgrades.length}
+        {@const tierName = ["", "bronze", "argent", "or"][r.upgrades[0].tier]}
+        <div class="rw plates"><div><span class="k">{r.upgrades.length} plaque{r.upgrades.length > 1 ? "s" : ""} {tierName}{r.newPlates.length ? ` · ${r.newPlates.length} nouvelle${r.newPlates.length > 1 ? "s" : ""}` : ""}</span>
+          <div class="pl">{#each r.upgrades.slice(0, 8) as u (u.code)}<Plate code={u.code} tier={u.tier} />{/each}{#if r.upgrades.length > 8}<span class="more">+{r.upgrades.length - 8}</span>{/if}</div></div></div>
       {/if}
     </div>
 

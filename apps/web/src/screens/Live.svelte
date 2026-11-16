@@ -8,6 +8,7 @@
   import { live } from "../lib/socket.svelte.ts";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
+  import { progress } from "../lib/progress.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
 
   const room = $derived(live.room);
@@ -32,7 +33,8 @@
     if (!ranking || recorded === ranking || !live.myResults.length) return;
     recorded = ranking;
     const won = ranking.length >= 2 && ranking[0].id === live.you;
-    rewards = profile.record({ mode: "multi", level: room?.settings.level ?? "normal", results: live.myResults, won, now: Date.now() });
+    progress.record(live.myResults);
+    rewards = profile.record({ mode: "multi", level: room?.settings.level ?? "normal", input: room?.settings.input ?? "libre", results: live.myResults, won, now: Date.now() });
     sound.play(won ? "level" : "tap");
   });
   $effect(() => { if (room?.phase === "lobby") rewards = null; });
@@ -72,7 +74,7 @@
           <li class:me={p.id === live.you}><span class="tabnum pos">{i + 1}</span><span>{p.name}{p.home ? ` · ${p.home}` : ""}</span><b class="tabnum">{p.hp !== undefined ? `${p.hp} PV` : `${p.score} pts`}</b></li>
         {/each}
       </ol>
-      {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.newPlates.length ? ` · ${rewards.newPlates.length} plaque${rewards.newPlates.length > 1 ? "s" : ""} pour l'album` : ""}{rewards.newBadges.length ? " · nouveau badge !" : ""}</p>{/if}
+      {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.upgrades.length ? ` · ${rewards.upgrades.length} plaque${rewards.upgrades.length > 1 ? "s" : ""} pour l'album` : ""}{rewards.newBadges.length ? " · nouveau badge !" : ""}</p>{/if}
       <div class="cta">
         {#if me?.host}<button class="btn big" onclick={() => live.send({ t: "rematch" })}>Revanche</button>{:else}<span class="hint">L'hôte peut lancer une revanche.</span>{/if}
         <button class="btn white big" onclick={leave}>Accueil</button>

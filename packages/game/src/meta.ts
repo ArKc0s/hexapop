@@ -3,7 +3,7 @@
 // le serveur fusionne les profils synchronisés.
 import { DEPARTEMENTS, DEP, REGIONS } from "./data.ts";
 import { rng, shuffle } from "./random.ts";
-import type { Level, RoundResult } from "./round.ts";
+import type { InputMode, Level, RoundResult } from "./round.ts";
 
 // ---------- jours ----------
 /** Jour calendaire à Paris (AAAA-MM-JJ). */
@@ -31,7 +31,8 @@ export interface Profile {
   stars: Record<string, number>;
   /** Région de départ du Tour de France. */
   tourStart: string | null;
-  plates: string[];
+  /** Palier de la plaque par département : 1 bronze (4 propositions), 2 argent (clavier), 3 or (expert). */
+  tiers: Record<string, number>;
   badges: Record<string, number>;
   stats: { games: number; rounds: number; perfectRounds: number; bestCombo: number; dailyPlayed: number; duelsWon: number; marathons: number };
 }
@@ -41,7 +42,7 @@ export function emptyProfile(): Profile {
     v: 1, xp: 0,
     streak: { count: 0, best: 0, last: null, jokers: 1, jokerWeek: null },
     quests: { day: "", progress: {} },
-    stars: {}, tourStart: null, plates: [], badges: {},
+    stars: {}, tourStart: null, tiers: {}, badges: {},
     stats: { games: 0, rounds: 0, perfectRounds: 0, bestCombo: 0, dailyPlayed: 0, duelsWon: 0, marathons: 0 },
   };
 }
@@ -58,7 +59,7 @@ export function mergeProfiles(a: Profile, b: Profile): Profile {
   if (q2) for (const [k, v] of Object.entries(q2.progress)) p.quests.progress[k] = Math.max(p.quests.progress[k] ?? 0, v);
   for (const k of new Set([...Object.keys(a.stars), ...Object.keys(b.stars)])) p.stars[k] = Math.max(a.stars[k] ?? 0, b.stars[k] ?? 0);
   p.tourStart = a.tourStart ?? b.tourStart;
-  p.plates = [...new Set([...a.plates, ...b.plates])].filter((c) => DEP.has(c));
+  for (const k of new Set([...Object.keys(a.tiers), ...Object.keys(b.tiers)])) if (DEP.has(k)) p.tiers[k] = Math.max(a.tiers[k] ?? 0, b.tiers[k] ?? 0);
   p.badges = { ...b.badges, ...a.badges };
   for (const k of Object.keys(p.stats) as (keyof Profile["stats"])[]) p.stats[k] = Math.max(a.stats[k] ?? 0, b.stats[k] ?? 0);
   return p;
@@ -79,11 +80,25 @@ export function sanitizeProfile(raw: unknown): Profile {
   }
   for (const [k, v] of Object.entries(r.stars ?? {})) if (TOUR_REGIONS.some((t) => t.code === k)) p.stars[k] = num(v, 3);
   p.tourStart = typeof r.tourStart === "string" && TOUR_REGIONS.some((t) => t.code === r.tourStart) ? r.tourStart : null;
-  p.plates = Array.isArray(r.plates) ? [...new Set(r.plates.filter((c): c is string => typeof c === "string" && DEP.has(c)))] : [];
+  // Ancien format (v1.1 : liste de plaques) : chaque plaque devient du bronze.
+  const legacy = (r as { plates?: unknown }).plates;
+  if (Array.isArray(legacy)) for (const c of legacy) if (typeof c === "string" && DEP.has(c)) p.tiers[c] = 1;
+  for (const [k, v] of Object.entries(r.tiers ?? {})) if (DEP.has(k)) p.tiers[k] = Math.max(p.tiers[k] ?? 0, num(v, 3));
   for (const [k, v] of Object.entries(r.badges ?? {})) if (BADGES.some((b) => b.id === k)) p.badges[k] = num(v, 1e13);
   for (const k of Object.keys(p.stats) as (keyof Profile["stats"])[]) p.stats[k] = num(r.stats?.[k], 1e7);
   return p;
 }
+
+// ---------- paliers de plaques ----------
+export const TIER_NAMES = ["", "bronze", "argent", "or"] as const;
+export const MAX_TIER_POINTS = 303;
+/** Palier gagné par une réponse parfaite selon la difficulté. */
+export function tierFor(level: Level, input: InputMode): number {
+  if (level === "expert") return 3;
+  return input === "libre" ? 2 : 1;
+}
+export const platesOwned = (p: Profile) => Object.values(p.tiers).filter((t) => t > 0).length;
+export const tierPoints = (p: Profile) => Object.values(p.tiers).reduce((n, t) => n + t, 0);
 
 // ---------- niveaux ----------
 /** XP cumulée pour atteindre le niveau n (niveau 1 = 0, 2 = 100, 3 = 300, 4 = 600…). */
@@ -149,6 +164,8 @@ export type GameMode = "apprendre" | "eclair" | "region" | "marathon" | "tour" |
 export interface GameReport {
   mode: GameMode;
   level: Level;
+  /** Façon de répondre : décide du palier des plaques gagnées. */
+  input: InputMode;
   results: RoundResult[];
   /** Région jouée (Tour de France). */
   region?: string;
@@ -194,9 +211,11 @@ export const BADGES: BadgeDef[] = [
   { id: "combo10", nom: "Inarrêtable", desc: "Un combo ×10", test: (c) => c.bestCombo >= 10 },
   { id: "marathon", nom: "Marathonien", desc: "Terminer un Marathon des 101 départements", test: (c) => c.report.mode === "marathon" && c.report.results.length >= 101 },
   { id: "expert", nom: "Sous-préfet", desc: "Terminer une partie en expert", test: (c) => c.report.level === "expert" && c.report.results.length >= 5 },
-  { id: "outre-mer", nom: "Ultramarin", desc: "Collectionner les 5 plaques d'outre-mer", test: (_c, p) => DEPARTEMENTS.filter((d) => d.outreMer).every((d) => p.plates.includes(d.code)) },
-  { id: "album-50", nom: "Collectionneur", desc: "50 plaques dans l'album", test: (_c, p) => p.plates.length >= 50 },
-  { id: "album-101", nom: "Album complet", desc: "Les 101 plaques", test: (_c, p) => p.plates.length >= 101 },
+  { id: "outre-mer", nom: "Ultramarin", desc: "Collectionner les 5 plaques d'outre-mer", test: (_c, p) => DEPARTEMENTS.filter((d) => d.outreMer).every((d) => (p.tiers[d.code] ?? 0) > 0) },
+  { id: "album-50", nom: "Collectionneur", desc: "50 départements dans l'album", test: (_c, p) => platesOwned(p) >= 50 },
+  { id: "album-101", nom: "Album complet", desc: "Les 101 départements dans l'album", test: (_c, p) => platesOwned(p) >= 101 },
+  { id: "argent-101", nom: "Tout en argent", desc: "Les 101 plaques au moins en argent", test: (_c, p) => DEPARTEMENTS.every((d) => (p.tiers[d.code] ?? 0) >= 2) },
+  { id: "or-101", nom: "Tout en or", desc: "Les 101 plaques en or", test: (_c, p) => DEPARTEMENTS.every((d) => (p.tiers[d.code] ?? 0) >= 3) },
   { id: "region-3", nom: "Chez soi", desc: "3 étoiles dans une région", test: (_c, p) => Object.values(p.stars).some((s) => s >= 3) },
   { id: "tour-complet", nom: "Tour de France", desc: "Au moins une étoile dans toutes les régions", test: (_c, p) => TOUR_REGIONS.every((r) => (p.stars[r.code] ?? 0) > 0) },
   { id: "serie-7", nom: "Une semaine", desc: "Jouer 7 jours d'affilée", test: (_c, p) => p.streak.count >= 7 },
@@ -213,7 +232,10 @@ export interface Rewards {
   levelBefore: number;
   levelAfter: number;
   bestCombo: number;
+  /** Départements entrés dans l'album à cette partie. */
   newPlates: string[];
+  /** Plaques passées à un palier supérieur (y compris les nouvelles). */
+  upgrades: { code: string; tier: number }[];
   newBadges: string[];
   stars: { region: string; before: number; after: number } | null;
   questsDone: string[];
@@ -270,9 +292,13 @@ export function applyGame(prev: Profile, report: GameReport): { profile: Profile
   }
   const starsGained = stars ? stars.after - stars.before : 0;
 
-  // Album
-  const newPlates = [...new Set(perfect.map((r) => r.code))].filter((c) => !p.plates.includes(c));
-  p.plates.push(...newPlates);
+  // Album : palier selon la difficulté de la partie
+  const tier = tierFor(report.level, report.input);
+  const newPlates: string[] = [], upgrades: Rewards["upgrades"] = [];
+  for (const c of new Set(perfect.map((r) => r.code))) {
+    const before = p.tiers[c] ?? 0;
+    if (tier > before) { p.tiers[c] = tier; upgrades.push({ code: c, tier }); if (!before) newPlates.push(c); }
+  }
 
   // Statistiques
   p.stats.games += 1;
@@ -307,7 +333,7 @@ export function applyGame(prev: Profile, report: GameReport): { profile: Profile
     profile: p,
     rewards: {
       xp, xpBefore, levelBefore: levelInfo(xpBefore).level, levelAfter: levelInfo(p.xp).level,
-      bestCombo, newPlates, newBadges, stars, questsDone,
+      bestCombo, newPlates, upgrades, newBadges, stars, questsDone,
       streak: { count: p.streak.count, extended, jokerUsed },
     },
   };
