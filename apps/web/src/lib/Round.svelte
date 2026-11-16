@@ -162,10 +162,11 @@
     if (f === "carte") return `${d.nom} (${d.code})`;
     return Array.isArray(v) ? (v.length ? v.join(", ") : "aucune") : v;
   }
-  const mapHelp = $derived(result ? "" : mapTarget === "carte" ? "Touche le département sur la carte" : "");
+  const coarse = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+  const mapHelp = $derived(result ? "" : mapTarget !== "carte" ? "" : sel ? `Placé ! Tu peux changer en ${coarse ? "touchant" : "cliquant"} un autre département.` : coarse ? "Touche la région, puis le département. Pince pour zoomer." : "Clique le département sur la carte.");
 </script>
 
-<div class="round" class:review={!!result}>
+<div class="round" class:review={!!result} class:placing={!result && mapTarget === "carte" && !sel}>
   <div class="mapwrap">
     {#if mobile && !result}
       <div class="timer top" aria-label="Temps restant">
@@ -176,7 +177,7 @@
     <div class="maphead">
       <span class="help">{mapHelp}</span>
     </div>
-    <Map {marks} interactive={!result && !!mapTarget} onpick={pick} />
+    <Map {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} />
   </div>
 
   <section class="panel">
@@ -203,7 +204,7 @@
         {@const r = fieldResult("carte")}
         <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
           <span class="label">{LABELS.carte}</span>
-          <span class="state">{#if r}{r.score === 1 ? "Bien placé" : "C'était " + expectedLabel("carte", r.expected)}{:else}{sel ? "Placé" : "À placer sur la carte"}{/if}</span>
+          <span class="state">{#if r}{r.score === 1 ? "Bien placé" : "C'était " + expectedLabel("carte", r.expected)}{:else if sel}Placé ✓ <button class="link" onclick={() => (sel = null)}>Changer</button>{:else}À placer sur la carte{/if}</span>
         </div>
       {/if}
 
@@ -340,6 +341,8 @@
     .round { grid-template-columns: 1fr; gap: 10px; }
     .mapwrap { position: sticky; top: 0; z-index: 2; background: var(--bg); margin: 0 -16px; padding: 2px 16px 6px; }
     .mapwrap :global(.map) { max-height: 38vh; }
+    /* Pendant qu'on place le département, la carte prend plus de place */
+    .round.placing .mapwrap :global(.map) { max-height: 56vh; }
     .round.review .mapwrap { position: static; }
     .panel { padding: 16px; border-radius: 22px; }
     .bignum { font-size: 68px; }
