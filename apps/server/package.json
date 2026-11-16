@@ -1,0 +1,21 @@
+{
+  "name": "@hexa/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/index.ts",
+    "start": "node src/index.ts",
+    "test": "node --test src/*.test.ts",
+    "check": "tsc -p ."
+  },
+  "dependencies": {
+    "@hexa/game": "workspace:*",
+    "nodemailer": "^10.5.0",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/nodemailer": "^8.0.2",
+    "@types/ws": "^8.18.2"
+  }
+}
