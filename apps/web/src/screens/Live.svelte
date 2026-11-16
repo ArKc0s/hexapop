@@ -30,7 +30,8 @@
 
   let now = $state(Date.now());
   const timer = setInterval(() => (now = Date.now()), 250);
-  onDestroy(() => clearInterval(timer));
+  let offerTimer: ReturnType<typeof setTimeout> | undefined;
+  onDestroy(() => { clearInterval(timer); clearTimeout(offerTimer); });
   const nextIn = $derived(s?.nextAt ? Math.max(0, Math.ceil((s.nextAt - (now + live.offset)) / 1000)) : 0);
 
   $effect(() => { if (!room) nav.go({ name: "lobby" }); else if (room.phase === "lobby") nav.go({ name: "lobby", join: room.code }); });
@@ -47,7 +48,7 @@
     rewards = profile.record({ mode: "multi", level: room?.settings.level ?? "normal", input: room?.settings.input ?? "libre", results: live.myResults, won, now: Date.now() });
     sound.play(won ? "level" : "tap");
     const got = rewards;
-    setTimeout(() => signup.offer({ kind: "multi", xp: got?.xp, vignettes: got?.upgrades.length, firstGame: profile.data.stats.games <= 1 }), 2500);
+    offerTimer = setTimeout(() => { if (live.ranking) signup.offer({ kind: "multi", xp: got?.xp, vignettes: got?.upgrades.length, firstGame: profile.data.stats.games <= 1 }); }, 1500);
   });
   $effect(() => { if (room?.phase === "lobby") rewards = null; });
 

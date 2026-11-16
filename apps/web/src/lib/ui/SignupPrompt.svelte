@@ -4,9 +4,11 @@
   import { nav } from "../nav.svelte.ts";
   import Mascot from "./Mascot.svelte";
   import ProviderIcon from "./ProviderIcon.svelte";
+  import { live } from "../socket.svelte.ts";
 
   const r = $derived(signup.reason);
-  const show = $derived(!!r && session.online && session.ready && !session.me);
+  const inGame = $derived(nav.screen.name === "play" || nav.screen.name === "setup" || (nav.screen.name === "live" && !live.ranking) || (nav.screen.name === "daily" && !!live.question && !live.daily));
+  const show = $derived(!!r && session.online && session.ready && !session.me && !inGame);
   const daily = $derived(r?.kind === "daily");
   const gains = $derived.by(() => {
     if (!r) return "";

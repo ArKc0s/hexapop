@@ -37,7 +37,7 @@
     const o = live.daily;
     if (!o || session.me || (guest && guest.day === o.day)) return;
     guest = { day: o.day, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim };
-    setTimeout(() => signup.offer({ kind: "daily" }), 1500);
+    offerTimer = setTimeout(() => signup.offer({ kind: "daily" }), 1000);
     try { localStorage.setItem(GUEST_DAILY, JSON.stringify(guest)); } catch { /* rien */ }
   });
   const guestToday = $derived(!session.me && !!guest && guest.day === info?.day ? guest : null);
@@ -49,7 +49,8 @@
       rewards = profile.record({ mode: "daily", level: "normal", input: "libre", results: live.myResults, now: Date.now() });
     }
   });
-  onDestroy(() => { if (live.room?.kind === "daily") live.leave(); });
+  let offerTimer: ReturnType<typeof setTimeout> | undefined;
+  onDestroy(() => { clearTimeout(offerTimer); if (live.room?.kind === "daily") live.leave(); });
 
   const total = $derived(live.room?.players[0]?.score ?? 0);
   const EMOJI = ["🟪", "🟨", "🟦"];

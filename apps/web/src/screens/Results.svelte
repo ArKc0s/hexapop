@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { BADGE, TOUR, levelInfo, nextTourRegion, questsFor, dayKey, QUEST_POOL, randomSeed, type Question, type RoundResult, type Rewards } from "@hexa/game";
   import Map, { type Mark } from "../lib/Map.svelte";
   import Fiche from "../lib/Fiche.svelte";
@@ -31,12 +31,15 @@
   const levelUp = r.levelAfter > r.levelBefore;
   const rank = rankFor(mastery(progress.data, DEPARTEMENTS.map((d) => d.code))).name;
   let xpWidth = $state(before.ratio * 100);
+  // Quitter l'écran avant l'invitation l'annule (elle ne doit jamais surgir pendant la partie suivante).
+  let offerTimer: ReturnType<typeof setTimeout> | undefined;
+  onDestroy(() => clearTimeout(offerTimer));
   onMount(() => {
     setTimeout(() => { xpWidth = levelUp ? 100 : after.ratio * 100; sound.play(levelUp ? "level" : "tick"); }, 700);
     if (levelUp) setTimeout(() => (xpWidth = after.ratio * 100), 1500);
     if (r.stars && r.stars.after > r.stars.before) setTimeout(() => sound.play("star"), 300);
     // Invité : on laisse voir les récompenses, puis on propose de les garder.
-    setTimeout(() => signup.offer({ kind: "solo", xp: r.xp, vignettes: r.upgrades.length, firstGame: profile.data.stats.games <= 1 }), 2200);
+    offerTimer = setTimeout(() => signup.offer({ kind: "solo", xp: r.xp, vignettes: r.upgrades.length, firstGame: profile.data.stats.games <= 1 }), 1000);
   });
 
   const quests = questsFor(dayKey(Date.now()));
