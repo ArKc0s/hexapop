@@ -286,6 +286,13 @@
           <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : "Raté"}</b>{#if result.accuracy < 0.999}<small>{d.nom} ({d.code})</small>{/if}</span>
           <span class="vp tabnum">+{result.points}</span>
         </div>
+        <ul class="recap" aria-label="Correction">
+          {#each result.fields as f (f.field)}
+            <li class:good={f.score >= 0.999} class:bad={f.score < 0.999}>
+              <span>{f.score >= 0.999 ? "✓" : "✗"} {LABELS[f.field]}</span>{#if f.score < 0.999}<b>{expectedLabel(f.field, f.expected)}</b>{/if}
+            </li>
+          {/each}
+        </ul>
       {/if}
       {#if !result}
         <button class="btn big" onclick={submit} disabled={submitted}>{submitted ? "Envoyé" : "Valider"} <kbd>↵</kbd></button>
@@ -319,7 +326,7 @@
   .exp::before { content: "Réponse : "; color: var(--soft); font-weight: 600; }
   .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .opt { font-weight: 700; font-size: 16px; line-height: 1.15; background: #f6f2ea; border: 0; border-radius: 14px; padding: 12px; text-align: left; cursor: pointer; box-shadow: 0 3px 0 #e2dacb; transition: transform .08s, background .1s; }
-  .opt:hover:not(:disabled) { background: #fff4c2; }
+  @media (hover: hover) { .opt:hover:not(:disabled):not(.on) { background: #fff4c2; } }
   .opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #e2dacb; }
   .opt.on { background: var(--ink); color: #fff; box-shadow: 0 3px 0 #000; }
   .opt.right { background: var(--blue); color: #fff; box-shadow: 0 3px 0 var(--blue-d); }
@@ -346,29 +353,41 @@
   .st.done:not(.on) b { color: var(--blue); }
   .timer.top { padding: 4px 0 2px; }
   .verdict { display: none; }
+  .recap { display: none; }
   @media (max-width: 900px) {
-    /* Le verdict passe dans la barre du bas ; le bloc mascotte du panneau devient inutile */
+    /* Écran de jeu mobile « comme une appli » : carte en haut qui prend la place restante,
+       panneau de réponses en bas (seul lui défile), barre d'action toujours visible. */
+    .round { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; }
+    .mapwrap { position: relative; flex: 1 1 0; min-height: 150px; display: flex; flex-direction: column; gap: 2px; }
+    .mapwrap :global(.wrap) { flex: 1; min-height: 0; display: flex; }
+    .mapwrap :global(.map) { width: 100%; height: 100%; max-height: none; }
+    .maphead { min-height: 0; }
+    .help { font-size: 13px; }
+    .panel { flex: 0 1 auto; max-height: 60%; overflow-y: auto; overscroll-behavior: contain; margin: 0 -16px; padding: 14px 16px 0; border-radius: 22px 22px 0 0; gap: 12px; box-shadow: 0 -6px 18px -12px rgba(28, 26, 55, .3); }
+    .round.placing .panel { max-height: 46%; }
+    .round.review .panel { max-height: 64%; }
+    .bignum { font-size: 56px; }
+    .qname { font-size: 22px; }
+    .kicker { font-size: 13px; }
+    .fields { gap: 10px; }
+    .opt { padding: 10px 12px; font-size: 15px; }
+    .actions { position: sticky; bottom: 0; z-index: 3; background: var(--card); margin: auto -16px 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); flex-wrap: wrap; gap: 8px; }
+    /* Le verdict et la correction passent dans la barre du bas */
     .react { display: none; }
-    .actions { flex-wrap: wrap; }
     .verdict { display: flex; align-items: center; gap: 10px; width: 100%; }
     .vt { flex: 1; display: flex; flex-direction: column; line-height: 1.15; }
     .vt b { font-weight: 900; font-size: 18px; }
     .vt small { font-weight: 700; font-size: 13px; opacity: .85; }
     .vp { font-family: var(--f-pop); font-size: 26px; }
+    .recap { display: flex; flex-wrap: wrap; gap: 5px; list-style: none; margin: 0; padding: 0; width: 100%; }
+    .recap li { display: inline-flex; gap: 6px; align-items: baseline; border-radius: 10px; padding: 4px 9px; font-size: 13.5px; font-weight: 700; }
+    .recap li.good { background: rgba(21, 114, 196, .12); color: var(--blue-d); }
+    .recap li.bad { background: #fff; color: var(--pink-d); box-shadow: inset 0 0 0 2px var(--pink); }
+    .recap li.bad b { color: var(--ink); font-weight: 900; }
     .actions.v-ok { background: #e3f0fb; }
     .actions.v-ok .vt b, .actions.v-ok .vp { color: var(--blue-d); }
     .actions.v-mid { background: #fff6cc; }
     .actions.v-ko { background: #ffe1ef; }
     .actions.v-ko .vt b { color: var(--pink-d); }
-    .round { grid-template-columns: 1fr; gap: 10px; }
-    .mapwrap { position: sticky; top: 0; z-index: 2; background: var(--bg); margin: 0 -16px; padding: 2px 16px 6px; }
-    .mapwrap :global(.map) { max-height: 38vh; }
-    /* Pendant qu'on place le département, la carte prend plus de place */
-    .round.placing .mapwrap :global(.map) { max-height: 56vh; }
-    .round.review .mapwrap { position: static; }
-    .panel { padding: 16px; border-radius: 22px; }
-    .bignum { font-size: 68px; }
-    .qname { font-size: 26px; }
-    .actions { position: sticky; bottom: 0; z-index: 3; background: var(--card); margin: 0 -16px -18px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; box-shadow: 0 -6px 16px -10px rgba(28, 26, 55, .25); }
   }
 </style>

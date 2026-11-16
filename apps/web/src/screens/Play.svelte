@@ -48,7 +48,7 @@
 
 <svelte:window onkeydown={onkey} />
 
-<main class="play">
+<main class="play shell">
   <header>
     <button class="back" onclick={quit}>← Quitter</button>
     <div class="dots" aria-label="Tour {i + 1} sur {questions.length}">

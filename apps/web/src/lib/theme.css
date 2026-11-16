@@ -106,6 +106,14 @@ button.chip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line)
 .bubble { background: #fff; border-radius: 18px; padding: 11px 14px; font-weight: 700; position: relative; }
 .bubble::before { content: ""; position: absolute; left: -8px; top: 16px; border: 8px solid transparent; border-right-color: #fff; border-left: 0; }
 
+/* Écrans de jeu sur mobile : hauteur de l'écran, rien ne défile hormis le panneau de réponses */
+@media (max-width: 900px) {
+  .shell { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; padding-bottom: 0 !important; gap: 6px !important; }
+  .shell > header { flex: none; }
+  /* Pendant une partie, la page elle-même ne défile jamais (seul le panneau de réponses) */
+  html:has(.shell), body:has(.shell) { overflow: hidden; height: 100%; overscroll-behavior: none; }
+}
+
 @keyframes pop-in { from { transform: scale(.6); opacity: 0; } }
 @keyframes float-up { from { opacity: 1; transform: translateY(0) scale(.85); } to { opacity: 0; transform: translateY(-70px) scale(1.15); } }
 @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }

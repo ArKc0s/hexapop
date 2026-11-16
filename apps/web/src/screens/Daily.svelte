@@ -71,7 +71,7 @@
   }
 </script>
 
-<main class="daily">
+<main class="daily" class:shell={started && !live.daily && !!live.question}>
   <header>
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
     <span class="riso logo" data-t="HEXA">HEXA</span>

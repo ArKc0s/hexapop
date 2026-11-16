@@ -56,7 +56,7 @@
   function leave() { live.leave(); nav.go({ name: "home" }); }
 </script>
 
-<main class="live">
+<main class="live" class:shell={!live.ranking && room?.phase !== "countdown" && !me?.eliminated && !!live.question}>
   <header>
     <button class="back" onclick={leave}>← Quitter</button>
     {#if duel}
@@ -210,6 +210,7 @@
   .fl small { font-weight: 800; }
   .snd { position: fixed; right: 14px; top: 12px; border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; z-index: 5; }
   @media (max-width: 700px) {
+    .shell .who { display: none; }
     .av { display: none; }
     /* Sur mobile : réactions dans le flux (pas par-dessus « Valider »), masquées pendant qu'on répond */
     .reacts { position: static; transform: none; align-self: center; box-shadow: none; }

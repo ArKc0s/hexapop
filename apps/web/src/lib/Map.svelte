@@ -241,7 +241,8 @@
   .regions path { fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; pointer-events: none; }
   .zoom use { stroke-width: .8; stroke: #8a806c; }
   .interactive .deps use { cursor: pointer; }
-  .interactive .deps use:hover, .interactive .deps use:focus-visible { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.2; }
+  .interactive .deps use:focus-visible { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.2; }
+  @media (hover: hover) { .interactive .deps use:hover { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.2; } }
   .deps use.hint { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse 1s ease-in-out infinite alternate; }
   .deps use.sel { fill: var(--ink); stroke: var(--ink); }
   .deps use.near { fill: #9fd3f0; stroke: var(--ink); stroke-width: 1.2; }
