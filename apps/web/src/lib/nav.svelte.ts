@@ -11,7 +11,8 @@ export type Screen =
   | { name: "daily" }
   | { name: "lobby"; join?: string }
   | { name: "live" }
-  | { name: "stage"; code: string };
+  | { name: "stage"; code: string }
+  | { name: "legal"; doc: "mentions" | "confidentialite" | "cgu" };
 
 class Nav {
   screen = $state<Screen>({ name: "home" });
@@ -19,7 +20,8 @@ class Nav {
     this.screen = s;
     window.scrollTo(0, 0);
     // Garde un lien partageable pour les salons, nettoie le reste.
-    const hash = s.name === "lobby" && s.join ? `#salon=${s.join}` : s.name === "stage" ? `#plateau=${s.code}` : "";
+    const LEGAL = { mentions: "#mentions-legales", confidentialite: "#confidentialite", cgu: "#cgu" };
+    const hash = s.name === "lobby" && s.join ? `#salon=${s.join}` : s.name === "stage" ? `#plateau=${s.code}` : s.name === "legal" ? LEGAL[s.doc] : "";
     if (location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
   }
 }
@@ -27,6 +29,9 @@ export const nav = new Nav();
 
 /** Écran de départ selon le lien ouvert (#salon=ABCD, #plateau=ABCD, #verifier=…, #nouveau-mdp=…). */
 export function screenFromHash(): Screen {
+  if (location.hash === "#mentions-legales") return { name: "legal", doc: "mentions" };
+  if (location.hash === "#confidentialite") return { name: "legal", doc: "confidentialite" };
+  if (location.hash === "#cgu") return { name: "legal", doc: "cgu" };
   const m = /^#([\w-]+)=([\w-]+)$/.exec(location.hash);
   if (!m) return { name: "home" };
   const [, k, v] = m;

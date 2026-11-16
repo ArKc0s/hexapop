@@ -66,6 +66,13 @@
     <Map {fills} interactive={false} label="Carte de ta maîtrise des départements" />
     <div class="legend"><span><i style="background:#ffd0e7"></i>à revoir</span><span><i style="background:var(--yellow)"></i>en cours</span><span><i style="background:var(--blue)"></i>maîtrisé</span></div>
   </section>
+
+  <footer>
+    <button class="link" onclick={() => nav.go({ name: "legal", doc: "mentions" })}>Mentions légales</button>
+    <button class="link" onclick={() => nav.go({ name: "legal", doc: "confidentialite" })}>Confidentialité</button>
+    <button class="link" onclick={() => nav.go({ name: "legal", doc: "cgu" })}>Conditions d'utilisation</button>
+    <span>Sans publicité ni traceur.</span>
+  </footer>
 </main>
 
 <style>
@@ -103,6 +110,8 @@
   .legend { display: flex; gap: 16px; font-size: 13px; color: var(--ink-soft); justify-content: flex-end; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--ink); display: inline-block; }
+  footer { grid-column: 1 / -1; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--ink-soft); padding-top: 18px; }
+  footer .link { font-weight: 500; color: var(--ink-soft); }
   @media (max-width: 860px) {
     .home { grid-template-columns: 1fr; padding: 14px 16px 40px; }
     .logo { font-size: 48px; }

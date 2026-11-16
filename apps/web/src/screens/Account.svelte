@@ -35,6 +35,8 @@
   const submitForgot = (e: Event) => { e.preventDefault(); run(async () => { await api("POST", "/auth/forgot", { email }); info = "Si un compte existe pour cette adresse, un lien vient de partir. Pense aux spams."; }); };
   const submitReset = (e: Event) => { e.preventDefault(); run(async () => { await api("POST", "/auth/reset", { token, password }); await session.load(); info = "Mot de passe changé, tu es connecté."; }); };
   const saveHome = () => run(async () => { await session.setHome(home || null); info = "Département de cœur enregistré."; });
+  let confirmDelete = $state(false);
+  const deleteAccount = (e: Event) => { e.preventDefault(); run(async () => { await api("DELETE", "/me", { password }); session.me = null; nav.go({ name: "home" }); }); };
   const resend = () => run(async () => { await api("POST", "/auth/resend"); info = "Email renvoyé."; });
 </script>
 
@@ -65,6 +67,7 @@
         <option value="">Je préfère ne pas dire</option>
         {#each sorted as d (d.code)}<option value={d.code}>{d.nom} ({d.code})</option>{/each}
       </select>
+      <p class="fine">En créant un compte, tu acceptes les <button type="button" class="link" onclick={() => nav.go({ name: "legal", doc: "cgu" })}>conditions d'utilisation</button>. Ton email ne sert qu'à ton compte : voir la <button type="button" class="link" onclick={() => nav.go({ name: "legal", doc: "confidentialite" })}>politique de confidentialité</button>.</p>
       <button class="btn accent" disabled={busy}>Créer mon compte</button>
     </form>
     <div class="links"><button onclick={() => (current = "login")}>J'ai déjà un compte</button></div>
@@ -98,6 +101,20 @@
         <button class="btn ghost" onclick={saveHome} disabled={busy}>Enregistrer</button>
       </div>
       <button class="btn ghost" onclick={() => session.logout().then(() => nav.go({ name: "home" }))}>Se déconnecter</button>
+
+      <h2 class="label section">Tes données</h2>
+      <p class="fine">Télécharge tout ce que Hexa sait de toi, en un fichier JSON.</p>
+      <a class="btn ghost" href="/api/me/export" download>Télécharger mes données</a>
+      {#if !confirmDelete}
+        <button class="btn ghost danger" onclick={() => (confirmDelete = true)}>Supprimer mon compte</button>
+      {:else}
+        <form class="danger-box" onsubmit={deleteAccount}>
+          <p>La suppression est <b>immédiate et définitive</b> : compte, progression et scores. Confirme avec ton mot de passe.</p>
+          <label class="label" for="d-pw">Mot de passe</label>
+          <input id="d-pw" class="field" type="password" autocomplete="current-password" bind:value={password} required />
+          <div class="row"><button class="btn" disabled={busy}>Supprimer définitivement</button><button type="button" class="btn ghost" onclick={() => (confirmDelete = false)}>Annuler</button></div>
+        </form>
+      {/if}
     </div>
   {/if}
 
@@ -119,5 +136,11 @@
   .err { color: #b0005f; font-weight: 600; }
   .info { color: var(--blue); font-weight: 600; }
   .warn { font-size: 14px; }
+  .fine { font-size: 14px; color: var(--ink-soft); }
+  .fine .link { font-weight: 600; }
+  .section { margin: 18px 0 0; }
+  .profile .btn.ghost { align-self: flex-start; }
+  .danger { color: #b0005f !important; }
+  .danger-box { border: 1.5px solid #b0005f; border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
   @media (min-width: 701px) { .acc { min-height: 100dvh; justify-content: center; } }
 </style>

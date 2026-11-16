@@ -11,6 +11,7 @@
   import Lobby from "./screens/Lobby.svelte";
   import Live from "./screens/Live.svelte";
   import Stage from "./screens/Stage.svelte";
+  import Legal from "./screens/Legal.svelte";
 
   nav.screen = screenFromHash();
   session.load();
@@ -26,4 +27,5 @@
 {:else if nav.screen.name === "lobby"}<Lobby join={nav.screen.join} />
 {:else if nav.screen.name === "live"}<Live />
 {:else if nav.screen.name === "stage"}<Stage code={nav.screen.code} />
+{:else if nav.screen.name === "legal"}<Legal doc={nav.screen.doc} />
 {/if}
