@@ -6,6 +6,7 @@
   import { api, session, GUEST_DAILY } from "../lib/api.svelte.ts";
   import SaveCard from "../lib/ui/SaveCard.svelte";
   import PushCard from "../lib/ui/PushCard.svelte";
+  import { signup } from "../lib/signup.svelte.ts";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { progress } from "../lib/progress.svelte.ts";
@@ -36,6 +37,7 @@
     const o = live.daily;
     if (!o || session.me || (guest && guest.day === o.day)) return;
     guest = { day: o.day, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim };
+    setTimeout(() => signup.offer({ kind: "daily" }), 1500);
     try { localStorage.setItem(GUEST_DAILY, JSON.stringify(guest)); } catch { /* rien */ }
   });
   const guestToday = $derived(!session.me && !!guest && guest.day === info?.day ? guest : null);

@@ -13,6 +13,7 @@
   import { progress } from "../lib/progress.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
   import SaveCard from "../lib/ui/SaveCard.svelte";
+  import { signup } from "../lib/signup.svelte.ts";
 
   const room = $derived(live.room);
   const me = $derived(room?.players.find((p) => p.id === live.you));
@@ -45,6 +46,8 @@
     progress.record(live.myResults);
     rewards = profile.record({ mode: "multi", level: room?.settings.level ?? "normal", input: room?.settings.input ?? "libre", results: live.myResults, won, now: Date.now() });
     sound.play(won ? "level" : "tap");
+    const got = rewards;
+    setTimeout(() => signup.offer({ kind: "multi", xp: got?.xp, vignettes: got?.upgrades.length, firstGame: profile.data.stats.games <= 1 }), 2500);
   });
   $effect(() => { if (room?.phase === "lobby") rewards = null; });
 

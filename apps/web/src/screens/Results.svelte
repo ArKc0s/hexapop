@@ -14,6 +14,7 @@
   import { DEPARTEMENTS, mastery } from "@hexa/game";
   import { progress } from "../lib/progress.svelte.ts";
   import SaveCard from "../lib/ui/SaveCard.svelte";
+  import { signup } from "../lib/signup.svelte.ts";
   import PushCard from "../lib/ui/PushCard.svelte";
 
   let { play, results, rewards }: { play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards } = $props();
@@ -34,6 +35,8 @@
     setTimeout(() => { xpWidth = levelUp ? 100 : after.ratio * 100; sound.play(levelUp ? "level" : "tick"); }, 700);
     if (levelUp) setTimeout(() => (xpWidth = after.ratio * 100), 1500);
     if (r.stars && r.stars.after > r.stars.before) setTimeout(() => sound.play("star"), 300);
+    // Invité : on laisse voir les récompenses, puis on propose de les garder.
+    setTimeout(() => signup.offer({ kind: "solo", xp: r.xp, vignettes: r.upgrades.length, firstGame: profile.data.stats.games <= 1 }), 2200);
   });
 
   const quests = questsFor(dayKey(Date.now()));

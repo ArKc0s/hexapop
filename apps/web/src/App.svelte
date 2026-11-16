@@ -18,6 +18,7 @@
   import Reminders from "./screens/Reminders.svelte";
   import { push } from "./lib/push.svelte.ts";
   import PushPrompt from "./lib/ui/PushPrompt.svelte";
+  import SignupPrompt from "./lib/ui/SignupPrompt.svelte";
 
   nav.screen = screenFromHash();
   // Retour de connexion externe : on nettoie l'adresse (le lien ne doit pas se rejouer).
@@ -46,3 +47,4 @@
 {/if}
 
 <PushPrompt />
+<SignupPrompt />
