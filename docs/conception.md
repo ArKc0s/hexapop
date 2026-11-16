@@ -69,6 +69,8 @@ Soit **101 × 3 = 303 facettes de base**, puis 202 facettes expert. Les futurs c
 
 Le nom du département sert d'ancre : chaque question relie le nom à une facette, dans un sens ou dans l'autre (les deux sens sont tirés au hasard, ça ancre mieux).
 
+**Règle : jamais deux inconnues dans une même question.** « Place le 87 » demande de savoir quel département porte le 87 *et* où il se trouve : pour un débutant, c'est impossible (retour d'un testeur, voir section 11). Une question passe donc toujours par le nom (nom → facette, ou facette → nom). Les questions qui relient deux facettes entre elles (numéro → carte, préfecture → numéro…) ne sont proposées qu'en défi avancé, et seulement quand les deux facettes sont déjà des étoiles du joueur.
+
 ---
 
 ## 3. La règle d'un tour (la même partout)
@@ -145,7 +147,13 @@ Deux choix au lieu de trois :
 Le **handicap** devient automatique : chacun reçoit les questions sous la forme qui correspond à son niveau (propositions pour le débutant, clavier pour le joueur fort), et le score est normalisé.
 
 ### Partie libre
-Un seul écran qui remplace Éclair, Une région et Marathon : **zone** (France, une région, outre-mer), **facettes** (carte, numéro, préfecture, expert), **longueur** (10, 20, les 101). Ça compte pour les étoiles comme le reste.
+Un seul écran qui remplace Éclair, Une région et Marathon, avec un réglage précis de ce qu'on joue :
+- **Zone** : France, une région, outre-mer.
+- **Ce qu'on te donne** : le nom, le numéro, le département qui clignote sur la carte, la préfecture (un ou plusieurs).
+- **Ce qu'on te demande** : le placer, le nom, le numéro, la préfecture, et en expert sous-préfectures et voisins (un ou plusieurs).
+- **Longueur** : 10, 20, les 101.
+
+Exemples : un débutant coche « on me donne le nom » + « je le place » pour apprendre la carte seule ; un joueur qui révise ses numéros coche « on me donne la carte » + « je donne le numéro ». Les combinaisons à deux inconnues restent possibles ici puisque c'est le joueur qui les choisit. Ça compte pour les étoiles comme le reste.
 
 ### Accueil
 Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcentage, le défi du jour et Entre amis. Partie libre, Atlas et profil en secondaire. Plus de quêtes ni de niveau.
@@ -213,3 +221,10 @@ Avant l'étape 3, faire jouer 2 ou 3 débutants (dont au moins une personne qui 
 - Qu'ont-ils trouvé frustrant ?
 
 Les réponses décident des ajustements avant de retirer l'ancien système.
+
+---
+
+## 11. Retours de testeurs
+
+- **2026-11-16** : « J'aimerais pouvoir configurer l'entraînement précisément, choisir ce qu'il peut te demander de trouver. Quand le jeu me dit de placer le 87, moi qui ne connais rien, c'est juste impossible, alors que placer un département nommé ou affiché sur la carte, c'est plus simple pour moi. »
+  → Intégré : règle « jamais deux inconnues » (section 2) et réglages « ce qu'on te donne / ce qu'on te demande » de la Partie libre (section 5). Livré à l'étape 1.

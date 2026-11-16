@@ -14,6 +14,7 @@ Idées validées avec Léo, à planifier. Mise à jour : 2026-11-16.
 Constat de Léo (2026-11-16) : « c'est bien, mais pas assez intuitif et ça part dans tous les sens ». Les fonctionnalités se sont empilées au fil des idées (Tour, entraînement, révisions, vignettes, badges, quêtes, niveaux, rangs, série, défi, salons…) sans vision d'ensemble. Avant d'ajouter quoi que ce soit, deux chantiers de conception, à mener sur papier (puis maquette) :
 
 ➡️ Proposition en cours de validation : [`conception.md`](conception.md) (chantiers 1 et 2 traités ensemble).
+Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement configurable** (choisir ce qu'on te donne et ce qu'on te demande) et **plus jamais deux inconnues dans une question** (« place le 87 » est impossible pour un débutant). Livré avec la Partie libre, étape 1.
 
 ### 1. Le système de progression
 - **Problème** : trop de compteurs parallèles qui mesurent des choses voisines (XP et niveaux, rangs par maîtrise, étoiles du Tour, vignettes bronze/argent/or, % de « Ta France », badges, série). Le joueur ne sait pas lequel compte ni ce qu'il doit faire ensuite.
