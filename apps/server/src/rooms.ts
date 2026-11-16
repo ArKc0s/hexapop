@@ -89,6 +89,8 @@ export class Room {
   day: string | null = null;
   /** Duel à points de vie : activé quand un duel démarre à exactement deux joueurs. */
   hpMode = false;
+  /** Nombre de joueurs au lancement : la fin par élimination n'a de sens qu'à plusieurs. */
+  startPlayers = 0;
 
   kind: RoomKind;
   settings: RoomSettings;
@@ -203,6 +205,7 @@ export class Room {
       : { seed: randomSeed(), level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes };
     this.questions = makeGame(cfg);
     this.hpMode = this.kind === "duel" && this.seats.size === 2;
+    this.startPlayers = this.seats.size;
     for (const s of this.seats.values()) s.info.hp = this.hpMode ? DUEL_HP : undefined;
     this.phase = "countdown";
     this.broadcastRoom();
@@ -272,7 +275,8 @@ export class Room {
       }
     }
     const knockout = forfeit || (this.hpMode && [...this.seats.values()].some((s) => (s.info.hp ?? 1) <= 0));
-    const last = knockout || this.qi + 1 >= this.questions.length || (this.settings.elimination && this.active.length <= 1);
+    const lastSurvivor = this.settings.elimination && this.startPlayers >= 2 && this.active.length <= 1;
+    const last = knockout || this.qi + 1 >= this.questions.length || lastSurvivor;
     const review = this.kind === "daily" ? 0 : REVIEW_MS;
     const nextAt = last ? null : now() + review;
     this.phase = "review";

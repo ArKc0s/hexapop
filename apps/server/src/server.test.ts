@@ -211,3 +211,20 @@ test("profil de jeu : fusion côté serveur et nettoyage", async () => {
   assert.deepEqual(m.profile.plates.sort(), ["13", "29", "56"]);
   assert.deepEqual(m.profile.stars, { "53": 2, "93": 3 });
 });
+
+test("soirée plateau en solo : tous les tours sont joués", { timeout: 60_000 }, async () => {
+  const a = new Client();
+  await a.open();
+  a.send({ t: "hello", v: PROTOCOL_VERSION, name: "Solo" });
+  await a.wait("welcome");
+  a.send({ t: "create", kind: "plateau", settings: { rounds: 5, elimination: true } });
+  await a.wait("room");
+  a.send({ t: "start" });
+  for (let i = 0; i < 3; i++) {
+    const q = (await a.wait("question", (m) => m.q.index === i, 15_000)).q;
+    a.send({ t: "answer", index: i, answer: perfect(q) });
+    const s = (await a.wait("round", (m) => m.summary.index === i)).summary;
+    assert.ok(s.nextAt, `le tour ${i + 1} doit être suivi d'un autre`);
+  }
+  a.ws.close();
+});

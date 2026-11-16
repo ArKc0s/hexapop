@@ -69,7 +69,7 @@
 
     <div class="row2">
       <button class="btn pink" disabled={!session.online} onclick={() => nav.go({ name: "daily" })}>Défi du jour<small>nouveau dans {countdown}</small></button>
-      <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel ou soirée</small></button>
+      <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel ou battle royale</small></button>
     </div>
 
     <div class="card quests">
