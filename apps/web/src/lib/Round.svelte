@@ -202,7 +202,7 @@
     <div class="fields">
       {#if has("carte")}
         {@const r = fieldResult("carte")}
-        <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
+        <div class="f carte" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
           <span class="label">{LABELS.carte}</span>
           <span class="state">{#if r}{r.score === 1 ? "Bien placé" : "C'était " + expectedLabel("carte", r.expected)}{:else if sel}Placé ✓ <button class="link" onclick={() => (sel = null)}>Changer</button>{:else}À placer sur la carte{/if}</span>
         </div>
@@ -357,20 +357,29 @@
   @media (max-width: 900px) {
     /* Écran de jeu mobile « comme une appli » : carte en haut qui prend la place restante,
        panneau de réponses en bas (seul lui défile), barre d'action toujours visible. */
-    .round { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; }
+    .round { display: flex; flex-direction: column; align-items: stretch; gap: 6px; flex: 1; min-height: 0; width: 100%; }
+    .panel, .mapwrap { width: auto; align-self: stretch; }
     .mapwrap { position: relative; flex: 1 1 0; min-height: 150px; display: flex; flex-direction: column; gap: 2px; }
     .mapwrap :global(.wrap) { flex: 1; min-height: 0; display: flex; }
     .mapwrap :global(.map) { width: 100%; height: 100%; max-height: none; }
     .maphead { min-height: 0; }
     .help { font-size: 13px; }
-    .panel { flex: 0 1 auto; max-height: 60%; overflow-y: auto; overscroll-behavior: contain; margin: 0 -16px; padding: 14px 16px 0; border-radius: 22px 22px 0 0; gap: 12px; box-shadow: 0 -6px 18px -12px rgba(28, 26, 55, .3); }
-    .round.placing .panel { max-height: 46%; }
-    .round.review .panel { max-height: 64%; }
-    .bignum { font-size: 56px; }
-    .qname { font-size: 22px; }
+    /* Le panneau prend la hauteur dont il a besoin ; la carte (zoomable) s'adapte au reste */
+    .panel { flex: 0 1 auto; max-height: 74%; overflow-y: auto; overscroll-behavior: contain; margin: 0 -16px; padding: 12px 16px 0; border-radius: 22px 22px 0 0; gap: 10px; box-shadow: 0 -6px 18px -12px rgba(28, 26, 55, .3); }
+    .mapwrap { min-height: 170px; }
+    .clue { flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .bignum { font-size: 40px; }
+    .qname { font-size: 21px; }
     .kicker { font-size: 13px; }
-    .fields { gap: 10px; }
-    .opt { padding: 10px 12px; font-size: 15px; }
+    .fields { gap: 8px; }
+    .f { gap: 4px; }
+    /* « Sur la carte » sur une seule ligne */
+    .f.carte { flex-direction: row; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .f.carte .state { font-size: 15px; }
+    .st { padding: 4px 8px; }
+    .st b { font-size: 13px; }
+    .choices { gap: 6px; }
+    .opt { padding: 9px 11px; font-size: 15px; }
     .actions { position: sticky; bottom: 0; z-index: 3; background: var(--card); margin: auto -16px 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); flex-wrap: wrap; gap: 8px; }
     /* Le verdict et la correction passent dans la barre du bas */
     .react { display: none; }
