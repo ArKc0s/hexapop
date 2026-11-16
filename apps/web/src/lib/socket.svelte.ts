@@ -110,6 +110,7 @@ class Live {
         break;
       }
       case "room":
+        this.error = null;
         this.room = { code: m.room, kind: m.kind, settings: m.settings, players: m.players, phase: m.phase, spectators: m.spectators };
         this.wantRoom = m.room;
         if (m.phase === "lobby") { this.ranking = null; this.summary = null; this.question = null; }
@@ -139,6 +140,9 @@ class Live {
         this.ranking = m.ranking; this.daily = m.daily ?? null;
         break;
       case "error":
+        // Salon introuvable alors qu'on est déjà dans un autre : réponse périmée, on l'ignore.
+        if (m.code === "room_not_found" && this.room) break;
+        if (m.code === "room_not_found") { this.wantRoom = null; if (location.hash.startsWith("#salon=")) history.replaceState(null, "", location.pathname); }
         this.error = { code: m.code, message: m.message };
         break;
     }
