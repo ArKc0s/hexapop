@@ -72,4 +72,5 @@
   .hint { margin: 0; font-size: 14px; color: var(--ink-soft); }
   .wrap { display: flex; flex-wrap: wrap; gap: 6px; }
   .go .btn { font-size: 18px; padding: 14px 26px; }
+  @media (min-width: 701px) { .setup { min-height: 100dvh; justify-content: center; } }
 </style>

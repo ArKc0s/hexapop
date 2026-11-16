@@ -136,4 +136,5 @@
   .lb li.me { background: var(--yellow); }
   @media (max-width: 700px) { .boards { grid-template-columns: 1fr; } }
   @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
+  @media (min-width: 901px) { .daily { min-height: 100dvh; } .daily > :global(.round), .daily > .intro, .daily > .end { flex: 1; align-content: center; } .daily > .intro { justify-content: center; padding-top: 0; } }
 </style>

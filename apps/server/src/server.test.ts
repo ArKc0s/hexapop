@@ -158,3 +158,20 @@ test("défi du jour : un seul essai par compte", { timeout: 60_000 }, async () =
   assert.equal(lb.top[0].name, "Daily");
   c.ws.close();
 });
+
+test("RGPD : export puis suppression définitive du compte", async () => {
+  let r = await post("/api/auth/register", { email: "rgpd@example.com", pseudo: "Rgpd", password: "motdepasse", home: "75" });
+  const { token } = await r.json();
+  const auth = { authorization: `Bearer ${token}` };
+  r = await fetch(BASE + "/api/me/export", { headers: auth });
+  assert.equal(r.status, 200);
+  const data = await r.json();
+  assert.equal(data.account.email, "rgpd@example.com");
+  assert.ok(!JSON.stringify(data).includes("scrypt$"), "le hachage n'est pas exporté");
+  r = await fetch(BASE + "/api/me", { method: "DELETE", headers: { ...auth, "content-type": "application/json" }, body: JSON.stringify({ password: "faux" }) });
+  assert.equal(r.status, 403);
+  r = await fetch(BASE + "/api/me", { method: "DELETE", headers: { ...auth, "content-type": "application/json" }, body: JSON.stringify({ password: "motdepasse" }) });
+  assert.equal(r.status, 200);
+  assert.equal((await fetch(BASE + "/api/me", { headers: auth })).status, 401, "session invalidée");
+  assert.equal((await post("/api/auth/login", { login: "Rgpd", password: "motdepasse" })).status, 401, "compte supprimé");
+});

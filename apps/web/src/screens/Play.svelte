@@ -63,4 +63,5 @@
   .logo { font-size: 22px; margin-right: auto; color: var(--blue); }
   .score { font-family: var(--f-num); font-weight: 600; font-size: 18px; }
   @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
+  @media (min-width: 901px) { .play { min-height: 100dvh; } .play > :global(.round) { flex: 1; align-content: center; } }
 </style>

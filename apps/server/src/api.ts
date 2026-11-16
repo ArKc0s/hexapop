@@ -11,6 +11,7 @@ import { dailyNumber, leaderboard, rankOf, today } from "./daily.ts";
 import { stats } from "./rooms.ts";
 
 const COOKIE = "hexa_session";
+const DUMMY_HASH = await hashPassword("factice-" + Math.random());
 const secureCookie = config.publicUrl.startsWith("https");
 
 export class HttpError extends Error {
@@ -100,8 +101,10 @@ const routes: Record<string, Handler> = {
     const login = s(b.login), password = typeof b.password === "string" ? b.password : "";
     need(rateLimit("login:" + clientIp(req), 30, 900_000) && rateLimit("login:" + login.toLowerCase(), 10, 900_000), 429, "rate_limited", "Trop de tentatives, réessaie dans 15 minutes.");
     const row = db.prepare("SELECT * FROM users WHERE email = ? OR pseudo = ?").get(login, login) as (User & { pass_hash: string }) | undefined;
-    const ok = row ? await verifyPassword(password, row.pass_hash) : false;
-    need(row && ok, 401, "bad_credentials", "Identifiant ou mot de passe incorrect.");
+    // Sans compte, on calcule quand même un hachage : même durée de réponse, pas d'énumération des comptes.
+    const check = await verifyPassword(password, row?.pass_hash ?? DUMMY_HASH);
+    need(row && check.ok, 401, "bad_credentials", "Identifiant ou mot de passe incorrect.");
+    if (check.rehash) db.prepare("UPDATE users SET pass_hash = ? WHERE id = ?").run(await hashPassword(password), row!.id);
     const sess = createSession(row!.id);
     json(res, 200, { user: publicUser(row!), token: sess.token }, { "set-cookie": setCookie(sess.token, sess.expiresAt) });
   },
@@ -165,6 +168,34 @@ const routes: Record<string, Handler> = {
       db.prepare("UPDATE users SET home_dep = ? WHERE id = ?").run(home, u.id);
     }
     json(res, 200, { user: publicUser({ ...u, home_dep: "home" in b ? (s(b.home) || null) : u.home_dep }) });
+  },
+
+  /** Droit d'accès et de portabilité : toutes les données du compte, en JSON. */
+  "GET /api/me/export": (_req, res, user) => {
+    const u = need(user, 401, "auth_required", "Non connecté.");
+    const row = db.prepare("SELECT id, email, pseudo, email_verified, home_dep, created_at, last_seen_at FROM users WHERE id = ?").get(u.id) as Record<string, unknown>;
+    const progressRow = db.prepare("SELECT data, updated_at FROM progress WHERE user_id = ?").get(u.id) as { data: string; updated_at: number } | undefined;
+    const daily = db.prepare("SELECT day, points, accuracy, elapsed_ms, grid, finished, created_at FROM daily_results WHERE user_id = ? ORDER BY day").all(u.id);
+    const sessions = db.prepare("SELECT COUNT(*) AS n, MAX(expires_at) AS until FROM sessions WHERE user_id = ?").get(u.id);
+    const iso = (v: unknown) => (typeof v === "number" ? new Date(v).toISOString() : v);
+    json(res, 200, {
+      exportedAt: new Date().toISOString(),
+      account: { ...row, created_at: iso(row.created_at), last_seen_at: iso(row.last_seen_at), password: "haché avec scrypt, non récupérable" },
+      progress: progressRow ? JSON.parse(progressRow.data) : {},
+      dailyResults: daily,
+      activeSessions: sessions,
+    }, { "content-disposition": `attachment; filename="hexa-${u.pseudo}-donnees.json"` });
+  },
+
+  /** Droit à l'effacement : suppression immédiate et définitive (cascade sur toutes les tables). */
+  "DELETE /api/me": async (req, res, user) => {
+    const u = need(user, 401, "auth_required", "Non connecté.");
+    const b = await body(req);
+    const row = db.prepare("SELECT pass_hash FROM users WHERE id = ?").get(u.id) as { pass_hash: string };
+    const check = await verifyPassword(typeof b.password === "string" ? b.password : "", row.pass_hash);
+    need(check.ok, 403, "bad_password", "Mot de passe incorrect.");
+    db.prepare("DELETE FROM users WHERE id = ?").run(u.id);
+    json(res, 200, { ok: true }, { "set-cookie": clearCookie });
   },
 
   "GET /api/progress": (_req, res, user) => {

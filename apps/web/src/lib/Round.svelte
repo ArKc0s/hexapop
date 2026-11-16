@@ -239,7 +239,7 @@
   .clue { display: flex; flex-direction: column; gap: 4px; }
   .kicker { font-size: 14px; color: var(--ink-soft); font-weight: 600; }
   .bignum { font-size: 112px; }
-  .qname { font-size: clamp(28px, 3.2vw, 40px); text-transform: uppercase; line-height: 1.12; }
+  .qname { font-size: clamp(28px, 3.2vw, 40px); text-transform: uppercase; line-height: 1.18; }
   .fields { display: flex; flex-direction: column; gap: 16px; }
   .f { display: flex; flex-direction: column; gap: 6px; }
   .state { font-weight: 600; }

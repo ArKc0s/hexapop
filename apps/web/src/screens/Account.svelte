@@ -119,4 +119,5 @@
   .err { color: #b0005f; font-weight: 600; }
   .info { color: var(--blue); font-weight: 600; }
   .warn { font-size: 14px; }
+  @media (min-width: 701px) { .acc { min-height: 100dvh; justify-content: center; } }
 </style>

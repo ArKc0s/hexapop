@@ -160,4 +160,5 @@
   .wait { font-weight: 600; }
   @media (max-width: 600px) { .choices { grid-template-columns: 1fr; } }
   .hint { margin: -6px 0 0; font-size: 14px; color: var(--ink-soft); }
+  @media (min-width: 701px) { .lobby { min-height: 100dvh; justify-content: center; } }
 </style>

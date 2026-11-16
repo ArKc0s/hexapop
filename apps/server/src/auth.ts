@@ -1,22 +1,32 @@
 import { randomBytes, scrypt, timingSafeEqual, createHash } from "node:crypto";
 import { db, now } from "./db.ts";
 
-const SCRYPT = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
+// Hachage (et non chiffrement) : le mot de passe n'est jamais stocké ni récupérable.
+// Paramètres OWASP pour scrypt : N=2^15 (32 Mio), r=8, p=3, sel aléatoire de 16 octets par compte.
+// Format stocké : scrypt$N$r$p$sel$clé — les paramètres voyagent avec le hachage pour pouvoir évoluer.
+const PARAMS = { N: 2 ** 15, r: 8, p: 3 };
 const SESSION_DAYS = 60;
 
-function scryptAsync(pw: string, salt: Buffer): Promise<Buffer> {
-  return new Promise((resolve, reject) => scrypt(pw, salt, 32, SCRYPT, (err, key) => (err ? reject(err) : resolve(key))));
+function derive(pw: string, salt: Buffer, N: number, r: number, p: number): Promise<Buffer> {
+  return new Promise((resolve, reject) =>
+    scrypt(pw.normalize("NFC"), salt, 32, { N, r, p, maxmem: 256 * N * r }, (err, key) => (err ? reject(err) : resolve(key))));
 }
 
 export async function hashPassword(pw: string): Promise<string> {
   const salt = randomBytes(16);
-  const key = await scryptAsync(pw, salt);
-  return ["scrypt", salt.toString("base64"), key.toString("base64")].join("$");
+  const key = await derive(pw, salt, PARAMS.N, PARAMS.r, PARAMS.p);
+  return ["scrypt", PARAMS.N, PARAMS.r, PARAMS.p, salt.toString("base64"), key.toString("base64")].join("$");
 }
-export async function verifyPassword(pw: string, stored: string): Promise<boolean> {
-  const [, s, k] = stored.split("$");
-  const key = await scryptAsync(pw, Buffer.from(s, "base64"));
-  return timingSafeEqual(key, Buffer.from(k, "base64"));
+
+/** Vérifie un mot de passe ; `rehash` indique que le hachage utilise d'anciens paramètres. */
+export async function verifyPassword(pw: string, stored: string): Promise<{ ok: boolean; rehash: boolean }> {
+  const parts = stored.split("$");
+  // Ancien format (v0) : scrypt$sel$clé avec N=2^15, r=8, p=1.
+  const [N, r, p, s, k] = parts.length === 3 ? [2 ** 15, 8, 1, parts[1], parts[2]] : [Number(parts[1]), Number(parts[2]), Number(parts[3]), parts[4], parts[5]];
+  const key = await derive(pw, Buffer.from(String(s), "base64"), N, r, p);
+  const expected = Buffer.from(String(k), "base64");
+  const ok = key.length === expected.length && timingSafeEqual(key, expected);
+  return { ok, rehash: ok && (N !== PARAMS.N || r !== PARAMS.r || p !== PARAMS.p) };
 }
 
 export const sha = (s: string) => createHash("sha256").update(s).digest("base64url");
@@ -36,6 +46,8 @@ export function userFromSession(token: string | undefined): User | null {
     `SELECT u.id, u.email, u.pseudo, u.email_verified, u.home_dep, u.created_at
      FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?`,
   ).get(sha(token), now()) as User | undefined;
+  // Dernière activité (au plus une écriture par heure) : sert à la purge des comptes inactifs.
+  if (row) db.prepare("UPDATE users SET last_seen_at = ? WHERE id = ? AND COALESCE(last_seen_at, 0) < ?").run(now(), row.id, now() - 3_600_000);
   return row ?? null;
 }
 export function deleteSession(token: string) {

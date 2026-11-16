@@ -46,4 +46,25 @@ CREATE TABLE IF NOT EXISTS daily_results (
 CREATE INDEX IF NOT EXISTS daily_rank ON daily_results(day, points DESC, elapsed_ms ASC);
 `);
 
+// Migrations légères
+const userCols = (db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name);
+if (!userCols.includes("last_seen_at")) db.exec("ALTER TABLE users ADD COLUMN last_seen_at INTEGER");
+
 export const now = () => Date.now();
+
+// ---------- Conservation des données (RGPD, minimisation) ----------
+export const RETENTION = {
+  /** Compte jamais confirmé : supprimé après 30 jours. */
+  unverifiedMs: 30 * 86_400_000,
+  /** Compte inactif : supprimé après 3 ans sans connexion (recommandation CNIL). */
+  inactiveMs: 3 * 365 * 86_400_000,
+};
+
+export function purge(t = now()): Record<string, number> {
+  const out: Record<string, number> = {};
+  out.sessions = Number(db.prepare("DELETE FROM sessions WHERE expires_at < ?").run(t).changes);
+  out.emailTokens = Number(db.prepare("DELETE FROM email_tokens WHERE expires_at < ?").run(t).changes);
+  out.unverified = Number(db.prepare("DELETE FROM users WHERE email_verified = 0 AND created_at < ?").run(t - RETENTION.unverifiedMs).changes);
+  out.inactive = Number(db.prepare("DELETE FROM users WHERE COALESCE(last_seen_at, created_at) < ?").run(t - RETENTION.inactiveMs).changes);
+  return out;
+}

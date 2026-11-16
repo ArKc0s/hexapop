@@ -60,4 +60,5 @@
   
   .mapcol { position: sticky; top: 12px; }
   @media (max-width: 860px) { .res { grid-template-columns: 1fr; } .mapcol { position: static; } }
+  @media (min-width: 861px) { .res { min-height: 100dvh; align-content: center; align-items: center; } }
 </style>

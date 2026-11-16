@@ -7,8 +7,21 @@ import { config } from "./config.ts";
 import { handleApi, sessionToken, clientIp } from "./api.ts";
 import { userFromSession, rateLimit } from "./auth.ts";
 import { handle, newPlayerId, send, fail, type Conn } from "./rooms.ts";
+import { purge } from "./db.ts";
+
+// Purge quotidienne des données arrivées à échéance (et une fois au démarrage).
+const runPurge = () => { const r = purge(); if (Object.values(r).some((n) => n > 0)) console.log("[purge]", r); };
+runPurge();
+setInterval(runPurge, 24 * 3_600_000).unref();
 
 // ---------- fichiers statiques (client web compilé) ----------
+// Tout est servi depuis notre domaine : aucune ressource tierce, aucun traceur.
+const SECURITY_HEADERS = {
+  "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' wss: ws:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+};
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml",
   ".json": "application/json", ".png": "image/png", ".webmanifest": "application/manifest+json", ".woff2": "font/woff2",
@@ -22,6 +35,7 @@ function serveStatic(url: string, res: import("node:http").ServerResponse) {
   catch { file = join(config.webDir, "index.html"); st = statSync(file); }
   const immutable = path.startsWith("/assets/");
   res.writeHead(200, {
+    ...SECURITY_HEADERS,
     "content-type": TYPES[extname(file)] ?? "application/octet-stream",
     "content-length": st.size,
     "cache-control": immutable ? "public, max-age=31536000, immutable" : "no-cache",

@@ -45,4 +45,5 @@
   .list button.on { background: var(--yellow); }
   .mapcol { position: sticky; top: 12px; }
   @media (max-width: 860px) { .atlas { grid-template-columns: 1fr; } .mapcol { position: static; order: -1; } }
+  @media (min-width: 861px) { .atlas { min-height: 100dvh; align-content: center; } }
 </style>

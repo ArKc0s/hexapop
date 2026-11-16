@@ -109,4 +109,5 @@
     .pitch { font-size: 18px; }
     .sub-menu { grid-template-columns: 1fr; }
   }
+  @media (min-width: 861px) { .home { min-height: 100dvh; align-content: center; } }
 </style>

@@ -92,4 +92,5 @@
   .rank li.me { background: var(--yellow); }
   .cta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
   @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
+  @media (min-width: 901px) { .live { min-height: 100dvh; } .live > :global(.round) { flex: 1; align-content: center; } .live > .end { flex: 1; justify-content: center; } }
 </style>
