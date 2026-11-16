@@ -1,6 +1,7 @@
 # Hexa · Conception du jeu (refonte des modes et de la progression)
 
 Document de travail. **Version 2 du 2026-11-16, toutes les décisions tranchées** (intègre les retours de jeu de Léo et des testeurs, voir section 11).
+Version courte pour les testeurs : [`ce-qui-change.md`](ce-qui-change.md).
 Il couvre les chantiers 1 (progression) et 2 (modes et mécaniques) de la [feuille de route](roadmap.md) : ils se conçoivent ensemble, parce que chaque mode nourrit la progression et que la progression décide de ce qu'on joue ensuite.
 
 ---
