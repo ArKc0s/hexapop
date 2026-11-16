@@ -1,0 +1,92 @@
+[
+ {
+  "code": "01",
+  "nom": "Guadeloupe",
+  "chefLieu": "Basse-Terre"
+ },
+ {
+  "code": "02",
+  "nom": "Martinique",
+  "chefLieu": "Fort-de-France"
+ },
+ {
+  "code": "03",
+  "nom": "Guyane",
+  "chefLieu": "Cayenne"
+ },
+ {
+  "code": "04",
+  "nom": "La Réunion",
+  "chefLieu": "Saint-Denis"
+ },
+ {
+  "code": "06",
+  "nom": "Mayotte",
+  "chefLieu": "Mamoudzou"
+ },
+ {
+  "code": "11",
+  "nom": "Île-de-France",
+  "chefLieu": "Paris"
+ },
+ {
+  "code": "24",
+  "nom": "Centre-Val de Loire",
+  "chefLieu": "Orléans"
+ },
+ {
+  "code": "27",
+  "nom": "Bourgogne-Franche-Comté",
+  "chefLieu": "Dijon"
+ },
+ {
+  "code": "28",
+  "nom": "Normandie",
+  "chefLieu": "Rouen"
+ },
+ {
+  "code": "32",
+  "nom": "Hauts-de-France",
+  "chefLieu": "Lille"
+ },
+ {
+  "code": "44",
+  "nom": "Grand Est",
+  "chefLieu": "Strasbourg"
+ },
+ {
+  "code": "52",
+  "nom": "Pays de la Loire",
+  "chefLieu": "Nantes"
+ },
+ {
+  "code": "53",
+  "nom": "Bretagne",
+  "chefLieu": "Rennes"
+ },
+ {
+  "code": "75",
+  "nom": "Nouvelle-Aquitaine",
+  "chefLieu": "Bordeaux"
+ },
+ {
+  "code": "76",
+  "nom": "Occitanie",
+  "chefLieu": "Toulouse"
+ },
+ {
+  "code": "84",
+  "nom": "Auvergne-Rhône-Alpes",
+  "chefLieu": "Lyon"
+ },
+ {
+  "code": "93",
+  "nom": "Provence-Alpes-Côte d'Azur",
+  "chefLieu": "Marseille"
+ },
+ {
+  "code": "94",
+  "nom": "Corse",
+  "chefLieu": "Ajaccio"
+ }
+]

@@ -1,0 +1,10 @@
+{
+  "name": "@hexa/data",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./departements.json": "./src/departements.json",
+    "./regions.json": "./src/regions.json",
+    "./map.json": "./src/map.json"
+  }
+}

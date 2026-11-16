@@ -1,0 +1,1915 @@
+[
+ {
+  "code": "01",
+  "nom": "Ain",
+  "article": "l'",
+  "region": "84",
+  "prefecture": "Bourg-en-Bresse",
+  "sousPrefectures": [
+   "Belley",
+   "Gex",
+   "Nantua"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "38",
+   "39",
+   "69",
+   "71",
+   "73",
+   "74"
+  ]
+ },
+ {
+  "code": "02",
+  "nom": "Aisne",
+  "article": "l'",
+  "region": "32",
+  "prefecture": "Laon",
+  "sousPrefectures": [
+   "Château-Thierry",
+   "Saint-Quentin",
+   "Soissons",
+   "Vervins"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "08",
+   "51",
+   "59",
+   "60",
+   "77",
+   "80"
+  ]
+ },
+ {
+  "code": "03",
+  "nom": "Allier",
+  "article": "l'",
+  "region": "84",
+  "prefecture": "Moulins",
+  "sousPrefectures": [
+   "Montluçon",
+   "Vichy"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "18",
+   "23",
+   "42",
+   "58",
+   "63",
+   "71"
+  ]
+ },
+ {
+  "code": "04",
+  "nom": "Alpes-de-Haute-Provence",
+  "article": "les",
+  "region": "93",
+  "prefecture": "Digne-les-Bains",
+  "sousPrefectures": [
+   "Barcelonnette",
+   "Castellane",
+   "Forcalquier"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "05",
+   "06",
+   "26",
+   "83",
+   "84"
+  ]
+ },
+ {
+  "code": "05",
+  "nom": "Hautes-Alpes",
+  "article": "les",
+  "region": "93",
+  "prefecture": "Gap",
+  "sousPrefectures": [
+   "Briançon"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "04",
+   "26",
+   "38",
+   "73"
+  ]
+ },
+ {
+  "code": "06",
+  "nom": "Alpes-Maritimes",
+  "article": "les",
+  "region": "93",
+  "prefecture": "Nice",
+  "sousPrefectures": [
+   "Grasse"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "04",
+   "83"
+  ]
+ },
+ {
+  "code": "07",
+  "nom": "Ardèche",
+  "article": "l'",
+  "region": "84",
+  "prefecture": "Privas",
+  "sousPrefectures": [
+   "Largentière",
+   "Tournon-sur-Rhône"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "26",
+   "30",
+   "38",
+   "42",
+   "43",
+   "48",
+   "84"
+  ]
+ },
+ {
+  "code": "08",
+  "nom": "Ardennes",
+  "article": "les",
+  "region": "44",
+  "prefecture": "Charleville-Mézières",
+  "sousPrefectures": [
+   "Rethel",
+   "Sedan",
+   "Vouziers"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "02",
+   "51",
+   "55"
+  ]
+ },
+ {
+  "code": "09",
+  "nom": "Ariège",
+  "article": "l'",
+  "region": "76",
+  "prefecture": "Foix",
+  "sousPrefectures": [
+   "Pamiers",
+   "Saint-Girons"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "11",
+   "31",
+   "66"
+  ]
+ },
+ {
+  "code": "10",
+  "nom": "Aube",
+  "article": "l'",
+  "region": "44",
+  "prefecture": "Troyes",
+  "sousPrefectures": [
+   "Bar-sur-Aube",
+   "Nogent-sur-Seine"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "21",
+   "51",
+   "52",
+   "77",
+   "89"
+  ]
+ },
+ {
+  "code": "11",
+  "nom": "Aude",
+  "article": "l'",
+  "region": "76",
+  "prefecture": "Carcassonne",
+  "sousPrefectures": [
+   "Limoux",
+   "Narbonne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "09",
+   "31",
+   "34",
+   "66",
+   "81"
+  ]
+ },
+ {
+  "code": "12",
+  "nom": "Aveyron",
+  "article": "l'",
+  "region": "76",
+  "prefecture": "Rodez",
+  "sousPrefectures": [
+   "Millau",
+   "Villefranche-de-Rouergue"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "15",
+   "30",
+   "34",
+   "46",
+   "48",
+   "81",
+   "82"
+  ]
+ },
+ {
+  "code": "13",
+  "nom": "Bouches-du-Rhône",
+  "article": "les",
+  "region": "93",
+  "prefecture": "Marseille",
+  "sousPrefectures": [
+   "Aix-en-Provence",
+   "Arles",
+   "Istres"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "30",
+   "83",
+   "84"
+  ]
+ },
+ {
+  "code": "14",
+  "nom": "Calvados",
+  "article": "le",
+  "region": "28",
+  "prefecture": "Caen",
+  "sousPrefectures": [
+   "Bayeux",
+   "Lisieux",
+   "Vire Normandie"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "27",
+   "50",
+   "61"
+  ]
+ },
+ {
+  "code": "15",
+  "nom": "Cantal",
+  "article": "le",
+  "region": "84",
+  "prefecture": "Aurillac",
+  "sousPrefectures": [
+   "Mauriac",
+   "Saint-Flour"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "12",
+   "19",
+   "43",
+   "46",
+   "48",
+   "63"
+  ]
+ },
+ {
+  "code": "16",
+  "nom": "Charente",
+  "article": "la",
+  "region": "75",
+  "prefecture": "Angoulême",
+  "sousPrefectures": [
+   "Cognac",
+   "Confolens"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "17",
+   "24",
+   "79",
+   "86",
+   "87"
+  ]
+ },
+ {
+  "code": "17",
+  "nom": "Charente-Maritime",
+  "article": "la",
+  "region": "75",
+  "prefecture": "La Rochelle",
+  "sousPrefectures": [
+   "Jonzac",
+   "Rochefort",
+   "Saint-Jean-d'Angély",
+   "Saintes"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "16",
+   "24",
+   "33",
+   "79",
+   "85"
+  ]
+ },
+ {
+  "code": "18",
+  "nom": "Cher",
+  "article": "le",
+  "region": "24",
+  "prefecture": "Bourges",
+  "sousPrefectures": [
+   "Saint-Amand-Montrond",
+   "Vierzon"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "03",
+   "23",
+   "36",
+   "41",
+   "45",
+   "58"
+  ]
+ },
+ {
+  "code": "19",
+  "nom": "Corrèze",
+  "article": "la",
+  "region": "75",
+  "prefecture": "Tulle",
+  "sousPrefectures": [
+   "Brive-la-Gaillarde",
+   "Ussel"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "15",
+   "23",
+   "24",
+   "46",
+   "63",
+   "87"
+  ]
+ },
+ {
+  "code": "21",
+  "nom": "Côte-d'Or",
+  "article": "la",
+  "region": "27",
+  "prefecture": "Dijon",
+  "sousPrefectures": [
+   "Beaune",
+   "Montbard"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "10",
+   "39",
+   "52",
+   "58",
+   "70",
+   "71",
+   "89"
+  ]
+ },
+ {
+  "code": "22",
+  "nom": "Côtes-d'Armor",
+  "article": "les",
+  "region": "53",
+  "prefecture": "Saint-Brieuc",
+  "sousPrefectures": [
+   "Dinan",
+   "Guingamp",
+   "Lannion"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "29",
+   "35",
+   "56"
+  ]
+ },
+ {
+  "code": "23",
+  "nom": "Creuse",
+  "article": "la",
+  "region": "75",
+  "prefecture": "Guéret",
+  "sousPrefectures": [
+   "Aubusson"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "03",
+   "18",
+   "19",
+   "36",
+   "63",
+   "87"
+  ]
+ },
+ {
+  "code": "24",
+  "nom": "Dordogne",
+  "article": "la",
+  "region": "75",
+  "prefecture": "Périgueux",
+  "sousPrefectures": [
+   "Bergerac",
+   "Nontron",
+   "Sarlat-la-Canéda"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "16",
+   "17",
+   "19",
+   "33",
+   "46",
+   "47",
+   "87"
+  ]
+ },
+ {
+  "code": "25",
+  "nom": "Doubs",
+  "article": "le",
+  "region": "27",
+  "prefecture": "Besançon",
+  "sousPrefectures": [
+   "Montbéliard",
+   "Pontarlier"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "39",
+   "70",
+   "90"
+  ]
+ },
+ {
+  "code": "26",
+  "nom": "Drôme",
+  "article": "la",
+  "region": "84",
+  "prefecture": "Valence",
+  "sousPrefectures": [
+   "Die",
+   "Nyons"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "04",
+   "05",
+   "07",
+   "38",
+   "84"
+  ]
+ },
+ {
+  "code": "27",
+  "nom": "Eure",
+  "article": "l'",
+  "region": "28",
+  "prefecture": "Évreux",
+  "sousPrefectures": [
+   "Bernay",
+   "Les Andelys"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "14",
+   "28",
+   "60",
+   "61",
+   "76",
+   "78",
+   "95"
+  ]
+ },
+ {
+  "code": "28",
+  "nom": "Eure-et-Loir",
+  "article": "",
+  "region": "24",
+  "prefecture": "Chartres",
+  "sousPrefectures": [
+   "Châteaudun",
+   "Dreux",
+   "Nogent-le-Rotrou"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "27",
+   "41",
+   "45",
+   "61",
+   "72",
+   "78",
+   "91"
+  ]
+ },
+ {
+  "code": "29",
+  "nom": "Finistère",
+  "article": "le",
+  "region": "53",
+  "prefecture": "Quimper",
+  "sousPrefectures": [
+   "Brest",
+   "Châteaulin",
+   "Morlaix"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "22",
+   "56"
+  ]
+ },
+ {
+  "code": "2A",
+  "nom": "Corse-du-Sud",
+  "article": "la",
+  "region": "94",
+  "prefecture": "Ajaccio",
+  "sousPrefectures": [
+   "Sartène"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "2B"
+  ]
+ },
+ {
+  "code": "2B",
+  "nom": "Haute-Corse",
+  "article": "la",
+  "region": "94",
+  "prefecture": "Bastia",
+  "sousPrefectures": [
+   "Calvi",
+   "Corte"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "2A"
+  ]
+ },
+ {
+  "code": "30",
+  "nom": "Gard",
+  "article": "le",
+  "region": "76",
+  "prefecture": "Nîmes",
+  "sousPrefectures": [
+   "Alès",
+   "Le Vigan"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "07",
+   "12",
+   "13",
+   "34",
+   "48",
+   "84"
+  ]
+ },
+ {
+  "code": "31",
+  "nom": "Haute-Garonne",
+  "article": "la",
+  "region": "76",
+  "prefecture": "Toulouse",
+  "sousPrefectures": [
+   "Muret",
+   "Saint-Gaudens"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "09",
+   "11",
+   "32",
+   "65",
+   "81",
+   "82"
+  ]
+ },
+ {
+  "code": "32",
+  "nom": "Gers",
+  "article": "le",
+  "region": "76",
+  "prefecture": "Auch",
+  "sousPrefectures": [
+   "Condom",
+   "Mirande"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "31",
+   "40",
+   "47",
+   "64",
+   "65",
+   "82"
+  ]
+ },
+ {
+  "code": "33",
+  "nom": "Gironde",
+  "article": "la",
+  "region": "75",
+  "prefecture": "Bordeaux",
+  "sousPrefectures": [
+   "Arcachon",
+   "Blaye",
+   "Langon",
+   "Lesparre-Médoc",
+   "Libourne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "17",
+   "24",
+   "40",
+   "47"
+  ]
+ },
+ {
+  "code": "34",
+  "nom": "Hérault",
+  "article": "l'",
+  "region": "76",
+  "prefecture": "Montpellier",
+  "sousPrefectures": [
+   "Béziers",
+   "Lodève"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "11",
+   "12",
+   "30",
+   "81"
+  ]
+ },
+ {
+  "code": "35",
+  "nom": "Ille-et-Vilaine",
+  "article": "",
+  "region": "53",
+  "prefecture": "Rennes",
+  "sousPrefectures": [
+   "Fougères",
+   "Redon",
+   "Saint-Malo"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "22",
+   "44",
+   "49",
+   "50",
+   "53",
+   "56"
+  ]
+ },
+ {
+  "code": "36",
+  "nom": "Indre",
+  "article": "l'",
+  "region": "24",
+  "prefecture": "Châteauroux",
+  "sousPrefectures": [
+   "Issoudun",
+   "La Châtre",
+   "Le Blanc"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "18",
+   "23",
+   "37",
+   "41",
+   "86",
+   "87"
+  ]
+ },
+ {
+  "code": "37",
+  "nom": "Indre-et-Loire",
+  "article": "",
+  "region": "24",
+  "prefecture": "Tours",
+  "sousPrefectures": [
+   "Chinon",
+   "Loches"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "36",
+   "41",
+   "49",
+   "72",
+   "86"
+  ]
+ },
+ {
+  "code": "38",
+  "nom": "Isère",
+  "article": "l'",
+  "region": "84",
+  "prefecture": "Grenoble",
+  "sousPrefectures": [
+   "La Tour-du-Pin",
+   "Vienne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "01",
+   "05",
+   "07",
+   "26",
+   "42",
+   "69",
+   "73"
+  ]
+ },
+ {
+  "code": "39",
+  "nom": "Jura",
+  "article": "le",
+  "region": "27",
+  "prefecture": "Lons-le-Saunier",
+  "sousPrefectures": [
+   "Dole",
+   "Saint-Claude"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "01",
+   "21",
+   "25",
+   "70",
+   "71"
+  ]
+ },
+ {
+  "code": "40",
+  "nom": "Landes",
+  "article": "les",
+  "region": "75",
+  "prefecture": "Mont-de-Marsan",
+  "sousPrefectures": [
+   "Dax"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "32",
+   "33",
+   "47",
+   "64"
+  ]
+ },
+ {
+  "code": "41",
+  "nom": "Loir-et-Cher",
+  "article": "le",
+  "region": "24",
+  "prefecture": "Blois",
+  "sousPrefectures": [
+   "Romorantin-Lanthenay",
+   "Vendôme"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "18",
+   "28",
+   "36",
+   "37",
+   "45",
+   "72"
+  ]
+ },
+ {
+  "code": "42",
+  "nom": "Loire",
+  "article": "la",
+  "region": "84",
+  "prefecture": "Saint-Étienne",
+  "sousPrefectures": [
+   "Montbrison",
+   "Roanne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "03",
+   "07",
+   "38",
+   "43",
+   "63",
+   "69",
+   "71"
+  ]
+ },
+ {
+  "code": "43",
+  "nom": "Haute-Loire",
+  "article": "la",
+  "region": "84",
+  "prefecture": "Le Puy-en-Velay",
+  "sousPrefectures": [
+   "Brioude",
+   "Yssingeaux"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "07",
+   "15",
+   "42",
+   "48",
+   "63"
+  ]
+ },
+ {
+  "code": "44",
+  "nom": "Loire-Atlantique",
+  "article": "la",
+  "region": "52",
+  "prefecture": "Nantes",
+  "sousPrefectures": [
+   "Châteaubriant",
+   "Saint-Nazaire"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "35",
+   "49",
+   "56",
+   "85"
+  ]
+ },
+ {
+  "code": "45",
+  "nom": "Loiret",
+  "article": "le",
+  "region": "24",
+  "prefecture": "Orléans",
+  "sousPrefectures": [
+   "Montargis",
+   "Pithiviers"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "18",
+   "28",
+   "41",
+   "58",
+   "77",
+   "89",
+   "91"
+  ]
+ },
+ {
+  "code": "46",
+  "nom": "Lot",
+  "article": "le",
+  "region": "76",
+  "prefecture": "Cahors",
+  "sousPrefectures": [
+   "Figeac",
+   "Gourdon"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "12",
+   "15",
+   "19",
+   "24",
+   "47",
+   "82"
+  ]
+ },
+ {
+  "code": "47",
+  "nom": "Lot-et-Garonne",
+  "article": "le",
+  "region": "75",
+  "prefecture": "Agen",
+  "sousPrefectures": [
+   "Marmande",
+   "Nérac",
+   "Villeneuve-sur-Lot"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "24",
+   "32",
+   "33",
+   "40",
+   "46",
+   "82"
+  ]
+ },
+ {
+  "code": "48",
+  "nom": "Lozère",
+  "article": "la",
+  "region": "76",
+  "prefecture": "Mende",
+  "sousPrefectures": [
+   "Florac Trois Rivières"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "07",
+   "12",
+   "15",
+   "30",
+   "43"
+  ]
+ },
+ {
+  "code": "49",
+  "nom": "Maine-et-Loire",
+  "article": "",
+  "region": "52",
+  "prefecture": "Angers",
+  "sousPrefectures": [
+   "Cholet",
+   "Saumur",
+   "Segré-en-Anjou Bleu"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "35",
+   "37",
+   "44",
+   "53",
+   "72",
+   "79",
+   "85",
+   "86"
+  ]
+ },
+ {
+  "code": "50",
+  "nom": "Manche",
+  "article": "la",
+  "region": "28",
+  "prefecture": "Saint-Lô",
+  "sousPrefectures": [
+   "Avranches",
+   "Cherbourg-en-Cotentin",
+   "Coutances"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "14",
+   "35",
+   "53",
+   "61"
+  ]
+ },
+ {
+  "code": "51",
+  "nom": "Marne",
+  "article": "la",
+  "region": "44",
+  "prefecture": "Châlons-en-Champagne",
+  "sousPrefectures": [
+   "Épernay",
+   "Reims",
+   "Vitry-le-François"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "02",
+   "08",
+   "10",
+   "52",
+   "55",
+   "77"
+  ]
+ },
+ {
+  "code": "52",
+  "nom": "Haute-Marne",
+  "article": "la",
+  "region": "44",
+  "prefecture": "Chaumont",
+  "sousPrefectures": [
+   "Langres",
+   "Saint-Dizier"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "10",
+   "21",
+   "51",
+   "55",
+   "70",
+   "88"
+  ]
+ },
+ {
+  "code": "53",
+  "nom": "Mayenne",
+  "article": "la",
+  "region": "52",
+  "prefecture": "Laval",
+  "sousPrefectures": [
+   "Château-Gontier-sur-Mayenne",
+   "Mayenne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "35",
+   "49",
+   "50",
+   "61",
+   "72"
+  ]
+ },
+ {
+  "code": "54",
+  "nom": "Meurthe-et-Moselle",
+  "article": "",
+  "region": "44",
+  "prefecture": "Nancy",
+  "sousPrefectures": [
+   "Lunéville",
+   "Toul",
+   "Val de Briey"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "55",
+   "57",
+   "67",
+   "88"
+  ]
+ },
+ {
+  "code": "55",
+  "nom": "Meuse",
+  "article": "la",
+  "region": "44",
+  "prefecture": "Bar-le-Duc",
+  "sousPrefectures": [
+   "Commercy",
+   "Verdun"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "08",
+   "51",
+   "52",
+   "54",
+   "88"
+  ]
+ },
+ {
+  "code": "56",
+  "nom": "Morbihan",
+  "article": "le",
+  "region": "53",
+  "prefecture": "Vannes",
+  "sousPrefectures": [
+   "Lorient",
+   "Pontivy"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "22",
+   "29",
+   "35",
+   "44"
+  ]
+ },
+ {
+  "code": "57",
+  "nom": "Moselle",
+  "article": "la",
+  "region": "44",
+  "prefecture": "Metz",
+  "sousPrefectures": [
+   "Forbach",
+   "Sarrebourg",
+   "Sarreguemines",
+   "Thionville"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "54",
+   "67"
+  ]
+ },
+ {
+  "code": "58",
+  "nom": "Nièvre",
+  "article": "la",
+  "region": "27",
+  "prefecture": "Nevers",
+  "sousPrefectures": [
+   "Château-Chinon (Ville)",
+   "Clamecy",
+   "Cosne-Cours-sur-Loire"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "03",
+   "18",
+   "21",
+   "45",
+   "71",
+   "89"
+  ]
+ },
+ {
+  "code": "59",
+  "nom": "Nord",
+  "article": "le",
+  "region": "32",
+  "prefecture": "Lille",
+  "sousPrefectures": [
+   "Avesnes-sur-Helpe",
+   "Cambrai",
+   "Douai",
+   "Dunkerque",
+   "Valenciennes"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "02",
+   "62",
+   "80"
+  ]
+ },
+ {
+  "code": "60",
+  "nom": "Oise",
+  "article": "l'",
+  "region": "32",
+  "prefecture": "Beauvais",
+  "sousPrefectures": [
+   "Clermont",
+   "Compiègne",
+   "Senlis"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "02",
+   "27",
+   "76",
+   "77",
+   "80",
+   "95"
+  ]
+ },
+ {
+  "code": "61",
+  "nom": "Orne",
+  "article": "l'",
+  "region": "28",
+  "prefecture": "Alençon",
+  "sousPrefectures": [
+   "Argentan",
+   "Mortagne-au-Perche"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "14",
+   "27",
+   "28",
+   "50",
+   "53",
+   "72"
+  ]
+ },
+ {
+  "code": "62",
+  "nom": "Pas-de-Calais",
+  "article": "le",
+  "region": "32",
+  "prefecture": "Arras",
+  "sousPrefectures": [
+   "Béthune",
+   "Boulogne-sur-Mer",
+   "Calais",
+   "Lens",
+   "Montreuil-sur-Mer",
+   "Saint-Omer"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "59",
+   "80"
+  ]
+ },
+ {
+  "code": "63",
+  "nom": "Puy-de-Dôme",
+  "article": "le",
+  "region": "84",
+  "prefecture": "Clermont-Ferrand",
+  "sousPrefectures": [
+   "Ambert",
+   "Issoire",
+   "Riom",
+   "Thiers"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "03",
+   "15",
+   "19",
+   "23",
+   "42",
+   "43"
+  ]
+ },
+ {
+  "code": "64",
+  "nom": "Pyrénées-Atlantiques",
+  "article": "les",
+  "region": "75",
+  "prefecture": "Pau",
+  "sousPrefectures": [
+   "Bayonne",
+   "Oloron-Sainte-Marie"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "32",
+   "40",
+   "65"
+  ]
+ },
+ {
+  "code": "65",
+  "nom": "Hautes-Pyrénées",
+  "article": "les",
+  "region": "76",
+  "prefecture": "Tarbes",
+  "sousPrefectures": [
+   "Argelès-Gazost",
+   "Bagnères-de-Bigorre"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "31",
+   "32",
+   "64"
+  ]
+ },
+ {
+  "code": "66",
+  "nom": "Pyrénées-Orientales",
+  "article": "les",
+  "region": "76",
+  "prefecture": "Perpignan",
+  "sousPrefectures": [
+   "Céret",
+   "Prades"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "09",
+   "11"
+  ]
+ },
+ {
+  "code": "67",
+  "nom": "Bas-Rhin",
+  "article": "le",
+  "region": "44",
+  "prefecture": "Strasbourg",
+  "sousPrefectures": [
+   "Haguenau",
+   "Molsheim",
+   "Saverne",
+   "Sélestat"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "54",
+   "57",
+   "68",
+   "88"
+  ]
+ },
+ {
+  "code": "68",
+  "nom": "Haut-Rhin",
+  "article": "le",
+  "region": "44",
+  "prefecture": "Colmar",
+  "sousPrefectures": [
+   "Altkirch",
+   "Mulhouse",
+   "Thann"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "67",
+   "88",
+   "90"
+  ]
+ },
+ {
+  "code": "69",
+  "nom": "Rhône",
+  "article": "le",
+  "region": "84",
+  "prefecture": "Lyon",
+  "sousPrefectures": [
+   "Villefranche-sur-Saône"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "01",
+   "38",
+   "42",
+   "71"
+  ]
+ },
+ {
+  "code": "70",
+  "nom": "Haute-Saône",
+  "article": "la",
+  "region": "27",
+  "prefecture": "Vesoul",
+  "sousPrefectures": [
+   "Lure"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "21",
+   "25",
+   "39",
+   "52",
+   "88",
+   "90"
+  ]
+ },
+ {
+  "code": "71",
+  "nom": "Saône-et-Loire",
+  "article": "",
+  "region": "27",
+  "prefecture": "Mâcon",
+  "sousPrefectures": [
+   "Autun",
+   "Chalon-sur-Saône",
+   "Charolles",
+   "Louhans"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "01",
+   "03",
+   "21",
+   "39",
+   "42",
+   "58",
+   "69"
+  ]
+ },
+ {
+  "code": "72",
+  "nom": "Sarthe",
+  "article": "la",
+  "region": "52",
+  "prefecture": "Le Mans",
+  "sousPrefectures": [
+   "La Flèche",
+   "Mamers"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "28",
+   "37",
+   "41",
+   "49",
+   "53",
+   "61"
+  ]
+ },
+ {
+  "code": "73",
+  "nom": "Savoie",
+  "article": "la",
+  "region": "84",
+  "prefecture": "Chambéry",
+  "sousPrefectures": [
+   "Albertville",
+   "Saint-Jean-de-Maurienne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "01",
+   "05",
+   "38",
+   "74"
+  ]
+ },
+ {
+  "code": "74",
+  "nom": "Haute-Savoie",
+  "article": "la",
+  "region": "84",
+  "prefecture": "Annecy",
+  "sousPrefectures": [
+   "Bonneville",
+   "Saint-Julien-en-Genevois",
+   "Thonon-les-Bains"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "01",
+   "73"
+  ]
+ },
+ {
+  "code": "75",
+  "nom": "Paris",
+  "article": "",
+  "region": "11",
+  "prefecture": "Paris",
+  "sousPrefectures": [],
+  "outreMer": false,
+  "limitrophes": [
+   "92",
+   "93",
+   "94"
+  ]
+ },
+ {
+  "code": "76",
+  "nom": "Seine-Maritime",
+  "article": "la",
+  "region": "28",
+  "prefecture": "Rouen",
+  "sousPrefectures": [
+   "Dieppe",
+   "Le Havre"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "27",
+   "60",
+   "80"
+  ]
+ },
+ {
+  "code": "77",
+  "nom": "Seine-et-Marne",
+  "article": "",
+  "region": "11",
+  "prefecture": "Melun",
+  "sousPrefectures": [
+   "Fontainebleau",
+   "Meaux",
+   "Provins",
+   "Torcy"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "02",
+   "10",
+   "45",
+   "51",
+   "60",
+   "89",
+   "91",
+   "93",
+   "94",
+   "95"
+  ]
+ },
+ {
+  "code": "78",
+  "nom": "Yvelines",
+  "article": "les",
+  "region": "11",
+  "prefecture": "Versailles",
+  "sousPrefectures": [
+   "Mantes-la-Jolie",
+   "Rambouillet",
+   "Saint-Germain-en-Laye"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "27",
+   "28",
+   "91",
+   "92",
+   "95"
+  ]
+ },
+ {
+  "code": "79",
+  "nom": "Deux-Sèvres",
+  "article": "les",
+  "region": "75",
+  "prefecture": "Niort",
+  "sousPrefectures": [
+   "Bressuire",
+   "Parthenay"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "16",
+   "17",
+   "49",
+   "85",
+   "86"
+  ]
+ },
+ {
+  "code": "80",
+  "nom": "Somme",
+  "article": "la",
+  "region": "32",
+  "prefecture": "Amiens",
+  "sousPrefectures": [
+   "Abbeville",
+   "Montdidier",
+   "Péronne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "02",
+   "59",
+   "60",
+   "62",
+   "76"
+  ]
+ },
+ {
+  "code": "81",
+  "nom": "Tarn",
+  "article": "le",
+  "region": "76",
+  "prefecture": "Albi",
+  "sousPrefectures": [
+   "Castres"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "11",
+   "12",
+   "31",
+   "34",
+   "82"
+  ]
+ },
+ {
+  "code": "82",
+  "nom": "Tarn-et-Garonne",
+  "article": "le",
+  "region": "76",
+  "prefecture": "Montauban",
+  "sousPrefectures": [
+   "Castelsarrasin"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "12",
+   "31",
+   "32",
+   "46",
+   "47",
+   "81"
+  ]
+ },
+ {
+  "code": "83",
+  "nom": "Var",
+  "article": "le",
+  "region": "93",
+  "prefecture": "Toulon",
+  "sousPrefectures": [
+   "Brignoles",
+   "Draguignan"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "04",
+   "06",
+   "13",
+   "84"
+  ]
+ },
+ {
+  "code": "84",
+  "nom": "Vaucluse",
+  "article": "le",
+  "region": "93",
+  "prefecture": "Avignon",
+  "sousPrefectures": [
+   "Apt",
+   "Carpentras"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "04",
+   "07",
+   "13",
+   "26",
+   "30",
+   "83"
+  ]
+ },
+ {
+  "code": "85",
+  "nom": "Vendée",
+  "article": "la",
+  "region": "52",
+  "prefecture": "La Roche-sur-Yon",
+  "sousPrefectures": [
+   "Fontenay-le-Comte",
+   "Les Sables-d'Olonne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "17",
+   "44",
+   "49",
+   "79"
+  ]
+ },
+ {
+  "code": "86",
+  "nom": "Vienne",
+  "article": "la",
+  "region": "75",
+  "prefecture": "Poitiers",
+  "sousPrefectures": [
+   "Châtellerault",
+   "Montmorillon"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "16",
+   "36",
+   "37",
+   "49",
+   "79",
+   "87"
+  ]
+ },
+ {
+  "code": "87",
+  "nom": "Haute-Vienne",
+  "article": "la",
+  "region": "75",
+  "prefecture": "Limoges",
+  "sousPrefectures": [
+   "Bellac",
+   "Rochechouart"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "16",
+   "19",
+   "23",
+   "24",
+   "36",
+   "86"
+  ]
+ },
+ {
+  "code": "88",
+  "nom": "Vosges",
+  "article": "les",
+  "region": "44",
+  "prefecture": "Épinal",
+  "sousPrefectures": [
+   "Neufchâteau",
+   "Saint-Dié-des-Vosges"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "52",
+   "54",
+   "55",
+   "67",
+   "68",
+   "70",
+   "90"
+  ]
+ },
+ {
+  "code": "89",
+  "nom": "Yonne",
+  "article": "l'",
+  "region": "27",
+  "prefecture": "Auxerre",
+  "sousPrefectures": [
+   "Avallon",
+   "Sens"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "10",
+   "21",
+   "45",
+   "58",
+   "77"
+  ]
+ },
+ {
+  "code": "90",
+  "nom": "Territoire de Belfort",
+  "article": "le",
+  "region": "27",
+  "prefecture": "Belfort",
+  "sousPrefectures": [],
+  "outreMer": false,
+  "limitrophes": [
+   "25",
+   "68",
+   "70",
+   "88"
+  ]
+ },
+ {
+  "code": "91",
+  "nom": "Essonne",
+  "article": "l'",
+  "region": "11",
+  "prefecture": "Évry-Courcouronnes",
+  "sousPrefectures": [
+   "Étampes",
+   "Palaiseau"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "28",
+   "45",
+   "77",
+   "78",
+   "92",
+   "94"
+  ]
+ },
+ {
+  "code": "92",
+  "nom": "Hauts-de-Seine",
+  "article": "les",
+  "region": "11",
+  "prefecture": "Nanterre",
+  "sousPrefectures": [
+   "Antony",
+   "Boulogne-Billancourt"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "75",
+   "78",
+   "91",
+   "93",
+   "94",
+   "95"
+  ]
+ },
+ {
+  "code": "93",
+  "nom": "Seine-Saint-Denis",
+  "article": "la",
+  "region": "11",
+  "prefecture": "Bobigny",
+  "sousPrefectures": [
+   "Le Raincy",
+   "Saint-Denis"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "75",
+   "77",
+   "92",
+   "94",
+   "95"
+  ]
+ },
+ {
+  "code": "94",
+  "nom": "Val-de-Marne",
+  "article": "le",
+  "region": "11",
+  "prefecture": "Créteil",
+  "sousPrefectures": [
+   "L'Haÿ-les-Roses",
+   "Nogent-sur-Marne"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "75",
+   "77",
+   "91",
+   "92",
+   "93"
+  ]
+ },
+ {
+  "code": "95",
+  "nom": "Val-d'Oise",
+  "article": "le",
+  "region": "11",
+  "prefecture": "Pontoise",
+  "sousPrefectures": [
+   "Argenteuil",
+   "Sarcelles"
+  ],
+  "outreMer": false,
+  "limitrophes": [
+   "27",
+   "60",
+   "77",
+   "78",
+   "92",
+   "93"
+  ]
+ },
+ {
+  "code": "971",
+  "nom": "Guadeloupe",
+  "article": "la",
+  "region": "01",
+  "prefecture": "Basse-Terre",
+  "sousPrefectures": [
+   "Pointe-à-Pitre"
+  ],
+  "outreMer": true,
+  "limitrophes": []
+ },
+ {
+  "code": "972",
+  "nom": "Martinique",
+  "article": "la",
+  "region": "02",
+  "prefecture": "Fort-de-France",
+  "sousPrefectures": [
+   "La Trinité",
+   "Le Marin",
+   "Saint-Pierre"
+  ],
+  "outreMer": true,
+  "limitrophes": []
+ },
+ {
+  "code": "973",
+  "nom": "Guyane",
+  "article": "la",
+  "region": "03",
+  "prefecture": "Cayenne",
+  "sousPrefectures": [
+   "Saint-Georges",
+   "Saint-Laurent-du-Maroni"
+  ],
+  "outreMer": true,
+  "limitrophes": []
+ },
+ {
+  "code": "974",
+  "nom": "La Réunion",
+  "article": "",
+  "region": "04",
+  "prefecture": "Saint-Denis",
+  "sousPrefectures": [
+   "Saint-Benoît",
+   "Saint-Paul",
+   "Saint-Pierre"
+  ],
+  "outreMer": true,
+  "limitrophes": []
+ },
+ {
+  "code": "976",
+  "nom": "Mayotte",
+  "article": "",
+  "region": "06",
+  "prefecture": "Mamoudzou",
+  "sousPrefectures": [],
+  "outreMer": true,
+  "limitrophes": []
+ }
+]
