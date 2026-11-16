@@ -1,4 +1,5 @@
 <script lang="ts">
+  import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
   import { onDestroy } from "svelte";
   import LiveRound from "../lib/LiveRound.svelte";
   import { live } from "../lib/socket.svelte.ts";
@@ -60,6 +61,7 @@
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
     <span class="riso logo" data-t="HEXA">HEXA</span>
     {#if info}<span class="chip">Défi n° {info.number}</span>{/if}
+    <FullscreenButton />
     {#if started && !outcome}<span class="score tabnum">{total} pts</span>{/if}
   </header>
 

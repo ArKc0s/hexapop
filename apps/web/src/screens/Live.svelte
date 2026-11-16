@@ -1,4 +1,5 @@
 <script lang="ts">
+  import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
   import { onDestroy } from "svelte";
   import { DUEL_HP, REACTIONS, TEAM_LIVES, type Rewards } from "@hexa/game";
   import LiveRound from "../lib/LiveRound.svelte";
@@ -75,6 +76,7 @@
       {#if me}<span class="score tabnum">{me.score} pts · {myRank}{myRank === 1 ? "er" : "e"}</span>{/if}
     {/if}
     {#if live.status !== "open"}<span class="chip warn">Reconnexion…</span>{/if}
+    <FullscreenButton />
   </header>
 
   {#if live.ranking && live.teamEnd}

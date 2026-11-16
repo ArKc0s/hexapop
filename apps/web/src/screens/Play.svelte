@@ -1,4 +1,5 @@
 <script lang="ts">
+  import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
   import { combos, grade, makeGame, type Answer, type RoundResult } from "@hexa/game";
   import Round from "../lib/Round.svelte";
   import type { Mark } from "../lib/Map.svelte";
@@ -61,6 +62,7 @@
       {/if}
     </div>
     {#if comboNow >= 2}<span class="combo" aria-label="Combo">×{comboNow}</span>{/if}
+    <FullscreenButton />
     <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
   </header>
   {#key i}

@@ -10,6 +10,7 @@
   import { session } from "../lib/api.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
   import { rankFor } from "../lib/rank.ts";
+  import { install } from "../lib/install.svelte.ts";
 
   const all = DEPARTEMENTS.map((d) => d.code);
   const p = $derived(profile.data);
@@ -71,6 +72,18 @@
     </div>
 
     <div class="hello"><Mascot mood="happy" size={66} /><p class="bubble">{hello}</p></div>
+
+    {#if install.suggest}
+      <div class="card install">
+        <div><b>Hexa en plein écran</b><p>Ajoute-le à ton écran d'accueil : il s'ouvrira comme une appli, sans barre de navigateur.</p>
+          {#if !install.canPrompt && install.ios}<p class="how">Touche <span class="share" aria-label="Partager"><svg width="14" height="16" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 11V1M3.5 4.5 7 1l3.5 3.5M4 7H2v10h10V7h-2" /></svg></span> <b>Partager</b>, puis <b>Sur l'écran d'accueil</b>.</p>{/if}
+        </div>
+        <div class="ia">
+          {#if install.canPrompt}<button class="btn small" onclick={() => install.prompt()}>Installer</button>{/if}
+          <button class="link" onclick={() => install.dismiss()}>Plus tard</button>
+        </div>
+      </div>
+    {/if}
 
     <div class="next">
       <button class="btn big wide" onclick={play}>Jouer <Icon name="play" size={20} /></button>
@@ -163,6 +176,12 @@
   footer { grid-column: 1 / -1; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--soft); padding-top: 14px; }
   footer .link { font-weight: 600; color: var(--soft); }
   .acc.mob { display: none; }
+  .install { display: flex; gap: 12px; align-items: center; justify-content: space-between; border: 2px dashed var(--line); }
+  .install b { font-weight: 900; }
+  .install p { font-size: 14px; color: var(--soft); font-weight: 600; }
+  .install .how { color: var(--ink); margin-top: 4px; }
+  .install .share { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--bg); vertical-align: -5px; }
+  .install .ia { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
   @media (max-width: 860px) {
     .acc.mob { display: flex; justify-content: flex-end; margin-top: -8px; }
     .acc.desk { display: none; }
