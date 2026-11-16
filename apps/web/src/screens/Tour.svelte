@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DEP, OM_UNLOCK_STARS, OUTRE_MER, TOUR, TOUR_REGIONS, mastery, nextTourRegion, randomSeed, totalStars, tourRegionOf, tourState, DEPARTEMENTS } from "@hexa/game";
+  import { DEP, OM_UNLOCK_STARS, OUTRE_MER, TOUR, TOUR_REGIONS, mastery, nextTourRegion, randomSeed, totalStars, tourRegionOf, tourState, DEPARTEMENTS, medalOf } from "@hexa/game";
   import Map from "../lib/Map.svelte";
   import Stars from "../lib/ui/Stars.svelte";
   import Vignette from "../lib/ui/Vignette.svelte";
@@ -83,7 +83,7 @@
               <li class:got={stars >= 2}><Icon name="star" size={16} /> Sans aucune faute</li>
               <li class:got={stars >= 3}><Icon name="star" size={16} /> En expert, 90 % ou plus (sous-préfectures et voisins)</li>
             </ul>
-            <div class="plates">{#each cur.deps as c (c)}<Vignette code={c} tier={p.tiers[c] ?? 0} size="s" />{/each}</div>
+            <div class="plates">{#each cur.deps as c (c)}<Vignette code={c} tier={medalOf(p.know ?? {}, c)} size="s" />{/each}</div>
             <div class="seg" role="group" aria-label="Façon de répondre">
               <button class:on={input === "choix"} onclick={() => (input = "choix")}>4 propositions</button>
               <button class:on={input === "libre"} onclick={() => (input = "libre")}>Au clavier</button>

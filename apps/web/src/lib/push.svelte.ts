@@ -1,9 +1,8 @@
 // Notifications : abonnement de l'appareil, préférences, signalement d'activité.
-import { DEPARTEMENTS, isFading, liveStreak } from "@hexa/game";
+import { fadingCodes, liveStreak } from "@hexa/game";
 import { api } from "./api.svelte.ts";
 import { install } from "./install.svelte.ts";
 import { profile } from "./profile.svelte.ts";
-import { progress } from "./progress.svelte.ts";
 
 export interface PushPrefs { daily: boolean; hour: number; streak: boolean; comeback: boolean }
 const PREFS_KEY = "hexa.push.prefs", DISMISS_KEY = "hexa.push.dismissed", ASKED_KEY = "hexa.push.asked";
@@ -73,7 +72,7 @@ class Push {
   reportActivity() {
     if (!this.endpoint) return;
     const p = profile.data, now = Date.now();
-    const fading = DEPARTEMENTS.filter((d) => (p.tiers[d.code] ?? 0) > 0 && isFading(progress.data, d.code, now)).length;
+    const fading = fadingCodes(p.know ?? {}, now).length;
     if (!p.streak.last) return;
     api("POST", "/push/activity", { endpoint: this.endpoint, day: p.streak.last, streak: liveStreak(p, now), fading }).catch(() => {});
   }

@@ -1,10 +1,17 @@
 // Profil de jeu (XP, série, quêtes, étoiles, album, badges) : stocké dans le navigateur,
 // fusionné avec le compte quand on est connecté.
-import { applyGame, emptyProfile, sanitizeProfile, type GameReport, type Profile, type Rewards } from "@hexa/game";
+import { applyGame, emptyProfile, migrateKnowledge, sanitizeProfile, type GameReport, type Profile, type Progress, type Rewards } from "@hexa/game";
 
 const KEY = "hexa.profile.v1";
+/** Profils d'avant les étoiles (v1.4) : on reprend la révision et les vignettes, personne ne perd rien. */
+function withKnowledge(p: Profile): Profile {
+  if (p.know) return p;
+  let old: Progress = {};
+  try { old = JSON.parse(localStorage.getItem("hexa.progress.v1") ?? "{}"); } catch { /* rien à reprendre */ }
+  return { ...p, know: migrateKnowledge(old, p.tiers, Date.now()) };
+}
 function load(): Profile {
-  try { return sanitizeProfile(JSON.parse(localStorage.getItem(KEY) ?? "null")); } catch { return emptyProfile(); }
+  try { return withKnowledge(sanitizeProfile(JSON.parse(localStorage.getItem(KEY) ?? "null"))); } catch { return withKnowledge(emptyProfile()); }
 }
 
 class ProfileStore {
@@ -36,7 +43,7 @@ class ProfileStore {
 
   /** Remplace par la version fusionnée du serveur. */
   replace(p: Profile) {
-    this.data = p;
+    this.data = withKnowledge(p);
     this.save();
   }
 }

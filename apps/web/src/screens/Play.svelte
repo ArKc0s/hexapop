@@ -1,6 +1,6 @@
 <script lang="ts">
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
-  import { combos, grade, makeGame, type Answer, type InputMode, type RoundResult } from "@hexa/game";
+  import { combos, grade, makeGame, type Answer, type Field, type InputMode, type RoundPlay, type RoundResult } from "@hexa/game";
   import Round from "../lib/Round.svelte";
   import type { Mark } from "../lib/Map.svelte";
   import Icon from "../lib/ui/Icon.svelte";
@@ -32,14 +32,19 @@
     try { localStorage.setItem(MODE_KEY, m); } catch { /* navigation privée */ }
   }
 
+  /** Pour les étoiles : l'indice, les champs, et ceux répondus avec de l'aide (propositions, carte à 4 choix). */
+  const rounds: RoundPlay[] = [];
   function submit(a: Answer) {
     if (answerMode === "choix") usedChoices = true;
+    const helped = play.config.switchable ? answerMode === "choix" : play.config.input === "choix";
+    const aided = helped ? q.fields.filter((f: Field) => (f === "carte" ? !!q.mapChoices : !!q.choices?.[f as "nom"])) : [];
+    rounds.push({ hint: q.hint, fields: q.fields, aided });
     result = grade(q, a);
     results = [...results, result];
   }
   function finish() {
     if (play.learn) progress.record(results);
-    const rewards = profile.record({ mode: play.mode, level: play.config.level, input: play.config.switchable ? (usedChoices ? "choix" : "libre") : play.config.input, results, region: play.region, now: Date.now() });
+    const rewards = profile.record({ mode: play.mode, level: play.config.level, input: play.config.switchable ? (usedChoices ? "choix" : "libre") : play.config.input, results, region: play.region, now: Date.now(), learn: play.learn, rounds });
     nav.go({ name: "results", play, questions, results, rewards });
   }
   function next() {

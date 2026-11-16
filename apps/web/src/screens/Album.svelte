@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BADGES, DEP, MAX_TIER_POINTS, TOUR_REGIONS, platesOwned, tierPoints } from "@hexa/game";
+  import { BADGES, TOUR_REGIONS, medalCounts, medalOf, starsOf, tarnished } from "@hexa/game";
   import Vignette from "../lib/ui/Vignette.svelte";
   import Icon from "../lib/ui/Icon.svelte";
   import { nav } from "../lib/nav.svelte.ts";
@@ -11,8 +11,12 @@
   let region = $state<string | null>(null);
   const p = $derived(profile.data);
   const shown = $derived(TOUR_REGIONS.filter((r) => !region || r.code === region));
-  const got = (codes: string[]) => codes.reduce((n, c) => n + (p.tiers[c] ?? 0), 0);
+  const know = $derived(p.know ?? {});
+  const got = (codes: string[]) => codes.reduce((n, c) => n + starsOf(know, c), 0);
+  const counts = $derived(medalCounts(know));
+  const owned = $derived(counts[1] + counts[2] + counts[3]);
   const TIER = ["À découvrir", "Bronze", "Argent", "Or"];
+  const now = Date.now();
   const fmt = (t: number) => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 </script>
 
@@ -24,8 +28,8 @@
 
   {#if cur === "plaques"}
     <div class="top">
-      <div><span class="k">Ton album · {platesOwned(p)} départements</span><div class="riso big" data-t="{tierPoints(p)} / {MAX_TIER_POINTS}">{tierPoints(p)} / {MAX_TIER_POINTS}</div></div>
-      <p>Réussis un département sans faute pour gagner sa vignette : <b>bronze</b> avec 4 propositions, <b>argent</b> au clavier, <b>or</b> en expert. Celles d'outre-mer sont holographiques.</p>
+      <div><span class="k">Ton album · {counts[1]} bronze · {counts[2]} argent · {counts[3]} or</span><div class="riso big" data-t="{owned} / 101">{owned} / 101</div></div>
+      <p>Chaque département a 3 étoiles : le placer, son numéro, sa préfecture, gagnées en répondant juste sans aide. <b>Bronze</b> avec les 3, <b>argent</b> quand tu les as retenues sur plusieurs jours, <b>or</b> avec en plus ses sous-préfectures et ses voisins. Une médaille se ternit si tu ne la révises pas.</p>
     </div>
     <div class="tabs">
       <button class="chip" class:on={!region} onclick={() => (region = null)}>Toutes</button>
@@ -36,8 +40,12 @@
         <h2>{r.nom} <span>{got(r.deps)}/{r.deps.length * 3}</span></h2>
         <div class="grid">
           {#each r.deps as c (c)}
-            {@const tier = p.tiers[c] ?? 0}
-            <div class="st" class:miss={!tier}><Vignette code={c} {tier} />{#if tier}<em class="tr t{tier}">{TIER[tier]}</em>{/if}</div>
+            {@const tier = medalOf(know, c)}
+            {@const s = starsOf(know, c)}
+            <div class="st" class:miss={!tier} class:dull={tier > 0 && tarnished(know, c, now)}><Vignette code={c} {tier} />
+              {#if tier}<em class="tr t{tier}">{TIER[tier]}{tarnished(know, c, now) ? " · à réviser" : ""}</em>
+              {:else}<span class="mini" aria-label="{s} étoile{s > 1 ? 's' : ''} sur 3">{#each [0, 1, 2] as k (k)}<i class:on={k < s}>★</i>{/each}</span>{/if}
+            </div>
           {/each}
         </div>
       </section>
@@ -73,6 +81,10 @@
 
   .st small { font-weight: 700; color: var(--soft); font-size: 13px; }
   .st.miss { background: rgba(255, 255, 255, .45); box-shadow: none; }
+  .st.dull :global(.art) { filter: saturate(.35); }
+  .mini { font-size: 16px; letter-spacing: 2px; color: #d7cfbe; }
+  .mini i { font-style: normal; }
+  .mini i.on { color: var(--yellow-d); }
   .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
   .bd { background: #fff; border-radius: 18px; padding: 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 4px 0 var(--line); }
   .bd > div { display: flex; flex-direction: column; gap: 2px; }

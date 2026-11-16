@@ -1,31 +1,38 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { DEPARTEMENTS, MAX_TIER_POINTS, dayKey, isFading, levelInfo, liveStreak, mastery, nextTourRegion, platesOwned, questsFor, totalStars } from "@hexa/game";
+  import { DEPARTEMENTS, MAX_STARS, PLAYER_LEVELS, dayKey, fadingCodes, knownStars, levelInfo, liveStreak, medalCount, medalOf, nextTourRegion, playerLevel, questsFor, starsOf, taFrance, titleFor, totalStars } from "@hexa/game";
   import Map from "../lib/Map.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
   import Icon from "../lib/ui/Icon.svelte";
   import { nav } from "../lib/nav.svelte.ts";
-  import { progress } from "../lib/progress.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { session } from "../lib/api.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
-  import { rankFor } from "../lib/rank.ts";
   import { install } from "../lib/install.svelte.ts";
 
   const all = DEPARTEMENTS.map((d) => d.code);
   const p = $derived(profile.data);
   const lvl = $derived(levelInfo(p.xp));
-  const rank = $derived(rankFor(mastery(progress.data, all)).name);
+  const know = $derived(p.know ?? {});
+  const rank = $derived(titleFor(know).name);
   const streak = $derived(liveStreak(p, Date.now()));
   const playedToday = $derived(p.streak.last === dayKey(Date.now()));
   const quests = $derived(questsFor(dayKey(Date.now())).map((q) => ({ ...q, done: Math.min(q.target, p.quests.day === dayKey(Date.now()) ? (p.quests.progress[q.id] ?? 0) : 0) })));
   const questsLeft = $derived(quests.filter((q) => q.done < q.target).length);
   const next = $derived(nextTourRegion(p));
-  // Maîtrise réelle : bronze 1, argent 2, or 3 points ; un département à réviser ne compte qu'à moitié.
-  const fading = $derived(all.filter((c) => (p.tiers[c] ?? 0) > 0 && isFading(progress.data, c, Date.now())));
-  const pct = $derived(Math.floor((all.reduce((n, c) => n + (p.tiers[c] ?? 0) * (fading.includes(c) ? 0.5 : 1), 0) / MAX_TIER_POINTS) * 100));
-  const TIER_FILL = ["", "#e6b98e", "#b4bfcd", "#f5c518"];
-  const fills = $derived(Object.fromEntries(all.filter((c) => p.tiers[c]).map((c) => [c, fading.includes(c) ? "var(--tint-ko)" : TIER_FILL[p.tiers[c]]])));
+  // « Ta France » : les étoiles (placer, numéro, préfecture) de chaque département, puis ses médailles.
+  const fading = $derived(fadingCodes(know, Date.now()));
+  const pct = $derived(taFrance(know));
+  const stars = $derived(knownStars(know));
+  const level = $derived(PLAYER_LEVELS[playerLevel(know)].nom);
+  const STAR_FILL = ["", "#dcebf8", "#b6d6f1"];
+  const MEDAL_FILL = ["", "#e6b98e", "#b4bfcd", "#f5c518"];
+  const fills = $derived(Object.fromEntries(all.flatMap((c) => {
+    const m = medalOf(know, c), s = starsOf(know, c);
+    if (!s) return [];
+    if (fading.includes(c)) return [[c, "var(--tint-ko)"]];
+    return [[c, m ? MEDAL_FILL[m] : STAR_FILL[s]]];
+  })));
 
   const hello = $derived.by(() => {
     if (!p.stats.games) return "Salut ! Moi c'est Hexa. On fait le tour de France ensemble ?";
@@ -109,7 +116,7 @@
     <nav class="menu" aria-label="Autres modes">
       <button onclick={() => nav.go({ name: "tour" })}>Tour de France <span>{totalStars(p)} ★</span></button>
       <button onclick={() => nav.go({ name: "training" })}>Entraînement</button>
-      <button onclick={() => nav.go({ name: "album" })}>Album <span>{platesOwned(p)}/101</span></button>
+      <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
       <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
       <button onclick={() => nav.go({ name: "rappels" })}>Rappels</button>
     </nav>
@@ -117,7 +124,7 @@
 
   <section class="right" aria-label="Ta France">
     <div class="rhead">
-      <div><span class="k">Ta France</span><div class="pct tabnum">{pct} %</div></div>
+      <div><span class="k">Ta France</span><div class="pct tabnum">{pct} %</div><span class="sub tabnum">{stars}/{MAX_STARS} étoiles · niveau {level}</span></div>
       <div class="acc desk">
         {#if session.me}
           <button class="back" onclick={() => nav.go({ name: "account", view: "profile" })}>{session.me.pseudo}</button>
@@ -129,7 +136,7 @@
     </div>
     <Map {fills} interactive={false} label="Ta France : maîtrise de chaque département" />
     <div class="legend">
-      <span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
+      <span><i style="background:#b6d6f1"></i>1-2 étoiles</span><span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
       <span><i style="background:var(--tint-ko)"></i>à réviser</span>
       {#if fading.length}<button class="link" onclick={() => nav.go({ name: "setup", mode: "apprendre" })}>Réviser ({fading.length})</button>{/if}
     </div>
@@ -171,6 +178,7 @@
   .right { display: flex; flex-direction: column; gap: 6px; }
   .rhead { display: flex; justify-content: space-between; align-items: flex-start; }
   .pct { font-family: var(--f-pop); font-size: 44px; line-height: 1; }
+  .rhead .sub { display: block; margin-top: 4px; font-size: 13px; font-weight: 700; color: var(--soft); }
   .acc { display: flex; gap: 8px; align-items: center; }
   .snd { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; }
   .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 13px; font-weight: 700; color: var(--soft); justify-content: flex-end; }

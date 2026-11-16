@@ -45,7 +45,7 @@ test("XP, combos, plaques, badges", () => {
   const rs = [res("29", 1, 1200), res("2A", 1), res("2B", 1), res("13", 0.5), res("75", 1)];
   assert.deepEqual(combos(rs), [1, 2, 3, 0, 1]);
   const { profile, rewards } = applyGame(emptyProfile(), report({ results: rs }));
-  assert.deepEqual(rewards.newPlates.sort(), ["29", "2A", "2B", "75"].sort());
+  assert.equal(rewards.knowledge, null, "partie sans apprentissage : pas d'étoiles");
   for (const b of ["premier", "bout-du-monde", "tour-de-corse", "eclair"]) assert.ok(rewards.newBadges.includes(b), b);
   assert.ok(rewards.xp > 0 && profile.xp === rewards.xp);
   assert.equal(rewards.streak.count, 1);
@@ -75,7 +75,7 @@ test("quêtes : 3 par jour, déterministes, familles distinctes", () => {
 test("fusion et nettoyage de profils", () => {
   const a = applyGame(emptyProfile(), report({ results: [res("29", 1)] })).profile;
   const b = applyGame(emptyProfile(), report({ results: [res("13", 1), res("69", 1)] })).profile;
-  const m = mergeProfiles(a, b);
+  const m = mergeProfiles({ ...a, tiers: { "29": 1 } }, { ...b, tiers: { "13": 2, "69": 1 } });
   assert.deepEqual(Object.keys(m.tiers).sort(), ["13", "29", "69"]);
   assert.equal(m.xp, Math.max(a.xp, b.xp));
   const s = sanitizeProfile({ xp: -5, plates: ["29", "XX", 3], tiers: { "13": 7, "ZZ": 2 }, stars: { "53": 9, nope: 2 }, badges: { fake: 1, premier: 5 } });
@@ -85,16 +85,43 @@ test("fusion et nettoyage de profils", () => {
   assert.deepEqual(Object.keys(s.badges), ["premier"]);
 });
 
-test("paliers : bronze au QCM, argent au clavier, or en expert, jamais de recul", () => {
-  let { profile, rewards } = applyGame(emptyProfile(), report({ input: "choix", results: [res("29", 1)] }));
-  assert.equal(profile.tiers["29"], 1);
-  assert.deepEqual(rewards.newPlates, ["29"]);
-  ({ profile, rewards } = applyGame(profile, report({ input: "libre", results: [res("29", 1)] })));
-  assert.equal(profile.tiers["29"], 2);
-  assert.deepEqual(rewards.newPlates, []);
-  assert.deepEqual(rewards.upgrades, [{ code: "29", tier: 2 }]);
-  ({ profile } = applyGame(profile, report({ input: "choix", results: [res("29", 1)] })));
-  assert.equal(profile.tiers["29"], 2, "pas de recul");
-  ({ profile } = applyGame(profile, report({ level: "expert", input: "choix", results: [res("29", 1)] })));
-  assert.equal(profile.tiers["29"], 3);
+test("étoiles : sans aide, avec aide, médailles, fusion et reprise des anciens profils", async () => {
+  const K = await import("./knowledge.ts");
+  const R = (code: string, scores: Record<string, number>): RoundResult => ({ code, accuracy: 1, points: 0, elapsedMs: 3000, fields: Object.entries(scores).map(([field, score]) => ({ field: field as never, score, expected: "" })) });
+  // On donne le nom : placer + numéro + préfecture. Numéro en propositions (aidé), le reste au clavier / carte entière.
+  let { profile, rewards } = applyGame(emptyProfile(), report({ learn: true, results: [R("29", { carte: 1, numero: 1, prefecture: 1 })], rounds: [{ hint: "nom", fields: ["carte", "numero", "prefecture"], aided: ["numero"] }] }));
+  assert.deepEqual(rewards.knowledge!.stars.map((s) => s.facet).sort(), ["carte", "prefecture"]);
+  assert.equal(K.starsOf(profile.know!, "29"), 2);
+  assert.equal(profile.know!["29"].numero!.v, 1, "vu en propositions, sans étoile");
+  // Le numéro au clavier : 3 étoiles, médaille de bronze.
+  ({ profile, rewards } = applyGame(profile, report({ learn: true, results: [R("29", { numero: 1 })], rounds: [{ hint: "nom", fields: ["numero"], aided: [] }] })));
+  assert.deepEqual(rewards.knowledge!.medals, [{ code: "29", medal: 1 }]);
+  assert.equal(K.taFrance(profile.know!), 0, "3 étoiles sur 303 = 0 %");
+  assert.equal(K.playerLevel(profile.know!), "decouverte");
+  // Indice numéro, on demande le nom : c'est la facette numéro qui est révisée. Une erreur ne retire jamais l'étoile.
+  ({ profile } = applyGame(profile, report({ learn: true, results: [R("29", { nom: 0 })], rounds: [{ hint: "numero", fields: ["nom"], aided: [] }] })));
+  assert.equal(profile.know!["29"].numero!.b, 0);
+  assert.equal(profile.know!["29"].numero!.s, 1);
+  // Argent : boîte 4 sur les trois facettes ; or : + sous-préfectures et voisins.
+  const solid = (s: 0 | 1 = 1) => ({ b: 4, d: 0, s, v: 1 as const });
+  const k = { "29": { carte: solid(), numero: solid(), prefecture: solid() } };
+  assert.equal(K.medalOf(k, "29"), 2);
+  assert.equal(K.medalOf({ "29": { ...k["29"], sousPrefectures: solid(), limitrophes: solid() } }, "29"), 3);
+  assert.equal(K.tarnished(k, "29", 30 * 86_400_000), true, "révision très en retard : médaille ternie");
+  // Fusion : étoile gardée, révision la plus récente.
+  const m = K.mergeKnowledge({ "29": { carte: { b: 1, d: 10, s: 1, v: 1 } } }, { "29": { carte: { b: 3, d: 20, s: 0, v: 1 } } });
+  assert.deepEqual(m["29"].carte, { b: 3, d: 20, s: 1, v: 1 });
+  // Partie hors apprentissage (défi) : aucune étoile.
+  const d = applyGame(emptyProfile(), report({ mode: "daily", results: [R("13", { carte: 1 })], rounds: [{ hint: "nom", fields: ["carte"], aided: [] }] }));
+  assert.equal(d.profile.know, undefined);
+  // Reprise : boîte ≥ 4 ou vignette argent → 3 étoiles (bronze) ; vu → « vu » ; or → étoiles expert.
+  const mig = K.migrateKnowledge({ "13": { box: 5, due: 0, seen: 3, correct: 3 }, "69": { box: 1, due: 0, seen: 1, correct: 0 } }, { "75": 2, "29": 3 }, 0);
+  assert.equal(K.medalOf(mig, "13"), 1);
+  assert.equal(K.starsOf(mig, "69"), 0);
+  assert.equal(mig["69"].carte!.v, 1);
+  assert.equal(K.starsOf(mig, "75"), 3);
+  assert.equal(mig["29"].limitrophes!.s, 1);
+  // Nettoyage : codes et facettes inconnus ignorés, valeurs bornées.
+  const s = sanitizeProfile({ know: { "29": { carte: { b: 99, d: -1, s: 7 }, nope: { b: 1 } }, XX: {} } });
+  assert.deepEqual(s.know, { "29": { carte: { b: 6, d: 0, s: 1, v: 0 } } });
 });

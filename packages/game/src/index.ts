@@ -5,3 +5,4 @@ export * from "./random.ts";
 export * from "./srs.ts";
 export * from "./protocol.ts";
 export * from "./meta.ts";
+export * from "./knowledge.ts";

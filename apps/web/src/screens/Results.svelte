@@ -10,9 +10,7 @@
   import { nav, type PlayScreen } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
-  import { rankFor } from "../lib/rank.ts";
-  import { DEPARTEMENTS, mastery } from "@hexa/game";
-  import { progress } from "../lib/progress.svelte.ts";
+  import { DEPARTEMENTS, DEP, MEDAL_NAMES, taFrance, titleFor, type Facet } from "@hexa/game";
   import SaveCard from "../lib/ui/SaveCard.svelte";
   import { signup } from "../lib/signup.svelte.ts";
   import PushCard from "../lib/ui/PushCard.svelte";
@@ -29,7 +27,16 @@
 
   const before = levelInfo(r.xpBefore), after = levelInfo(r.xpBefore + r.xp);
   const levelUp = r.levelAfter > r.levelBefore;
-  const rank = rankFor(mastery(progress.data, DEPARTEMENTS.map((d) => d.code))).name;
+  const rank = titleFor(profile.data.know ?? {}).name;
+  // Étoiles gagnées, regroupées par département (« Finistère : placer, numéro »).
+  const FACET_LABEL: Record<Facet, string> = { carte: "placer", numero: "numéro", prefecture: "préfecture", sousPrefectures: "sous-préfectures", limitrophes: "voisins" };
+  const starList = (() => {
+    const by = new globalThis.Map<string, Facet[]>();
+    for (const s of r.knowledge?.stars ?? []) by.set(s.code, [...(by.get(s.code) ?? []), s.facet]);
+    return [...by].map(([code, facets]) => ({ code, facets }));
+  })();
+  const newStars = r.knowledge?.stars.length ?? 0;
+  const pctNow = taFrance(profile.data.know ?? {});
   let xpWidth = $state(before.ratio * 100);
   // Quitter l'écran avant l'invitation l'annule (elle ne doit jamais surgir pendant la partie suivante).
   let offerTimer: ReturnType<typeof setTimeout> | undefined;
@@ -39,7 +46,7 @@
     if (levelUp) setTimeout(() => (xpWidth = after.ratio * 100), 1500);
     if (r.stars && r.stars.after > r.stars.before) setTimeout(() => sound.play("star"), 300);
     // Invité : on laisse voir les récompenses, puis on propose de les garder.
-    offerTimer = setTimeout(() => signup.offer({ kind: "solo", xp: r.xp, vignettes: r.upgrades.length, firstGame: profile.data.stats.games <= 1 }), 1000);
+    offerTimer = setTimeout(() => signup.offer({ kind: "solo", xp: r.xp, stars: newStars, firstGame: profile.data.stats.games <= 1 }), 1000);
   });
 
   const quests = questsFor(dayKey(Date.now()));
@@ -82,10 +89,15 @@
       {#each r.questsDone as id (id)}
         <div class="rw"><span class="ico quest"><Icon name="check" size={24} /></span><div><span class="k">Quête du jour · +50 XP</span><b>{questLabel(id)}</b></div></div>
       {/each}
-      {#if r.upgrades.length}
-        {@const tierName = ["", "bronze", "argent", "or"][r.upgrades[0].tier]}
-        <div class="rw plates"><div><span class="k">{r.upgrades.length} vignette{r.upgrades.length > 1 ? "s" : ""} {tierName}{r.newPlates.length ? ` · ${r.newPlates.length} nouvelle${r.newPlates.length > 1 ? "s" : ""}` : ""}</span>
-          <div class="pl">{#each r.upgrades.slice(0, 8) as u (u.code)}<Vignette code={u.code} tier={u.tier} size="s" />{/each}{#if r.upgrades.length > 8}<span class="more">+{r.upgrades.length - 8}</span>{/if}</div></div></div>
+      {#if r.knowledge?.medals.length}
+        <div class="rw plates"><div><span class="k">{r.knowledge.medals.length === 1 ? "Nouvelle médaille" : `${r.knowledge.medals.length} nouvelles médailles`}</span>
+          <div class="pl">{#each r.knowledge.medals.slice(0, 8) as m (m.code)}<span class="md"><Vignette code={m.code} tier={m.medal} size="s" /><small>{MEDAL_NAMES[m.medal]}</small></span>{/each}{#if r.knowledge.medals.length > 8}<span class="more">+{r.knowledge.medals.length - 8}</span>{/if}</div></div></div>
+      {/if}
+      {#if newStars}
+        <div class="rw"><span class="ico star"><Icon name="star" size={28} /></span><div><span class="k">+{newStars} étoile{newStars > 1 ? "s" : ""} · Ta France {pctNow} %</span>
+          <ul class="sl">{#each starList.slice(0, 6) as s (s.code)}<li><b>{DEP.get(s.code)?.nom}</b> {s.facets.map((f) => FACET_LABEL[f]).join(", ")}</li>{/each}{#if starList.length > 6}<li class="more">et {starList.length - 6} autre{starList.length - 6 > 1 ? "s" : ""}</li>{/if}</ul></div></div>
+      {:else if play.learn && r.knowledge}
+        <div class="rw"><span class="ico star dim"><Icon name="star" size={28} /></span><div><span class="k">Pas de nouvelle étoile</span><small>Une étoile se gagne en répondant juste sans aide : au clavier, ou sur la carte entière.</small></div></div>
       {/if}
     </div>
 
@@ -142,6 +154,12 @@
   .badge { background: var(--yellow); box-shadow: 0 3px 0 var(--yellow-d); color: var(--ink); }
   .quest { background: var(--green); color: #fff; box-shadow: 0 3px 0 var(--green-d); }
   .pl { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .md { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+  .md small { font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  .star { background: #fff4c2; box-shadow: 0 3px 0 var(--yellow-d); }
+  .star.dim { filter: grayscale(1); opacity: .6; }
+  .sl { list-style: none; margin: 2px 0 0; padding: 0; font-size: 14px; color: var(--soft); font-weight: 600; }
+  .sl b { color: var(--ink); font-weight: 800; }
   .more { font-weight: 800; align-self: center; }
   .cta { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; }
   .review { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 12px; }

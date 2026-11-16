@@ -111,7 +111,7 @@
         {:else if !session.me}
           <p>Score pas encore classé.</p>
         {/if}
-        {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.upgrades.length ? ` · ${rewards.upgrades.length} vignette${rewards.upgrades.length > 1 ? "s" : ""} pour l'album` : ""}</p>{/if}
+        {#if rewards}<p class="xp">+{rewards.xp} XP</p>{/if}
         <button class="btn pink big" onclick={share}>{copied ? "Copié !" : "Partager"}</button>
       </div>
     </section>

@@ -2,7 +2,7 @@
 const LAST_KEY = "hexa.signup.last";
 const DAY = 86_400_000;
 
-export interface SignupReason { kind: "solo" | "daily" | "multi"; xp?: number; vignettes?: number; firstGame?: boolean }
+export interface SignupReason { kind: "solo" | "daily" | "multi"; xp?: number; stars?: number; firstGame?: boolean }
 
 class Signup {
   reason = $state<SignupReason | null>(null);
