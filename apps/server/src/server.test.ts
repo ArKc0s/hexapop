@@ -244,3 +244,65 @@ test("connexion Google : fournisseurs listés, redirection avec state, retour in
   const link = await fetch(BASE + "/api/auth/oauth/google/start?intent=link", { redirect: "manual" });
   assert.equal(link.headers.get("location"), "/#oauth-erreur=connexion-requise");
 });
+
+function perfectFor(q: QuestionPayload) {
+  const d = DEP.get(q.code)!;
+  return { ...perfect(q), sousPrefectures: d.sousPrefectures, limitrophes: d.limitrophes };
+}
+
+test("handicap : niveaux par joueur, mêmes départements, points comparables", { timeout: 60_000 }, async () => {
+  const a = new Client(), b = new Client();
+  await Promise.all([a.open(), b.open()]);
+  a.send({ t: "hello", v: PROTOCOL_VERSION, name: "Fort" }); b.send({ t: "hello", v: PROTOCOL_VERSION, name: "Debutante" });
+  const wa = await a.wait("welcome"); const wb = await b.wait("welcome");
+  a.send({ t: "create", kind: "duel", settings: { rounds: 3 } });
+  const room = await a.wait("room");
+  b.send({ t: "join", room: room.room });
+  await a.wait("room", (m) => m.players.length === 2);
+  b.send({ t: "level", player: wa.you, level: "expert" });
+  assert.equal((await b.wait("error")).code, "not_host", "un invité ne choisit pas le niveau des autres");
+  a.send({ t: "level", player: wa.you, level: "expert" });
+  const st = await b.wait("room", (m) => m.players.some((p) => p.level === "expert"));
+  assert.equal(st.players.find((p) => p.id === wb.you)!.level, "normal");
+  a.send({ t: "start" });
+  const qa = (await a.wait("question")).q, qb = (await b.wait("question")).q;
+  assert.equal(qa.code, qb.code);
+  assert.equal(qa.durationMs, qb.durationMs, "même temps pour tous");
+  assert.ok(qa.fields.length > qb.fields.length || DEP.get(qa.code)!.sousPrefectures.length === 0, "l'expert a plus à répondre");
+  a.send({ t: "answer", index: 0, answer: perfectFor(qa) });
+  b.send({ t: "answer", index: 0, answer: perfect(qb) });
+  const s = (await a.wait("round")).summary;
+  assert.equal(s.results[wa.you].accuracy, 1);
+  assert.equal(s.results[wb.you].accuracy, 1);
+  assert.ok(Math.abs(s.results[wa.you].points - s.results[wb.you].points) < 40, `points normalisés : ${s.results[wa.you].points} / ${s.results[wb.you].points}`);
+  a.ws.close(); b.ws.close();
+});
+
+test("en équipe : vies communes, fin quand l'équipe n'a plus de vie", { timeout: 60_000 }, async () => {
+  const a = new Client(), b = new Client();
+  await Promise.all([a.open(), b.open()]);
+  a.send({ t: "hello", v: PROTOCOL_VERSION, name: "Un" }); b.send({ t: "hello", v: PROTOCOL_VERSION, name: "Deux" });
+  await a.wait("welcome"); await b.wait("welcome");
+  a.send({ t: "create", kind: "coop", settings: { rounds: 10 } });
+  const room = await a.wait("room");
+  assert.equal(room.kind, "coop");
+  b.send({ t: "join", room: room.room });
+  await a.wait("room", (m) => m.players.length === 2);
+  a.send({ t: "start" });
+  const q0 = (await a.wait("question")).q; await b.wait("question");
+  a.send({ t: "answer", index: 0, answer: perfect(q0) });
+  b.send({ t: "answer", index: 0, answer: perfect(q0) });
+  const s0 = (await a.wait("round")).summary;
+  assert.deepEqual([s0.team?.lives, s0.team?.lostLife], [3, false]);
+  for (let i = 1; i <= 3; i++) {
+    await a.wait("question", (m) => m.q.index === i, 15_000); await b.wait("question", (m) => m.q.index === i, 15_000);
+    a.send({ t: "answer", index: i, answer: {} }); b.send({ t: "answer", index: i, answer: {} });
+    const s = (await a.wait("round", (m) => m.summary.index === i)).summary;
+    assert.equal(s.team?.lives, 3 - i);
+  }
+  const end = await a.wait("end", undefined, 15_000);
+  assert.ok(end.team);
+  assert.equal(end.team.lives, 0);
+  assert.equal(end.team.stars, 0);
+  a.ws.close(); b.ws.close();
+});

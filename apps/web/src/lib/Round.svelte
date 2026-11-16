@@ -127,6 +127,27 @@
   const PLACEHOLDER: Record<ChoiceField, string> = { nom: "Nom du département", numero: "Numéro", prefecture: "Préfecture" };
   const textFields = $derived((["nom", "numero", "prefecture"] as ChoiceField[]).filter(has));
 
+  // Mobile + 4 propositions : une question à la fois, pour répondre sans faire défiler.
+  let mobile = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches);
+  $effect(() => {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const on = () => (mobile = mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  });
+  const choiceFields = $derived(textFields.filter((f) => q.choices?.[f]));
+  const stepped = $derived(mobile && !result && choiceFields.length > 1);
+  let step = $state(0);
+  function choose(f: ChoiceField, opt: string) {
+    text[f] = opt;
+    if (!stepped) return;
+    // Passe à la prochaine question sans réponse (dans l'ordre), sinon reste.
+    const order = choiceFields;
+    const next = order.findIndex((x, k) => k > order.indexOf(f) && !text[x]);
+    const anyEmpty = order.findIndex((x) => !text[x]);
+    if (next >= 0) step = next; else if (anyEmpty >= 0) step = anyEmpty;
+  }
+
   function enter(e: KeyboardEvent) {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -146,6 +167,12 @@
 
 <div class="round" class:review={!!result}>
   <div class="mapwrap">
+    {#if mobile && !result}
+      <div class="timer top" aria-label="Temps restant">
+        <div class="bar"><span style="transform:scaleX({remaining / q.durationMs})"></span></div>
+        <span class="secs tabnum">{Math.ceil(remaining / 1000)} s</span>
+      </div>
+    {/if}
     <div class="maphead">
       <span class="help">{mapHelp}</span>
     </div>
@@ -153,7 +180,7 @@
   </div>
 
   <section class="panel">
-    <div class="timer" aria-label="Temps restant">
+    <div class="timer" class:hidden={mobile} aria-label="Temps restant">
       <div class="bar"><span style="transform:scaleX({remaining / q.durationMs})"></span></div>
       <span class="secs tabnum">{result ? "" : Math.ceil(remaining / 1000) + " s"}</span>
     </div>
@@ -180,16 +207,25 @@
         </div>
       {/if}
 
+      {#if stepped}
+        <div class="steps" role="tablist" aria-label="Questions">
+          {#each choiceFields as f, k (f)}
+            <button role="tab" aria-selected={step === k} class="st" class:on={step === k} class:done={!!text[f]} onclick={() => (step = k)}>
+              <span>{LABELS[f]}</span><b>{text[f] || "…"}</b>
+            </button>
+          {/each}
+        </div>
+      {/if}
       {#each textFields as f, i (f)}
         {@const r = fieldResult(f)}
-        <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
-          <label class="label" for="in-{f}">{LABELS[f]}</label>
+        <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1} class:hidden={stepped && q.choices?.[f] && choiceFields.indexOf(f) !== step}>
+          <label class="label" class:hidden={stepped && !!q.choices?.[f]} for="in-{f}">{LABELS[f]}</label>
           {#if q.choices?.[f]}
             <div class="choices" role="radiogroup" aria-label={LABELS[f]}>
               {#each q.choices[f]! as opt (opt)}
                 <button role="radio" aria-checked={text[f] === opt} class="opt" class:on={text[f] === opt}
                   class:right={r && opt === r.expected} class:wrong={r && text[f] === opt && opt !== r.expected}
-                  disabled={!!result || submitted} onclick={() => (text[f] = opt)}>{opt}</button>
+                  disabled={!!result || submitted} onclick={() => choose(f, opt)}>{opt}</button>
               {/each}
             </div>
           {:else}
@@ -291,6 +327,15 @@
   .actions { display: flex; gap: 12px; align-items: center; }
   .actions :global(.btn) { flex: 1; }
 
+  .hidden { display: none !important; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .st { border: 0; border-radius: 12px; background: var(--bg); padding: 6px 8px; text-align: left; display: flex; flex-direction: column; cursor: pointer; min-width: 0; }
+  .st span { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
+  .st b { font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .st.on { background: var(--ink); }
+  .st.on span, .st.on b { color: #fff; }
+  .st.done:not(.on) b { color: var(--blue); }
+  .timer.top { padding: 4px 0 2px; }
   @media (max-width: 900px) {
     .round { grid-template-columns: 1fr; gap: 10px; }
     .mapwrap { position: sticky; top: 0; z-index: 2; background: var(--bg); margin: 0 -16px; padding: 2px 16px 6px; }

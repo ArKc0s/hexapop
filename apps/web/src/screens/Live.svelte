@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { DUEL_HP, REACTIONS, type Rewards } from "@hexa/game";
+  import { DUEL_HP, REACTIONS, TEAM_LIVES, type Rewards } from "@hexa/game";
   import LiveRound from "../lib/LiveRound.svelte";
   import StageView from "../lib/StageView.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
   import Icon from "../lib/ui/Icon.svelte";
+  import Stars from "../lib/ui/Stars.svelte";
   import { live } from "../lib/socket.svelte.ts";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
@@ -15,6 +16,12 @@
   const me = $derived(room?.players.find((p) => p.id === live.you));
   const myRank = $derived(room && me ? room.players.indexOf(me) + 1 : 0);
   const s = $derived(live.summary);
+  const coop = $derived(room?.kind === "coop");
+  // État de l'équipe : dernier connu (fin de tour) ou état de départ.
+  let teamNow = $state({ lives: TEAM_LIVES, accuracy: 0, score: 0, lostLife: false });
+  $effect(() => { if (s?.team) teamNow = s.team; });
+  $effect(() => { if (room?.phase === "countdown") teamNow = { lives: TEAM_LIVES, accuracy: 0, score: 0, lostLife: false }; });
+  const FIELD = { carte: "carte", nom: "nom", numero: "numéro", prefecture: "préfecture", sousPrefectures: "sous-préf.", limitrophes: "voisins" } as const;
   const duel = $derived(!!room && room.players.length === 2 && room.players.every((p) => p.hp !== undefined));
   const duo = $derived(duel && room && me ? [me, room.players.find((p) => p.id !== live.you)!].filter(Boolean) : []);
 
@@ -32,7 +39,7 @@
     const ranking = live.ranking;
     if (!ranking || recorded === ranking || !live.myResults.length) return;
     recorded = ranking;
-    const won = ranking.length >= 2 && ranking[0].id === live.you;
+    const won = room?.kind !== "coop" && ranking.length >= 2 && ranking[0].id === live.you;
     progress.record(live.myResults);
     rewards = profile.record({ mode: "multi", level: room?.settings.level ?? "normal", input: room?.settings.input ?? "libre", results: live.myResults, won, now: Date.now() });
     sound.play(won ? "level" : "tap");
@@ -56,6 +63,11 @@
           </div>
         {/each}
       </div>
+    {:else if coop}
+      <span class="hearts" aria-label="{teamNow.lives} vies sur {TEAM_LIVES}">{#each Array(TEAM_LIVES) as _, i (i)}<span class:lost={i >= teamNow.lives}>♥</span>{/each}</span>
+      {#if live.question}<span class="chip tabnum">{live.question.index + 1}/{live.question.total}</span>{/if}
+      <span class="sp"></span>
+      <span class="score tabnum">Équipe · {teamNow.score} pts{teamNow.accuracy ? ` · ${Math.round(teamNow.accuracy * 100)} %` : ""}</span>
     {:else}
       <span class="chip">Salon {room?.code}</span>
       {#if live.question}<span class="chip tabnum">{live.question.index + 1}/{live.question.total}</span>{/if}
@@ -65,7 +77,24 @@
     {#if live.status !== "open"}<span class="chip warn">Reconnexion…</span>{/if}
   </header>
 
-  {#if live.ranking}
+  {#if live.ranking && live.teamEnd}
+    <section class="end">
+      <Stars n={live.teamEnd.stars} size={56} animate />
+      <h1 class="riso big" data-t={live.teamEnd.stars ? "BRAVO L'ÉQUIPE" : "PERDU…"}>{live.teamEnd.stars ? "BRAVO L'ÉQUIPE" : "PERDU…"}</h1>
+      <p class="xp">{live.teamEnd.score} points d'équipe · {Math.round(live.teamEnd.accuracy * 100)} % de bonnes réponses · {live.teamEnd.lives} vie{live.teamEnd.lives > 1 ? "s" : ""} restante{live.teamEnd.lives > 1 ? "s" : ""}</p>
+      <p class="hint">1 étoile à 50 % de moyenne, 2 à 75 %, 3 à 90 %, s'il vous reste au moins une vie.</p>
+      <ol class="rank">
+        {#each live.ranking as p (p.id)}
+          <li class:me={p.id === live.you}><span class="tabnum pos">{p.level === "expert" ? "E" : "N"}</span><span>{p.name}</span><b class="tabnum">{p.score} pts</b></li>
+        {/each}
+      </ol>
+      {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.upgrades.length ? ` · ${rewards.upgrades.length} vignette${rewards.upgrades.length > 1 ? "s" : ""} pour l'album` : ""}</p>{/if}
+      <div class="cta">
+        {#if me?.host}<button class="btn big" onclick={() => live.send({ t: "rematch" })}>Rejouer ensemble</button>{:else}<span class="hint">L'hôte peut relancer une partie.</span>{/if}
+        <button class="btn white big" onclick={leave}>Accueil</button>
+      </div>
+    </section>
+  {:else if live.ranking}
     <section class="end">
       <Mascot mood={myRank === 1 ? "wow" : "happy"} size={72} />
       <h1 class="riso big" data-t={myRank === 1 ? "VICTOIRE !" : `${myRank}e PLACE`}>{myRank === 1 ? "VICTOIRE !" : `${myRank}e PLACE`}</h1>
@@ -88,7 +117,17 @@
   {:else}
     <LiveRound>
       {#if s && room}
-        {#if !duel}
+        {#if coop}
+          <p class="teammsg" class:bad={s.team?.lostLife}>{s.team?.lostLife ? "L'équipe perd une vie !" : "L'équipe tient bon."} Moyenne du tour : {Math.round((room.players.reduce((n, p) => n + (s.results[p.id]?.accuracy ?? 0), 0) / Math.max(1, room.players.length)) * 100)} %</p>
+          <ul class="mates">
+            {#each room.players as p (p.id)}
+              {@const r = s.results[p.id]}
+              <li class:me={p.id === live.you}><b>{p.name}{p.level === "expert" ? " · expert" : ""}</b>
+                {#if r}<span class="flds">{#each r.fields as f (f.field)}<span class:okf={f.score >= 0.999} class:kof={f.score < 0.999}>{FIELD[f.field]}</span>{/each}</span>{:else}<span class="hint">pas de réponse</span>{/if}
+              </li>
+            {/each}
+          </ul>
+        {:else if !duel}
           <ol class="mini">
             {#each room.players.slice(0, 8) as p, i (p.id)}
               <li class:me={p.id === live.you} class:gone={p.eliminated}>
@@ -108,7 +147,7 @@
   {/if}
 
   {#if room && !live.ranking}
-    <div class="reacts" role="group" aria-label="Réactions">
+    <div class="reacts" class:asking={!!live.question && !s && room.phase === "question"} role="group" aria-label="Réactions">
       {#each REACTIONS as e (e)}<button onclick={() => live.send({ t: "react", e })} aria-label="Réagir {e}">{e}</button>{/each}
     </div>
   {/if}
@@ -161,6 +200,24 @@
   .fl b { font-size: 24px; }
   .fl small { font-weight: 800; }
   .snd { position: fixed; right: 14px; top: 12px; border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; z-index: 5; }
-  @media (max-width: 700px) { .av { display: none; } .reacts button { width: 38px; height: 38px; } }
+  @media (max-width: 700px) {
+    .av { display: none; }
+    /* Sur mobile : réactions dans le flux (pas par-dessus « Valider »), masquées pendant qu'on répond */
+    .reacts { position: static; transform: none; align-self: center; box-shadow: none; }
+    .reacts.asking { display: none; }
+    .reacts button { width: 38px; height: 38px; }
+    .snd { display: none; }
+    .live { padding-bottom: 24px; }
+  }
   @media (min-width: 901px) { .live { min-height: 100dvh; } .live > :global(.round) { flex: 1; align-content: center; } }
+  .hearts { display: inline-flex; gap: 3px; font-size: 24px; color: var(--pink); }
+  .hearts .lost { color: #e2dacb; }
+  .teammsg { font-weight: 800; color: var(--green-d); }
+  .teammsg.bad { color: var(--pink-d); animation: shake .35s; }
+  .mates { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .mates li { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px; background: var(--bg); }
+  .mates li.me { background: #fff4c2; }
+  .flds { display: flex; flex-wrap: wrap; gap: 4px; }
+  .flds span { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; color: #fff; }
+  .okf { background: var(--blue); } .kof { background: var(--pink); }
 </style>

@@ -21,7 +21,7 @@
     if (!session.me) { try { localStorage.setItem(NAME_KEY, name); } catch { /* rien */ } }
     live.connect(session.me?.pseudo ?? name, fn);
   }
-  const create = (kind: "duel" | "plateau") => connectThen(() => live.create(kind));
+  const create = (kind: "duel" | "plateau" | "coop") => connectThen(() => live.create(kind));
   const doJoin = (spectate = false) => connectThen(() => live.join(code.trim(), spectate));
 
   // Lien d'invitation ouvert par un joueur connecté ou ayant déjà un pseudo : on rejoint directement.
@@ -54,10 +54,13 @@
     {/if}
     <div class="choices">
       <button class="btn big door" onclick={() => create("duel")} disabled={!session.me && name.trim().length < 2}>
-        <b>Créer un duel</b><span>À deux : barres de vie. À plusieurs : course aux points.</span>
+        <b>Duel</b><span>Les uns contre les autres. À deux : barres de vie.</span>
+      </button>
+      <button class="btn green big door" onclick={() => create("coop")} disabled={!session.me && name.trim().length < 2}>
+        <b>En équipe</b><span>Ensemble contre la carte : 3 vies communes, idéal pour apprendre à deux.</span>
       </button>
       <button class="btn blue big door" onclick={() => create("plateau")} disabled={!session.me && name.trim().length < 2}>
-        <b>Soirée plateau</b><span>Jusqu'à 100 joueurs, avec un écran à projeter ou à streamer. Mode battle royale en option.</span>
+        <b>Soirée plateau</b><span>Jusqu'à 100 joueurs, écran à projeter ou streamer, battle royale en option.</span>
       </button>
     </div>
     <div class="join">
@@ -75,7 +78,7 @@
   {:else}
     <div class="room">
       <section class="card codecard">
-        <span class="k">{room.settings.elimination ? "Battle royale" : room.kind === "plateau" ? "Soirée plateau" : "Duel"} · code du salon</span>
+        <span class="k">{room.settings.elimination ? "Battle royale" : room.kind === "plateau" ? "Soirée plateau" : room.kind === "coop" ? "En équipe" : "Duel"} · code du salon</span>
         <div class="riso bigcode" data-t={room.code}>{room.code}</div>
         <p class="hint">Tes amis tapent ce code dans « Entre amis », ou ouvrent le lien.</p>
         <div class="share">
@@ -88,15 +91,23 @@
         <h2 class="k">Joueurs · {room.players.length}{room.spectators ? ` · ${room.spectators} spectateur${room.spectators > 1 ? "s" : ""}` : ""}</h2>
         <ul class="players">
           {#each room.players as p (p.id)}
-            <li class:me={p.id === live.you}><span class="av">{p.name.slice(0, 1).toUpperCase()}</span><span class="pn">{p.name}{#if p.home}<small> · {p.home}</small>{/if}</span>{#if p.host}<span class="host">hôte</span>{/if}</li>
+            {@const canSet = p.id === live.you || isHost}
+            <li class:me={p.id === live.you}>
+              <span class="av">{p.name.slice(0, 1).toUpperCase()}</span><span class="pn">{p.name}{#if p.home}<small> · {p.home}</small>{/if}</span>{#if p.host}<span class="host">hôte</span>{/if}
+              <span class="lv seg" role="group" aria-label="Niveau de {p.name}">
+                <button class:on={p.level === "normal"} disabled={!canSet} onclick={() => live.send({ t: "level", player: p.id, level: "normal" })}>Normal</button>
+                <button class:on={p.level === "expert"} disabled={!canSet} onclick={() => live.send({ t: "level", player: p.id, level: "expert" })}>Expert</button>
+              </span>
+            </li>
           {/each}
         </ul>
         {#if room.players.length < 2}<p class="hint" style="margin-top:8px">En attente d'au moins un autre joueur…</p>{/if}
+        <p class="hint" style="margin-top:8px">Handicap : chacun peut jouer à son niveau. En expert, on donne en plus les sous-préfectures et les voisins, dans le même temps. Les points comptent le pourcentage de bonnes réponses, donc personne n'est avantagé.</p>
       </section>
 
       <section class="card rules">
         <h2 class="k">Règles{isHost ? "" : " · choisies par l'hôte"}</h2>
-        <div class="rule"><span>Niveau</span><div class="seg">
+        <div class="rule"><span>Niveau par défaut</span><div class="seg">
           <button class:on={room.settings.level === "normal"} disabled={!isHost} onclick={() => set({ level: "normal" })}>Normal</button>
           <button class:on={room.settings.level === "expert"} disabled={!isHost} onclick={() => set({ level: "expert" })}>Expert</button></div></div>
         <div class="rule"><span>Réponses</span><div class="seg">
@@ -132,7 +143,7 @@
   .lobby { max-width: 820px; margin: 0 auto; padding: 24px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
   .back { align-self: flex-start; }
   h1 { font-size: clamp(40px, 7vw, 60px); text-transform: uppercase; }
-  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
   .door { flex-direction: column; align-items: flex-start; text-align: left; gap: 4px; padding: 18px; }
   .door b { font-size: 22px; font-weight: 900; }
   .door span { font-size: 14px; font-weight: 600; opacity: .9; }
@@ -150,8 +161,10 @@
   .share { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .share a { text-decoration: none; }
   .card h2 { margin-bottom: 10px; }
-  .players { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .players li { display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 4px 12px 4px 4px; font-weight: 800; background: var(--bg); }
+  .players { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .players li { display: flex; align-items: center; gap: 8px; border-radius: 16px; padding: 6px 6px 6px 6px; font-weight: 800; background: var(--bg); }
+  .players .pn { flex: 1; }
+  .lv button { padding: 6px 10px; font-size: 13px; }
   .players li.me { background: #fff4c2; }
   .players small { color: var(--soft); font-weight: 700; }
   .host { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; background: var(--ink); color: #fff; border-radius: 999px; padding: 2px 7px; }

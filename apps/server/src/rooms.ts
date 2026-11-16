@@ -5,7 +5,8 @@
 import { randomBytes, randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import {
-  COUNTDOWN_MS, DEFAULT_SETTINGS, DUEL_HP, REACTIONS, duelDamage, DEPARTEMENTS, MAX_PLAYERS, REVIEW_MS, grade, makeGame, randomSeed,
+  COUNTDOWN_MS, DEFAULT_SETTINGS, DUEL_HP, REACTIONS, duelDamage, DEFAULT_DURATION, TEAM_LIVES, TEAM_LIFE_THRESHOLD, roomPoints, teamStars,
+  type Level, type TeamState, DEPARTEMENTS, MAX_PLAYERS, REVIEW_MS, grade, makeGame, randomSeed,
   type Answer, type ClientMsg, type DailyOutcome, type ErrorCode, type Phase, type PlayerInfo, type Question,
   type QuestionPayload, type RoomKind, type RoomSettings, type RoundResult, type ServerMsg,
 } from "@hexa/game";
@@ -62,6 +63,9 @@ function clampSettings(s: Partial<RoomSettings>, base: RoomSettings): RoomSettin
     rounds: Number.isInteger(s.rounds) ? Math.min(101, Math.max(5, s.rounds as number)) : base.rounds,
     regions,
     elimination: typeof s.elimination === "boolean" ? s.elimination : base.elimination,
+    levels: s.levels && typeof s.levels === "object"
+      ? Object.fromEntries(Object.entries(s.levels).filter(([k, v]) => typeof k === "string" && k.length < 40 && (v === "normal" || v === "expert")).slice(0, 100)) as Record<string, Level>
+      : base.levels,
   };
 }
 
@@ -91,6 +95,23 @@ export class Room {
   hpMode = false;
   /** Nombre de joueurs au lancement : la fin par élimination n'a de sens qu'à plusieurs. */
   startPlayers = 0;
+  /** Questions par niveau (handicap) : mêmes départements et indices, champs différents. */
+  byLevel: Partial<Record<Level, Question[]>> = {};
+  /** Mode en équipe */
+  team: TeamState = { lives: TEAM_LIVES, accuracy: 0, score: 0, lostLife: false };
+  teamAcc: number[] = [];
+
+  levelOf(id: string): Level { return this.settings.levels[id] ?? this.settings.level; }
+  qFor(id: string | null, i = this.qi): Question { return (id && this.byLevel[this.levelOf(id)]?.[i]) || this.questions[i]; }
+  syncLevels() { for (const s of this.seats.values()) s.info.level = this.levelOf(s.info.id); }
+
+  setLevel(c: Conn, player: string, level: unknown) {
+    if (this.phase !== "lobby" || (level !== "normal" && level !== "expert") || !this.seats.has(player)) return;
+    if (player !== c.playerId && !this.isHost(c)) return fail(c, "not_host", "Seul l'hôte peut changer le niveau d'un autre joueur.");
+    this.settings = { ...this.settings, levels: { ...this.settings.levels, [player]: level } };
+    this.syncLevels();
+    this.broadcastRoom();
+  }
 
   kind: RoomKind;
   settings: RoomSettings;
@@ -117,7 +138,7 @@ export class Room {
     if (this.seats.size >= (this.kind === "daily" ? 1 : MAX_PLAYERS)) return "room_full";
     const host = this.seats.size === 0;
     this.seats.set(c.playerId, {
-      info: { id: c.playerId, name: c.name, home: c.home ?? undefined, score: 0, connected: true, eliminated: false, answered: false, host },
+      info: { id: c.playerId, name: c.name, home: c.home ?? undefined, score: 0, connected: true, eliminated: false, answered: false, host, level: this.levelOf(c.playerId) },
       conn: c, userId: c.userId, results: [],
     });
     c.room = this;
@@ -183,7 +204,7 @@ export class Room {
   /** Renvoie la question en cours à quelqu'un qui (re)arrive. */
   private catchUp(c: Conn) {
     if (this.phase === "question" || this.phase === "countdown") {
-      const q = this.questions[this.qi];
+      const q = c.spectating ? this.questions[this.qi] : this.qFor(c.playerId);
       if (q) send(c, { t: "question", q: this.payload(q) });
     }
   }
@@ -193,6 +214,7 @@ export class Room {
     if (!this.isHost(c)) return fail(c, "not_host", "Seul l'hôte peut changer les règles.");
     if (this.phase !== "lobby") return fail(c, "already_started", "La partie a déjà commencé.");
     this.settings = clampSettings(s, this.settings);
+    this.syncLevels();
     this.broadcastRoom();
   }
 
@@ -203,7 +225,18 @@ export class Room {
     const cfg = this.kind === "daily" && this.day
       ? dailyConfig(this.day)
       : { seed: randomSeed(), level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes };
-    this.questions = makeGame(cfg);
+    if (this.kind === "daily") {
+      this.questions = makeGame(cfg);
+      this.byLevel = {};
+    } else {
+      // Même graine pour tous les niveaux : mêmes départements, mêmes indices, mêmes propositions.
+      const levels = new Set<Level>([this.settings.level, ...[...this.seats.keys()].map((id) => this.levelOf(id))]);
+      const durationMs = Math.max(...[...levels].map((l) => DEFAULT_DURATION[l]));
+      this.byLevel = Object.fromEntries([...levels].map((l) => [l, makeGame({ ...cfg, level: l, durationMs })]));
+      this.questions = this.byLevel[this.settings.level]!;
+    }
+    this.team = { lives: TEAM_LIVES, accuracy: 0, score: 0, lostLife: false };
+    this.teamAcc = [];
     this.hpMode = this.kind === "duel" && this.seats.size === 2;
     this.startPlayers = this.seats.size;
     for (const s of this.seats.values()) s.info.hp = this.hpMode ? DUEL_HP : undefined;
@@ -229,7 +262,8 @@ export class Room {
     for (const s of this.seats.values()) s.info.answered = false;
     this.phase = "question";
     this.broadcastRoom();
-    this.broadcast({ t: "question", q: this.payload(q) });
+    for (const s of this.seats.values()) if (s.conn) send(s.conn, { t: "question", q: this.payload(this.qFor(s.info.id, i)) });
+    for (const c of this.spectators) send(c, { t: "question", q: this.payload(q) });
     this.schedule(this.endsAt - now() + GRACE_MS, () => this.closeRound());
   }
 
@@ -238,9 +272,12 @@ export class Room {
     if (!seat || seat.info.eliminated || this.phase !== "question" || index !== this.qi || seat.results[index]) return;
     const t = now();
     if (t > this.endsAt + GRACE_MS) return;
-    const q = this.questions[index];
+    const q = this.qFor(c.playerId, index);
     const elapsedMs = Math.min(q.durationMs, Math.max(0, t - this.startsAt - c.rttMs / 2));
-    seat.results[index] = grade(q, { ...sanitizeAnswer(raw), elapsedMs });
+    const r = grade(q, { ...sanitizeAnswer(raw), elapsedMs });
+    // En salon, points normalisés : un joueur en expert ne marque pas plus pour ses questions en plus.
+    if (this.kind !== "daily") r.points = roomPoints(r.accuracy, r.elapsedMs, q.durationMs);
+    seat.results[index] = r;
     seat.info.answered = true;
     this.broadcast({ t: "answered", player: seat.info.id });
     this.maybeCloseRound();
@@ -274,14 +311,28 @@ export class Room {
         damage = { [loser.info.id]: dmg };
       }
     }
-    const knockout = forfeit || (this.hpMode && [...this.seats.values()].some((s) => (s.info.hp ?? 1) <= 0));
+    let team: TeamState | undefined;
+    if (this.kind === "coop") {
+      const present = this.active.filter((s) => s.info.connected || s.results[this.qi]);
+      const acc = present.length ? present.reduce((n, s) => n + (s.results[this.qi]?.accuracy ?? 0), 0) / present.length : 0;
+      this.teamAcc.push(acc);
+      const lostLife = acc < TEAM_LIFE_THRESHOLD;
+      this.team = {
+        lives: this.team.lives - (lostLife ? 1 : 0),
+        accuracy: this.teamAcc.reduce((n, a) => n + a, 0) / this.teamAcc.length,
+        score: this.team.score + Object.values(results).reduce((n, r) => n + r.points, 0),
+        lostLife,
+      };
+      team = this.team;
+    }
+    const knockout = forfeit || (this.hpMode && [...this.seats.values()].some((s) => (s.info.hp ?? 1) <= 0)) || (this.kind === "coop" && this.team.lives <= 0);
     const lastSurvivor = this.settings.elimination && this.startPlayers >= 2 && this.active.length <= 1;
     const last = knockout || this.qi + 1 >= this.questions.length || lastSurvivor;
     const review = this.kind === "daily" ? 0 : REVIEW_MS;
     const nextAt = last ? null : now() + review;
     this.phase = "review";
     this.broadcastRoom();
-    this.broadcast({ t: "round", summary: { index: this.qi, code: q.code, results, eliminated, damage, nextAt } });
+    this.broadcast({ t: "round", summary: { index: this.qi, code: q.code, results, eliminated, damage, team, nextAt } });
     if (this.kind === "daily") return; // le joueur passe au suivant lui-même
     this.schedule(review, () => (last ? this.finish() : this.ask(this.qi + 1)));
   }
@@ -293,7 +344,7 @@ export class Room {
       if (!s.conn) { this.seats.delete(id); continue; }
       s.info.score = 0; s.info.eliminated = false; s.info.answered = false; s.info.hp = undefined; s.results = [];
     }
-    this.questions = []; this.qi = -1;
+    this.questions = []; this.byLevel = {}; this.qi = -1;
     this.phase = "lobby";
     this.lastActivity = now();
     this.broadcastRoom();
@@ -336,6 +387,8 @@ export class Room {
       }
       const daily: DailyOutcome = { day: this.day, number: dailyNumber(this.day), points, accuracy, elapsedMs, grid, saved, rank: rank?.rank, players: rank?.players };
       this.broadcast({ t: "end", ranking, daily });
+    } else if (this.kind === "coop") {
+      this.broadcast({ t: "end", ranking, team: { ...this.team, stars: teamStars(this.team.accuracy, this.team.lives) } });
     } else {
       this.broadcast({ t: "end", ranking });
     }
@@ -364,7 +417,7 @@ export function handle(c: Conn, msg: ClientMsg) {
         room.add(c);
         return room.start(null);
       }
-      const kind: RoomKind = msg.kind === "plateau" ? "plateau" : "duel";
+      const kind: RoomKind = msg.kind === "plateau" ? "plateau" : msg.kind === "coop" ? "coop" : "duel";
       const base = { ...DEFAULT_SETTINGS, elimination: kind === "plateau" };
       const room = new Room(kind, clampSettings(msg.settings ?? {}, base));
       room.add(c);
@@ -385,6 +438,7 @@ export function handle(c: Conn, msg: ClientMsg) {
     case "next": return c.room?.next(c);
     case "rematch": return c.room?.rematch(c);
     case "react": return c.room?.react(c, msg.e);
+    case "level": return c.room?.setLevel(c, String(msg.player), msg.level);
     case "leave": return c.room?.leave(c);
     default: return fail(c, "bad_request", "Message inconnu.");
   }

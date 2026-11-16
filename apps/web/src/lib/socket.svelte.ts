@@ -1,7 +1,7 @@
 // Client WebSocket : connexion, synchro d'horloge, état du salon, reconnexion automatique.
 import {
   PROTOCOL_VERSION, type ClientMsg, type DailyOutcome, type Phase, type PlayerInfo, type QuestionPayload,
-  type RoomKind, type RoomSettings, type RoundSummary, type ServerMsg, type RoundResult, type Question, grade,
+  type RoomKind, type RoomSettings, type RoundSummary, type ServerMsg, type RoundResult, type Question, type TeamState, grade,
 } from "@hexa/game";
 
 const RESUME_KEY = "hexa.resume";
@@ -25,6 +25,8 @@ class Live {
   summary = $state<RoundSummary | null>(null);
   ranking = $state<PlayerInfo[] | null>(null);
   daily = $state<DailyOutcome | null>(null);
+  /** Fin de partie en équipe. */
+  teamEnd = $state<(TeamState & { stars: number }) | null>(null);
   error = $state<{ code: string; message: string } | null>(null);
   answered = $state<Set<string>>(new Set());
   /** Mes résultats de la partie en cours (pour l'XP et l'album). */
@@ -137,7 +139,7 @@ class Live {
         break;
       }
       case "end":
-        this.ranking = m.ranking; this.daily = m.daily ?? null;
+        this.ranking = m.ranking; this.daily = m.daily ?? null; this.teamEnd = m.team ?? null;
         break;
       case "error":
         // Salon introuvable alors qu'on est déjà dans un autre : réponse périmée, on l'ignore.
@@ -151,7 +153,7 @@ class Live {
   create(kind: RoomKind, settings?: Partial<RoomSettings>) { this.reset(); this.send({ t: "create", kind, settings }); }
   join(code: string, spectate = false) { this.reset(); this.wantRoom = code.toUpperCase(); this.send({ t: "join", room: code, spectate }); }
   leave() { this.send({ t: "leave" }); this.reset(); this.room = null; this.wantRoom = null; }
-  private reset() { this.question = null; this.summary = null; this.ranking = null; this.daily = null; this.error = null; this.answered = new Set(); }
+  private reset() { this.question = null; this.summary = null; this.ranking = null; this.daily = null; this.teamEnd = null; this.error = null; this.answered = new Set(); }
 }
 
 export const live = new Live();

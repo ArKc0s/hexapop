@@ -7,7 +7,7 @@ import type { Answer, Field, Hint, InputMode, Level, RoundResult, ChoiceField } 
 
 export const PROTOCOL_VERSION = 1;
 
-export type RoomKind = "duel" | "plateau" | "daily";
+export type RoomKind = "duel" | "plateau" | "coop" | "daily";
 
 export interface RoomSettings {
   level: Level;
@@ -18,6 +18,8 @@ export interface RoomSettings {
   regions: string[];
   /** Mode plateau : éliminer les derniers après chaque manche. */
   elimination: boolean;
+  /** Handicap : niveau propre à certains joueurs (id joueur -> niveau). Les autres jouent au niveau du salon. */
+  levels: Record<string, Level>;
 }
 
 export interface PlayerInfo {
@@ -33,6 +35,8 @@ export interface PlayerInfo {
   host: boolean;
   /** Points de vie (duel à deux uniquement). */
   hp?: number;
+  /** Niveau de ce joueur (handicap). */
+  level: Level;
 }
 
 export interface QuestionPayload {
@@ -57,6 +61,8 @@ export interface RoundSummary {
   eliminated: string[];
   /** Dégâts subis ce tour (duel à points de vie). */
   damage?: Record<string, number>;
+  /** Mode en équipe : état de l'équipe après ce tour. */
+  team?: TeamState;
   nextAt: number | null;
 }
 
@@ -71,6 +77,8 @@ export type ClientMsg =
   | { t: "answer"; index: number; answer: Omit<Answer, "elapsedMs"> }
   /** Défi du jour uniquement : passer à la question suivante. */
   | { t: "next" }
+  /** Choisir le niveau d'un joueur (soi-même, ou n'importe qui pour l'hôte). */
+  | { t: "level"; player: string; level: Level }
   /** Réaction rapide (emoji de la liste REACTIONS). */
   | { t: "react"; e: string }
   /** Hôte, partie terminée : revenir au salon avec les mêmes joueurs. */
@@ -85,14 +93,29 @@ export type ServerMsg =
   | { t: "question"; q: QuestionPayload }
   | { t: "answered"; player: string }
   | { t: "round"; summary: RoundSummary }
-  | { t: "end"; ranking: PlayerInfo[]; daily?: DailyOutcome }
+  | { t: "end"; ranking: PlayerInfo[]; daily?: DailyOutcome; team?: TeamState & { stars: number } }
   | { t: "react"; player: string; e: string }
   | { t: "error"; code: ErrorCode; message: string };
 
 export type Phase = "lobby" | "countdown" | "question" | "review" | "ended";
 export type ErrorCode = "bad_request" | "room_not_found" | "room_full" | "already_started" | "not_host" | "auth_required" | "daily_done" | "version";
 
-export const DEFAULT_SETTINGS: RoomSettings = { level: "normal", input: "libre", rounds: 20, regions: [], elimination: false };
+export const DEFAULT_SETTINGS: RoomSettings = { level: "normal", input: "libre", rounds: 20, regions: [], elimination: false, levels: {} };
+
+/** Mode en équipe : vies communes, moyenne de l'équipe. */
+export interface TeamState { lives: number; accuracy: number; score: number; lostLife: boolean }
+export const TEAM_LIVES = 3;
+/** Un tour coûte une vie si la moyenne de l'équipe est sous ce seuil. */
+export const TEAM_LIFE_THRESHOLD = 0.5;
+/** Étoiles d'équipe selon la moyenne de toute la partie. */
+export const teamStars = (accuracy: number, livesLeft: number) => (livesLeft <= 0 ? 0 : accuracy >= 0.9 ? 3 : accuracy >= 0.75 ? 2 : accuracy >= 0.5 ? 1 : 0);
+
+/**
+ * Points en salon : normalisés sur le pourcentage de bonnes réponses (comme 3 champs justes),
+ * pour que les niveaux différents (handicap) restent comparables. Bonus vitesse jusqu'à ×2.
+ */
+export const roomPoints = (accuracy: number, elapsedMs: number, durationMs: number) =>
+  Math.round(accuracy * 300 * (1 + (1 - Math.min(1, elapsedMs / durationMs))));
 export const MAX_PLAYERS = 100;
 export const REVIEW_MS = 5_000;
 export const COUNTDOWN_MS = 3_000;

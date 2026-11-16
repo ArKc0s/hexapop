@@ -60,6 +60,15 @@
       <span class="chip" title="Série de jours joués"><Icon name="flame" /> {streak}</span>
       <span class="lvl" title="Niveau {lvl.level}"><span class="ring" style="--p:{lvl.ratio * 100}"><span>{lvl.level}</span></span><span class="rk">{rank}</span></span>
     </div>
+    <!-- Sur mobile, compte et son restent en haut de l'écran -->
+    <div class="acc mob">
+      {#if session.me}
+        <button class="back" onclick={() => nav.go({ name: "account", view: "profile" })}>{session.me.pseudo}</button>
+      {:else if session.online}
+        <button class="back" onclick={() => nav.go({ name: "account", view: "login" })}>Se connecter</button>
+      {/if}
+      <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
+    </div>
 
     <div class="hello"><Mascot mood="happy" size={66} /><p class="bubble">{hello}</p></div>
 
@@ -70,7 +79,7 @@
 
     <div class="row2">
       <button class="btn pink" disabled={!session.online} onclick={() => nav.go({ name: "daily" })}>Défi du jour<small>nouveau dans {countdown}</small></button>
-      <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel ou soirée</small></button>
+      <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel, équipe ou soirée</small></button>
     </div>
 
     <div class="card quests">
@@ -94,7 +103,7 @@
   <section class="right" aria-label="Ta France">
     <div class="rhead">
       <div><span class="k">Ta France</span><div class="pct tabnum">{pct} %</div></div>
-      <div class="acc">
+      <div class="acc desk">
         {#if session.me}
           <button class="back" onclick={() => nav.go({ name: "account", view: "profile" })}>{session.me.pseudo}</button>
         {:else if session.online}
@@ -153,7 +162,10 @@
   .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
   footer { grid-column: 1 / -1; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--soft); padding-top: 14px; }
   footer .link { font-weight: 600; color: var(--soft); }
+  .acc.mob { display: none; }
   @media (max-width: 860px) {
+    .acc.mob { display: flex; justify-content: flex-end; margin-top: -8px; }
+    .acc.desk { display: none; }
     .home { grid-template-columns: 1fr; padding: 14px 16px 30px; }
     .logo { font-size: 36px; }
     .rk { display: none; }
