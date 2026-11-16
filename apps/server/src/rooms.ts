@@ -5,7 +5,7 @@
 import { randomBytes, randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import {
-  COUNTDOWN_MS, DEFAULT_SETTINGS, DEPARTEMENTS, MAX_PLAYERS, REVIEW_MS, grade, makeGame, randomSeed,
+  COUNTDOWN_MS, DEFAULT_SETTINGS, DUEL_HP, REACTIONS, duelDamage, DEPARTEMENTS, MAX_PLAYERS, REVIEW_MS, grade, makeGame, randomSeed,
   type Answer, type ClientMsg, type DailyOutcome, type ErrorCode, type Phase, type PlayerInfo, type Question,
   type QuestionPayload, type RoomKind, type RoomSettings, type RoundResult, type ServerMsg,
 } from "@hexa/game";
@@ -25,6 +25,7 @@ export interface Conn {
   userId: number | null;
   home: string | null;
   rttMs: number;
+  lastReact?: number;
   room: Room | null;
   spectating: boolean;
 }
@@ -86,6 +87,8 @@ export class Room {
   timer: NodeJS.Timeout | null = null;
   lastActivity = now();
   day: string | null = null;
+  /** Duel à points de vie : activé quand un duel démarre à exactement deux joueurs. */
+  hpMode = false;
 
   kind: RoomKind;
   settings: RoomSettings;
@@ -161,7 +164,16 @@ export class Room {
     for (const c of this.conns()) if (c.ws.readyState === c.ws.OPEN) c.ws.send(data);
   }
   players(): PlayerInfo[] {
-    return [...this.seats.values()].map((s) => s.info).sort((a, b) => b.score - a.score);
+    const byHp = this.hpMode;
+    return [...this.seats.values()].map((s) => s.info).sort((a, b) => (byHp ? (b.hp ?? 0) - (a.hp ?? 0) : 0) || b.score - a.score);
+  }
+
+  react(c: Conn, e: unknown) {
+    const t = Date.now();
+    if (typeof e !== "string" || !REACTIONS.includes(e) || (c.lastReact && t - c.lastReact < 800)) return;
+    if (!this.seats.has(c.playerId) && !this.spectators.has(c)) return;
+    c.lastReact = t;
+    this.broadcast({ t: "react", player: c.playerId, e });
   }
   broadcastRoom() {
     this.broadcast({ t: "room", room: this.code, kind: this.kind, settings: this.settings, players: this.players(), phase: this.phase, spectators: this.spectators.size });
@@ -190,6 +202,8 @@ export class Room {
       ? dailyConfig(this.day)
       : { seed: randomSeed(), level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes };
     this.questions = makeGame(cfg);
+    this.hpMode = this.kind === "duel" && this.seats.size === 2;
+    for (const s of this.seats.values()) s.info.hp = this.hpMode ? DUEL_HP : undefined;
     this.phase = "countdown";
     this.broadcastRoom();
     this.schedule(this.kind === "daily" ? 800 : COUNTDOWN_MS, () => this.ask(0));
@@ -244,12 +258,26 @@ export class Room {
       if (r) { results[s.info.id] = r; s.info.score += r.points; }
     }
     const eliminated = this.settings.elimination ? this.eliminate() : [];
-    const last = this.qi + 1 >= this.questions.length || (this.settings.elimination && this.active.length <= 1);
+    let damage: Record<string, number> | undefined;
+    // Un joueur parti en plein duel : l'autre gagne par forfait.
+    const forfeit = this.hpMode && this.seats.size < 2;
+    if (this.hpMode && !forfeit) {
+      const [a, b] = [...this.seats.values()];
+      const pa = results[a.info.id]?.points ?? 0, pb = results[b.info.id]?.points ?? 0;
+      const loser = pa < pb ? a : pb < pa ? b : null;
+      if (loser) {
+        const dmg = duelDamage(pa - pb, this.qi);
+        loser.info.hp = Math.max(0, (loser.info.hp ?? DUEL_HP) - dmg);
+        damage = { [loser.info.id]: dmg };
+      }
+    }
+    const knockout = forfeit || (this.hpMode && [...this.seats.values()].some((s) => (s.info.hp ?? 1) <= 0));
+    const last = knockout || this.qi + 1 >= this.questions.length || (this.settings.elimination && this.active.length <= 1);
     const review = this.kind === "daily" ? 0 : REVIEW_MS;
     const nextAt = last ? null : now() + review;
     this.phase = "review";
     this.broadcastRoom();
-    this.broadcast({ t: "round", summary: { index: this.qi, code: q.code, results, eliminated, nextAt } });
+    this.broadcast({ t: "round", summary: { index: this.qi, code: q.code, results, eliminated, damage, nextAt } });
     if (this.kind === "daily") return; // le joueur passe au suivant lui-même
     this.schedule(review, () => (last ? this.finish() : this.ask(this.qi + 1)));
   }
@@ -259,7 +287,7 @@ export class Room {
     if (!this.isHost(c)) return fail(c, "not_host", "Seul l'hôte peut relancer.");
     for (const [id, s] of this.seats) {
       if (!s.conn) { this.seats.delete(id); continue; }
-      s.info.score = 0; s.info.eliminated = false; s.info.answered = false; s.results = [];
+      s.info.score = 0; s.info.eliminated = false; s.info.answered = false; s.info.hp = undefined; s.results = [];
     }
     this.questions = []; this.qi = -1;
     this.phase = "lobby";
@@ -352,6 +380,7 @@ export function handle(c: Conn, msg: ClientMsg) {
     case "answer": return c.room?.answer(c, Number(msg.index), msg.answer);
     case "next": return c.room?.next(c);
     case "rematch": return c.room?.rematch(c);
+    case "react": return c.room?.react(c, msg.e);
     case "leave": return c.room?.leave(c);
     default: return fail(c, "bad_request", "Message inconnu.");
   }

@@ -31,6 +31,8 @@ export interface PlayerInfo {
   /** A répondu au tour en cours. */
   answered: boolean;
   host: boolean;
+  /** Points de vie (duel à deux uniquement). */
+  hp?: number;
 }
 
 export interface QuestionPayload {
@@ -53,6 +55,8 @@ export interface RoundSummary {
   /** Résultat par joueur (absent = pas de réponse). */
   results: Record<string, RoundResult>;
   eliminated: string[];
+  /** Dégâts subis ce tour (duel à points de vie). */
+  damage?: Record<string, number>;
   nextAt: number | null;
 }
 
@@ -67,6 +71,8 @@ export type ClientMsg =
   | { t: "answer"; index: number; answer: Omit<Answer, "elapsedMs"> }
   /** Défi du jour uniquement : passer à la question suivante. */
   | { t: "next" }
+  /** Réaction rapide (emoji de la liste REACTIONS). */
+  | { t: "react"; e: string }
   /** Hôte, partie terminée : revenir au salon avec les mêmes joueurs. */
   | { t: "rematch" }
   | { t: "leave" };
@@ -80,6 +86,7 @@ export type ServerMsg =
   | { t: "answered"; player: string }
   | { t: "round"; summary: RoundSummary }
   | { t: "end"; ranking: PlayerInfo[]; daily?: DailyOutcome }
+  | { t: "react"; player: string; e: string }
   | { t: "error"; code: ErrorCode; message: string };
 
 export type Phase = "lobby" | "countdown" | "question" | "review" | "ended";
@@ -89,6 +96,10 @@ export const DEFAULT_SETTINGS: RoomSettings = { level: "normal", input: "libre",
 export const MAX_PLAYERS = 100;
 export const REVIEW_MS = 5_000;
 export const COUNTDOWN_MS = 3_000;
+export const DUEL_HP = 1000;
+export const REACTIONS = ["😱", "🔥", "😂", "👏", "😅", "🤯"];
+/** Dégâts d'un tour de duel : la moitié de l'écart de points, multipliée au fil des tours. */
+export const duelDamage = (diff: number, roundIndex: number) => Math.round(Math.abs(diff) * 0.5 * (1 + 0.15 * roundIndex));
 
 export interface DailyOutcome {
   day: string;

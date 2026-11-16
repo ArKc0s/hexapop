@@ -1,6 +1,6 @@
 // API HTTP JSON sous /api. Authentification : cookie HttpOnly (web) ou en-tête Bearer (mobile).
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { DEP, type Progress } from "@hexa/game";
+import { DEP, mergeProfiles, sanitizeProfile, type Progress } from "@hexa/game";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
 import {
@@ -170,18 +170,37 @@ const routes: Record<string, Handler> = {
     json(res, 200, { user: publicUser({ ...u, home_dep: "home" in b ? (s(b.home) || null) : u.home_dep }) });
   },
 
+  "GET /api/profile": (_req, res, user) => {
+    const u = need(user, 401, "auth_required", "Non connecté.");
+    const row = db.prepare("SELECT data FROM profiles WHERE user_id = ?").get(u.id) as { data: string } | undefined;
+    json(res, 200, { profile: sanitizeProfile(row ? JSON.parse(row.data) : null) });
+  },
+
+  /** Profil de jeu (XP, série, étoiles, album, badges) : fusion avec la version du serveur. */
+  "PUT /api/profile": async (req, res, user) => {
+    const u = need(user, 401, "auth_required", "Non connecté.");
+    const b = await body(req);
+    const row = db.prepare("SELECT data FROM profiles WHERE user_id = ?").get(u.id) as { data: string } | undefined;
+    const merged = mergeProfiles(sanitizeProfile(row ? JSON.parse(row.data) : null), sanitizeProfile(b.profile));
+    db.prepare("INSERT INTO profiles (user_id, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at")
+      .run(u.id, JSON.stringify(merged), now());
+    json(res, 200, { profile: merged });
+  },
+
   /** Droit d'accès et de portabilité : toutes les données du compte, en JSON. */
   "GET /api/me/export": (_req, res, user) => {
     const u = need(user, 401, "auth_required", "Non connecté.");
     const row = db.prepare("SELECT id, email, pseudo, email_verified, home_dep, created_at, last_seen_at FROM users WHERE id = ?").get(u.id) as Record<string, unknown>;
     const progressRow = db.prepare("SELECT data, updated_at FROM progress WHERE user_id = ?").get(u.id) as { data: string; updated_at: number } | undefined;
     const daily = db.prepare("SELECT day, points, accuracy, elapsed_ms, grid, finished, created_at FROM daily_results WHERE user_id = ? ORDER BY day").all(u.id);
+    const profileRow = db.prepare("SELECT data FROM profiles WHERE user_id = ?").get(u.id) as { data: string } | undefined;
     const sessions = db.prepare("SELECT COUNT(*) AS n, MAX(expires_at) AS until FROM sessions WHERE user_id = ?").get(u.id);
     const iso = (v: unknown) => (typeof v === "number" ? new Date(v).toISOString() : v);
     json(res, 200, {
       exportedAt: new Date().toISOString(),
       account: { ...row, created_at: iso(row.created_at), last_seen_at: iso(row.last_seen_at), password: "haché avec scrypt, non récupérable" },
       progress: progressRow ? JSON.parse(progressRow.data) : {},
+      gameProfile: profileRow ? JSON.parse(profileRow.data) : null,
       dailyResults: daily,
       activeSessions: sessions,
     }, { "content-disposition": `attachment; filename="hexa-${u.pseudo}-donnees.json"` });

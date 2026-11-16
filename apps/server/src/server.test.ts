@@ -121,11 +121,10 @@ test("duel en direct : le plus rapide marque plus, le serveur note", { timeout: 
 
   // Double réponse ignorée, réponse hors délai ignorée : on vérifie juste que ça ne casse rien.
   a.send({ t: "answer", index: 0, answer: perfect(q1) });
+  // Inès abandonne : Bastien gagne par forfait à la fin du tour suivant.
   a.send({ t: "leave" });
-  for (let i = 1; i < 5; i++) {
-    const q = (await b.wait("question", (m) => m.q.index === i, 15_000)).q;
-    b.send({ t: "answer", index: i, answer: perfect(q) });
-  }
+  const q2 = (await b.wait("question", (m) => m.q.index === 1, 15_000)).q;
+  b.send({ t: "answer", index: 1, answer: perfect(q2) });
   const end = await b.wait("end", undefined, 15_000);
   assert.equal(end.ranking.length, 1);
   a.ws.close(); b.ws.close();
@@ -174,4 +173,41 @@ test("RGPD : export puis suppression définitive du compte", async () => {
   assert.equal(r.status, 200);
   assert.equal((await fetch(BASE + "/api/me", { headers: auth })).status, 401, "session invalidée");
   assert.equal((await post("/api/auth/login", { login: "Rgpd", password: "motdepasse" })).status, 401, "compte supprimé");
+});
+
+test("duel à deux : points de vie, dégâts, réactions", { timeout: 60_000 }, async () => {
+  const a = new Client(), b = new Client();
+  await Promise.all([a.open(), b.open()]);
+  a.send({ t: "hello", v: PROTOCOL_VERSION, name: "Ana" }); b.send({ t: "hello", v: PROTOCOL_VERSION, name: "Bob" });
+  const wa = await a.wait("welcome"); const wb = await b.wait("welcome");
+  a.send({ t: "create", kind: "duel", settings: { rounds: 5 } });
+  const room = await a.wait("room");
+  b.send({ t: "join", room: room.room });
+  await a.wait("room", (m) => m.players.length === 2);
+  a.send({ t: "start" });
+  await a.wait("room", (m) => m.players.every((p) => p.hp === 1000));
+  const q = (await a.wait("question")).q;
+  a.send({ t: "answer", index: 0, answer: perfect(q) });
+  b.send({ t: "answer", index: 0, answer: {} });
+  const s = (await a.wait("round")).summary;
+  assert.ok(s.damage && s.damage[wb.you] > 100, JSON.stringify(s.damage));
+  const st = await a.wait("room", (m) => m.phase === "review");
+  assert.equal(st.players.find((p) => p.id === wa.you)!.hp, 1000);
+  assert.ok(st.players.find((p) => p.id === wb.you)!.hp! < 1000);
+  b.send({ t: "react", e: "🔥" });
+  const r = await a.wait("react");
+  assert.equal(r.player, wb.you);
+  b.send({ t: "react", e: "<script>" });
+  a.ws.close(); b.ws.close();
+});
+
+test("profil de jeu : fusion côté serveur et nettoyage", async () => {
+  const r = await post("/api/auth/register", { email: "profil@example.com", pseudo: "Profil", password: "motdepasse" });
+  const { token } = await r.json();
+  const put = (profile: unknown) => fetch(BASE + "/api/profile", { method: "PUT", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ profile }) }).then((x) => x.json());
+  await put({ xp: 300, plates: ["29", "56"], stars: { "53": 2 } });
+  const m = await put({ xp: 120, plates: ["13", "ZZ"], stars: { "53": 1, "93": 3 } });
+  assert.equal(m.profile.xp, 300);
+  assert.deepEqual(m.profile.plates.sort(), ["13", "29", "56"]);
+  assert.deepEqual(m.profile.stars, { "53": 2, "93": 3 });
 });
