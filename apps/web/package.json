@@ -1,0 +1,22 @@
+{
+  "name": "@hexa/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "check": "svelte-check"
+  },
+  "dependencies": {
+    "@hexa/data": "workspace:*",
+    "@hexa/game": "workspace:*"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.8",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.8"
+  }
+}
