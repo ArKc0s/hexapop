@@ -1,0 +1,18 @@
+# Déployé sur infra (VM 103) dans /home/infra/hexapop. Exposé par Caddy (LXC 109) via le LAN.
+services:
+  hexapop:
+    build: ./src
+    image: hexapop:latest
+    container_name: hexapop
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PUBLIC_URL: https://hexapop.app
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./data:/data
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
