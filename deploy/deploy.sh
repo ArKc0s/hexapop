@@ -1,8 +1,9 @@
 #!/bin/sh
 # Envoie la version courante (HEAD) sur infra, reconstruit et relance le conteneur.
 set -eu
-HOST=${HOST:-infra@192.168.1.103}
-DIR=/home/infra/hexapop
+# Cible lue dans deploy/.deploy.env (non versionné) : HOST=utilisateur@serveur et DIR=/chemin/hexapop
+[ -f "$(dirname "$0")/.deploy.env" ] && . "$(dirname "$0")/.deploy.env"
+: "${HOST:?définis HOST dans deploy/.deploy.env}" "${DIR:?définis DIR dans deploy/.deploy.env}"
 cd "$(dirname "$0")/.."
 # Ne pas couper une partie en cours (FORCE=1 pour passer outre).
 EN_COURS=$(ssh "$HOST" "curl -fsS -m 5 http://127.0.0.1:8787/api/health 2>/dev/null" | sed -n 's/.*"players":\([0-9]*\).*/\1/p')

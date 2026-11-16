@@ -1,0 +1,15 @@
+name: Proposer une idée
+description: Un mode de jeu, un contenu, une amélioration
+labels: ["idée"]
+body:
+  - type: textarea
+    id: idee
+    attributes:
+      label: Ton idée
+    validations:
+      required: true
+  - type: textarea
+    id: pourquoi
+    attributes:
+      label: Pourquoi ce serait bien ?
+      description: Le problème que ça règle, ou ce que ça apporterait aux joueurs.

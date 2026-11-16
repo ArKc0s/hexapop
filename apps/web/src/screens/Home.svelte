@@ -115,6 +115,8 @@
     <button class="link" onclick={() => nav.go({ name: "legal", doc: "mentions" })}>Mentions légales</button>
     <button class="link" onclick={() => nav.go({ name: "legal", doc: "confidentialite" })}>Confidentialité</button>
     <button class="link" onclick={() => nav.go({ name: "legal", doc: "cgu" })}>Conditions d'utilisation</button>
+    <a class="link" href="https://github.com/ArKc0s/hexapop/issues/new/choose" target="_blank" rel="noopener">Signaler un bug</a>
+    <a class="link" href="https://github.com/ArKc0s/hexapop" target="_blank" rel="noopener">Code source (AGPL)</a>
     <span>Sans publicité ni traceur.</span>
   </footer>
 </main>

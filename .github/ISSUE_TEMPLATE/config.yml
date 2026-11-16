@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Erreur dans les données (préfecture, contour…)
+    url: https://github.com/ArKc0s/hexapop/issues/new?labels=donn%C3%A9es&title=%5BDonn%C3%A9es%5D+
+    about: Une préfecture, une sous-préfecture ou un voisinage qui te semble faux.
+  - name: Question sur tes données personnelles
+    url: https://hexapop.app/#confidentialite
+    about: Pour exercer tes droits (RGPD), écris à contact@hexapop.app plutôt que sur une issue publique.

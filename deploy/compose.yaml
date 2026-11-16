@@ -1,4 +1,4 @@
-# Déployé sur infra (VM 103) dans /home/infra/hexapop. Exposé par Caddy (LXC 109) via le LAN.
+# Conteneur unique (API, WebSocket, client web). À placer derrière un proxy HTTPS (voir Caddyfile.hexapop).
 services:
   hexapop:
     build: ./src

@@ -10,11 +10,11 @@ L'éditeur du site (voir `apps/web/src/lib/legal.ts`). Contact : contact@hexapop
 
 | # | Traitement | Données | Personnes | Finalité | Base légale | Conservation | Où |
 |---|---|---|---|---|---|---|---|
-| 1 | Comptes joueurs | email, pseudo, empreinte du mot de passe, département de cœur (facultatif), dates de création et de dernière activité | joueurs inscrits | fournir le compte, connexion, synchronisation | contrat (CGU), art. 6.1.b | jusqu'à suppression ; 30 j si email jamais confirmé ; 3 ans sans connexion | SQLite, conteneur `hexapop` (infra, France) |
+| 1 | Comptes joueurs | email, pseudo, empreinte du mot de passe, département de cœur (facultatif), dates de création et de dernière activité | joueurs inscrits | fournir le compte, connexion, synchronisation | contrat (CGU), art. 6.1.b | jusqu'à suppression ; 30 j si email jamais confirmé ; 3 ans sans connexion | SQLite, conteneur `hexapop` (serveur de l'éditeur, France) |
 | 2 | Progression et défi du jour | état de révision par département, scores quotidiens | joueurs inscrits | sauvegarde, classements publics (pseudo, département de cœur, score) | contrat | comme le compte | idem |
 | 3 | Emails transactionnels | email, pseudo | joueurs inscrits | vérification d'adresse, réinitialisation du mot de passe | contrat | jetons : 48 h / 1 h ; les emails envoyés restent chez OVH selon sa politique | OVH (France) |
 | 4 | Sessions | empreinte du jeton, identifiant du compte, expiration | joueurs inscrits | rester connecté | contrat | 60 jours | SQLite |
-| 5 | Sécurité | adresse IP, date, URL, user-agent | tous les visiteurs | lutte contre les abus, limitation des tentatives | intérêt légitime, art. 6.1.f | mémoire du serveur : quelques minutes ; journaux Caddy : 12 mois max (voir point ouvert) | Caddy (LXC 109), Cloudflare |
+| 5 | Sécurité | adresse IP, date, URL, user-agent | tous les visiteurs | lutte contre les abus, limitation des tentatives | intérêt légitime, art. 6.1.f | mémoire du serveur : quelques minutes ; journaux du proxy : 12 mois max | proxy HTTPS de l'éditeur, Cloudflare |
 | 7 | Connexion via un service tiers (Google, Discord, Twitch, Apple) | identifiant chez le service, email et indicateur « vérifié », nom affiché | joueurs qui choisissent ce mode | connexion sans mot de passe, liaison de comptes, pseudo proposé | contrat | jusqu'à la déliaison ou la suppression du compte | table `oauth_identities` |
 | 6 | Parties multijoueur invité | pseudo d'invité, réponses | invités | afficher le joueur, noter la partie | contrat | mémoire du serveur, le temps du salon | conteneur `hexapop` |
 
@@ -34,7 +34,7 @@ Google, Discord, Twitch et Apple sont des responsables de traitement indépendan
 - Limitation des tentatives (inscription, connexion, mot de passe oublié, WebSocket).
 - CSP stricte, aucune ressource tierce (polices auto-hébergées), pas de cookie non essentiel.
 - Purge quotidienne automatique (`purge()` dans `apps/server/src/db.ts`).
-- Base SQLite sur un volume local du conteneur ; accès restreint au compte `infra`.
+- Base SQLite sur un volume local du conteneur ; accès restreint au compte d'exploitation.
 
 ## Droits des personnes
 - Accès et portabilité : `GET /api/me/export` (bouton « Télécharger mes données »).
@@ -44,7 +44,6 @@ Google, Discord, Twitch et Apple sont des responsables de traitement indépendan
 ## Points ouverts
 - [x] Identité de l'éditeur : nom et email publiés. Choix assumé de ne pas publier d'adresse ni de téléphone : non strictement conforme à la LCEN pour un site auto-hébergé ; solution conforme possible plus tard via un hébergeur tiers (VPS), qui permet l'anonymat.
 - [ ] Créer l'adresse `contact@hexapop.app` (ou une redirection OVH).
-- [x] Journaux Caddy : `roll_keep_for 8760h` ajouté (2026-11-16, LXC 109).
-- [x] Sauvegarde quotidienne chiffrée : restic → Backblaze B2 via `sauvegarde.sh quotidien` sur pve01 (tag `hexapop`, rétention 7 j / 4 sem. / 6 mois, alerte Gatus). Clé pve01 à commande forcée dans `authorized_keys` d'infra. Restauration testée le 2026-11-16 :
-      `restic dump --tag hexapop latest /root/sauvegarde/tmp-hexapop.db > hexa.db`, puis arrêter le conteneur, remplacer `/home/infra/hexapop/data/hexa.db` (supprimer `-wal`/`-shm`) et relancer.
+- [x] Journaux du proxy : rotation par durée, 12 mois maximum (2026-11-16).
+- [x] Sauvegarde quotidienne chiffrée hors site (restic), rétention 7 j / 4 sem. / 6 mois, alerte en cas d'échec ; restauration testée le 2026-11-16 (procédure : `apps/server/src/backup.ts`).
 - [ ] En cas de violation de données : notification à la CNIL sous 72 h (art. 33) et aux joueurs si risque élevé.

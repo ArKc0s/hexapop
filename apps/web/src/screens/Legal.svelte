@@ -36,6 +36,9 @@
       Contours : IGN ADMIN EXPRESS via le projet france-geojson, Licence Ouverte. Les données ont été simplifiées pour le jeu.</p>
     <p>Polices : Bowlby One, Schibsted Grotesk, IBM Plex Mono, sous licence SIL Open Font License.</p>
 
+    <h2>Code source</h2>
+    <p>Le code d'Hexa est publié sous licence GNU AGPL-3.0 : <a class="link" href="https://github.com/ArKc0s/hexapop" target="_blank" rel="noopener">github.com/ArKc0s/hexapop</a>. Le nom, le logo et la mascotte ne sont pas couverts par cette licence.</p>
+
     <h2>Signaler un contenu</h2>
     <p>Pour signaler un pseudo ou un contenu illicite, écris à {EDITEUR.contact} en précisant le pseudo et la page concernée.</p>
   {:else if doc === "confidentialite"}

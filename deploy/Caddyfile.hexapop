@@ -1,5 +1,6 @@
 
-# Hexa : jeu des départements (conteneur hexapop sur infra). Ajouté le 2026-11-16, voir github.com/ArKc0s/hexapop.
+# Exemple de bloc Caddy pour exposer Hexa (derrière Cloudflare, certificats par DNS).
+# Les snippets cloudflare_dns, journal, sondes et anti_exploits sont à définir dans votre Caddyfile.
 hexapop.app, www.hexapop.app {
 	import cloudflare_dns
 	import journal
@@ -13,5 +14,5 @@ hexapop.app, www.hexapop.app {
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 	}
-	reverse_proxy 192.168.1.103:8787
+	reverse_proxy {$HEXAPOP_UPSTREAM:127.0.0.1:8787}
 }
