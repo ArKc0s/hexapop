@@ -44,23 +44,23 @@
 <main class="play">
   <header>
     <button class="back" onclick={quit}>← Quitter</button>
-    <span class="riso logo" data-t="HEXA">HEXA</span>
+    <span class="display logo">HEXA</span>
     <span class="chip">{title}</span>
     <span class="chip tabnum">{i + 1} / {questions.length}</span>
     <span class="score tabnum">{total} pts</span>
   </header>
   {#key i}
     <Round {q} {result} {startedAt} {history} onsubmit={submit}>
-      <button class="btn blue next" onclick={next}>{i + 1 >= questions.length ? "Voir le bilan" : "Suivant"} ↵</button>
+      {#snippet action()}<button class="btn" onclick={next}>{i + 1 >= questions.length ? "Voir le bilan" : "Suivant"} <kbd>↵</kbd></button>{/snippet}
     </Round>
   {/key}
 </main>
 
 <style>
-  .play { max-width: 1320px; margin: 0 auto; padding: 14px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+  .play { max-width: 1320px; margin: 0 auto; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .back { background: none; border: 0; cursor: pointer; font-weight: 600; padding: 0; }
-  .logo { font-size: 28px; margin-right: auto; }
-  .score { font-family: var(--f-pop); font-size: 22px; }
-  .next { align-self: flex-start; }
+  .logo { font-size: 22px; margin-right: auto; color: var(--blue); }
+  .score { font-family: var(--f-num); font-weight: 600; font-size: 18px; }
+  @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
 </style>

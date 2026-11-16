@@ -46,10 +46,11 @@
   <button class="back" onclick={leave}>← Accueil</button>
 
   {#if !room}
-    <h1 class="riso" data-t="ENTRE AMIS">ENTRE AMIS</h1>
+    <h1 class="display">Entre amis</h1>
     {#if !session.me}
       <label class="label" for="l-name">Ton pseudo</label>
       <input id="l-name" class="field" maxlength="20" placeholder="ex. Inès" bind:value={name} />
+      {#if name.trim().length < 2}<p class="hint">Choisis un pseudo pour créer ou rejoindre un salon, ou <button class="link" onclick={() => nav.go({ name: "account", view: "login", then: { name: "lobby" } })}>connecte-toi</button>.</p>{/if}
     {/if}
     <div class="choices">
       <button class="door" onclick={() => create("duel")} disabled={!session.me && name.trim().length < 2}>
@@ -68,7 +69,7 @@
     </div>
     {#if live.error}
       <p class="err" role="alert">{live.error.message}
-        {#if live.error.code === "already_started"}<button class="inline" onclick={() => doJoin(true)}>Regarder en spectateur</button>{/if}
+        {#if live.error.code === "already_started"}<button class="link" onclick={() => doJoin(true)}>Regarder en spectateur</button>{/if}
       </p>
     {/if}
   {:else}
@@ -118,7 +119,7 @@
     </section>
 
     {#if isHost}
-      <button class="btn go" onclick={() => live.send({ t: "start" })}>Lancer la partie</button>
+      <button class="btn accent go" onclick={() => live.send({ t: "start" })}>Lancer la partie</button>
     {:else}
       <p class="wait">En attente du lancement par l'hôte…</p>
     {/if}
@@ -128,31 +129,29 @@
 
 <style>
   .lobby { max-width: 820px; margin: 0 auto; padding: 24px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
-  .back { align-self: flex-start; background: none; border: 0; cursor: pointer; font-weight: 600; padding: 0; }
-  h1 { font-size: clamp(44px, 8vw, 72px); margin: 0; }
+  .back { align-self: flex-start; }
+  h1 { font-size: clamp(40px, 7vw, 60px); text-transform: uppercase; }
   .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .door { text-align: left; border: 3px solid var(--ink); border-radius: var(--r); padding: 14px 18px; background: var(--yellow); cursor: pointer; display: flex; flex-direction: column; gap: 4px; box-shadow: 4px 4px 0 var(--pink); }
-  .door.plateau { background: var(--blue); color: #fff; box-shadow: 4px 4px 0 var(--ink); }
-  .door:disabled { opacity: .5; cursor: not-allowed; }
-  .door b { font-family: var(--f-pop); font-weight: 400; font-size: 22px; text-transform: uppercase; }
-  .door span { font-size: 14px; }
+  .door { text-align: left; border: 1.5px solid var(--ink); border-radius: var(--r); padding: 14px 16px; background: var(--card); cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: background .1s; }
+  .door:hover:not(:disabled) { background: var(--yellow); }
+  .door:disabled { opacity: .4; cursor: not-allowed; }
+  .door b { font-size: 19px; font-weight: 800; }
+  .door span { font-size: 14px; color: var(--ink-soft); }
   .join { display: flex; flex-direction: column; gap: 6px; }
   .row { display: flex; gap: 10px; }
-  .code { max-width: 140px; text-transform: uppercase; letter-spacing: .2em; font-family: var(--f-pop); }
+  .code { max-width: 140px; text-transform: uppercase; letter-spacing: .2em; font-family: var(--f-num); font-weight: 600; }
   .err { color: #b0005f; font-weight: 600; margin: 0; }
-  .inline { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; font-weight: 600; }
+  
   .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
   .bigcode { font-size: clamp(64px, 12vw, 110px); letter-spacing: .08em; }
   .share { display: flex; gap: 10px; flex-wrap: wrap; }
   .share a { text-decoration: none; color: inherit; }
   h2 { margin: 0 0 8px; }
   .players ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .players li { display: flex; align-items: center; gap: 8px; border: 2px solid var(--ink); border-radius: 999px; padding: 3px 12px 3px 3px; font-weight: 600; background: #fff; }
+  .players li { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); border-radius: 999px; padding: 3px 12px 3px 3px; font-weight: 600; background: var(--card); }
   .players li.me { background: var(--yellow); }
-  .av { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); display: grid; place-items: center; font-family: var(--f-pop); font-size: 12px; background: var(--tint-a); }
+  .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: var(--ink); color: var(--paper); }
   .opts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .opts .chip { cursor: pointer; background: #fff; }
-  .opts .chip.on { background: var(--yellow); }
   .opts .chip:disabled { cursor: default; }
   .sep { width: 8px; }
   details { margin-top: 10px; }
@@ -160,4 +159,5 @@
   .go { align-self: flex-start; font-size: 22px; }
   .wait { font-weight: 600; }
   @media (max-width: 600px) { .choices { grid-template-columns: 1fr; } }
+  .hint { margin: -6px 0 0; font-size: 14px; color: var(--ink-soft); }
 </style>

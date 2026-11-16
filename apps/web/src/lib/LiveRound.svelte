@@ -4,7 +4,7 @@
   import { live } from "./socket.svelte.ts";
   import type { Snippet } from "svelte";
 
-  let { children, header, readonly = false }: { children?: Snippet; header?: Snippet; readonly?: boolean } = $props();
+  let { children, action, readonly = false }: { children?: Snippet; action?: Snippet; readonly?: boolean } = $props();
 
   const q = $derived(live.question as Question | null);
   const result = $derived.by(() => {
@@ -22,7 +22,7 @@
 
 {#if q}
   {#key q.index}
-    <Round {q} {result} startedAt={live.toPerf(live.question!.startsAt)} onsubmit={submit} {header}>
+    <Round {q} {result} startedAt={live.toPerf(live.question!.startsAt)} onsubmit={submit} {action}>
       {@render children?.()}
     </Round>
   {/key}

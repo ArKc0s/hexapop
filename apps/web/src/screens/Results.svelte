@@ -29,7 +29,7 @@
       <div><b class="tabnum">{perfect}/{results.length}</b><span>sans faute</span></div>
     </div>
     <div class="cta">
-      {#if missed.length}<button class="btn" onclick={replayMissed}>Rejouer les {missed.length} ratés</button>{/if}
+      {#if missed.length}<button class="btn accent" onclick={replayMissed}>Rejouer les {missed.length} ratés</button>{/if}
       <button class="btn ghost" onclick={() => nav.go({ name: "home" })}>Accueil</button>
     </div>
     {#if missed.length}
@@ -48,16 +48,16 @@
 <style>
   .res { max-width: 1240px; margin: 0 auto; padding: 24px 20px 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 28px; align-items: start; }
   .sum { display: flex; flex-direction: column; gap: 14px; }
-  .back { align-self: flex-start; background: none; border: 0; cursor: pointer; font-weight: 600; padding: 0; }
+  .back { align-self: flex-start; }
   h1 { font-size: clamp(72px, 11vw, 128px); margin: 0; }
   .sub { margin: -6px 0 0; font-weight: 600; }
   .stats { display: flex; gap: 28px; }
   .stats div { display: flex; flex-direction: column; }
-  .stats b { font-family: var(--f-pop); font-size: 30px; font-weight: 400; }
+  .stats b { font-family: var(--f-num); font-size: 28px; font-weight: 600; }
   .stats span { font-size: 13px; }
   .cta { display: flex; gap: 12px; flex-wrap: wrap; }
   .list { display: flex; flex-wrap: wrap; gap: 6px; }
-  .list .chip { cursor: pointer; }
+  
   .mapcol { position: sticky; top: 12px; }
   @media (max-width: 860px) { .res { grid-template-columns: 1fr; } .mapcol { position: static; } }
 </style>

@@ -40,7 +40,7 @@
 
 <main class="acc">
   <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-  <h1 class="riso" data-t="COMPTE">COMPTE</h1>
+  <h1 class="display">{current === "register" ? "Créer un compte" : current === "profile" ? "Ton compte" : current === "forgot" || current === "reset" ? "Mot de passe" : "Connexion"}</h1>
 
   {#if current === "login"}
     <form onsubmit={submitLogin}>
@@ -48,7 +48,7 @@
       <input id="a-login" class="field" autocomplete="username" bind:value={login} required />
       <label class="label" for="a-pw">Mot de passe</label>
       <input id="a-pw" class="field" type="password" autocomplete="current-password" bind:value={password} required />
-      <button class="btn" disabled={busy}>Se connecter</button>
+      <button class="btn accent" disabled={busy}>Se connecter</button>
     </form>
     <div class="links"><button onclick={() => (current = "register")}>Créer un compte</button><button onclick={() => (current = "forgot")}>Mot de passe oublié</button></div>
   {:else if current === "register"}
@@ -65,7 +65,7 @@
         <option value="">Je préfère ne pas dire</option>
         {#each sorted as d (d.code)}<option value={d.code}>{d.nom} ({d.code})</option>{/each}
       </select>
-      <button class="btn" disabled={busy}>Créer mon compte</button>
+      <button class="btn accent" disabled={busy}>Créer mon compte</button>
     </form>
     <div class="links"><button onclick={() => (current = "login")}>J'ai déjà un compte</button></div>
   {:else if current === "forgot"}
@@ -107,8 +107,8 @@
 
 <style>
   .acc { max-width: 520px; margin: 0 auto; padding: 28px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
-  .back { align-self: flex-start; background: none; border: 0; cursor: pointer; font-weight: 600; padding: 0; }
-  h1 { font-size: 56px; margin: 0; }
+  .back { align-self: flex-start; }
+  h1 { font-size: 40px; margin: 0; text-transform: uppercase; }
   form, .profile { display: flex; flex-direction: column; gap: 8px; }
   form .btn { margin-top: 10px; align-self: flex-start; }
   select.field { font-size: 16px; }

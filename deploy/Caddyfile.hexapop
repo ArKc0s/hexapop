@@ -1,12 +1,15 @@
-# Bloc à ajouter au Caddyfile du proxy public (LXC 109).
+
+# Hexa : jeu des départements (conteneur hexapop sur infra). Ajouté le 2026-11-16, voir github.com/ArKc0s/hexapop.
 hexapop.app, www.hexapop.app {
 	import cloudflare_dns
 	import journal
+	import sondes
+	import anti_exploits
 	@www host www.hexapop.app
 	redir @www https://hexapop.app{uri} permanent
 	encode zstd gzip
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 	}

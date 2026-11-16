@@ -5,7 +5,7 @@
 </script>
 
 <div class="fiche">
-  <div class="head"><span class="riso num" data-t={d.code}>{d.code}</span><div><div class="nom">{d.nom}</div><div class="reg">{REGION.get(d.region)?.nom}</div></div></div>
+  <div class="head"><span class="display code num">{d.code}</span><div><div class="nom">{d.nom}</div><div class="reg">{REGION.get(d.region)?.nom}</div></div></div>
   <dl>
     <dt>Préfecture</dt><dd>{d.prefecture}</dd>
     {#if expert}
@@ -17,10 +17,10 @@
 </div>
 
 <style>
-  .fiche { border: 3px solid var(--ink); border-radius: var(--r); background: #fff; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .fiche { border: 1.5px solid var(--line); border-radius: var(--r); background: var(--card); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
   .head { display: flex; gap: 14px; align-items: center; }
-  .num { font-size: 48px; }
-  .nom { font-family: var(--f-pop); font-size: 22px; line-height: 1.05; text-transform: uppercase; }
+  .code { font-size: 40px; font-family: var(--f-num); font-weight: 600; letter-spacing: -.02em; }
+  .nom { font-weight: 800; font-size: 20px; line-height: 1.1; }
   .reg { font-size: 13px; color: var(--ink-soft); }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
   dt { color: var(--ink-soft); }

@@ -46,7 +46,7 @@
 <main class="daily">
   <header>
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-    <span class="riso logo" data-t="HEXA">HEXA</span>
+    <span class="display logo">HEXA</span>
     {#if info}<span class="chip">Défi n° {info.number}</span>{/if}
     {#if started && !outcome}<span class="score tabnum">{total} pts</span>{/if}
   </header>
@@ -57,14 +57,14 @@
 
   {#if !started && !(info?.played)}
     <section class="intro">
-      <h1 class="riso" data-t="DÉFI DU JOUR">DÉFI DU JOUR</h1>
+      <h1 class="display">Défi du jour</h1>
       <p>10 départements tirés pour tout le monde. Carte, numéro, préfecture : plus tu vas vite, plus tu marques. Un seul essai, nouveau défi à minuit.</p>
-      {#if !session.me}<p class="hint">Tu joues en invité : <button class="inline" onclick={() => nav.go({ name: "account", view: "register", then: { name: "daily" } })}>crée un compte</button> pour entrer au classement.</p>{/if}
-      <button class="btn go" onclick={start}>Jouer le défi</button>
+      {#if !session.me}<p class="hint">Tu joues en invité : <button class="link" onclick={() => nav.go({ name: "account", view: "register", then: { name: "daily" } })}>crée un compte</button> pour entrer au classement.</p>{/if}
+      <button class="btn accent go" onclick={start}>Jouer le défi</button>
     </section>
   {:else if started && !outcome && live.question}
     <LiveRound>
-      <button class="btn blue" onclick={() => live.send({ t: "next" })}>{live.question.index + 1 >= live.question.total ? "Voir le bilan" : "Suivant"} ↵</button>
+      {#snippet action()}<button class="btn" onclick={() => live.send({ t: "next" })}>{live.question!.index + 1 >= live.question!.total ? "Voir le bilan" : "Suivant"} <kbd>↵</kbd></button>{/snippet}
     </LiveRound>
   {:else if started && !outcome}
     <p class="wait">Préparation du défi…</p>
@@ -81,7 +81,7 @@
         {:else if !session.me}
           <p>Score non classé (invité).</p>
         {/if}
-        <button class="btn" onclick={share}>{copied ? "Copié !" : "Partager"}</button>
+        <button class="btn accent" onclick={share}>{copied ? "Copié !" : "Partager"}</button>
       </div>
     </section>
   {/if}
@@ -109,21 +109,21 @@
 </main>
 
 <style>
-  .daily { max-width: 1320px; margin: 0 auto; padding: 14px 20px 48px; display: flex; flex-direction: column; gap: 18px; }
+  .daily { max-width: 1320px; margin: 0 auto; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 18px; }
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .back { background: none; border: 0; cursor: pointer; font-weight: 600; padding: 0; }
-  .logo { font-size: 28px; margin-right: auto; }
-  .score { font-family: var(--f-pop); font-size: 22px; }
+  
+  .logo { font-size: 22px; margin-right: auto; color: var(--blue); }
+  .score { font-family: var(--f-num); font-weight: 600; font-size: 18px; }
   .intro { max-width: 640px; display: flex; flex-direction: column; gap: 14px; padding-top: 30px; }
-  .intro h1 { font-size: clamp(44px, 8vw, 76px); margin: 0; }
+  .intro h1 { font-size: clamp(40px, 7vw, 64px); text-transform: uppercase; }
   .intro p { margin: 0; font-size: 17px; }
   .hint { font-size: 14px !important; }
-  .inline { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; font-weight: 600; }
+  
   .go { align-self: flex-start; font-size: 22px; }
   .wait { font-weight: 600; }
   .err { color: #b0005f; font-weight: 600; }
   .end { display: flex; justify-content: center; padding: 20px 0; }
-  .card { border: 3px solid var(--ink); border-radius: var(--r); background: #fff; padding: 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 6px 6px 0 var(--pink); }
+  .card { border: 1.5px solid var(--ink); border-radius: var(--r); background: var(--card); padding: 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 6px 6px 0 var(--pink); }
   .card p { margin: 0; }
   .big { font-size: 84px; }
   .grid { display: flex; gap: 6px; }
@@ -135,4 +135,5 @@
   .lb li { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; padding: 4px 8px; border-radius: 8px; }
   .lb li.me { background: var(--yellow); }
   @media (max-width: 700px) { .boards { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
 </style>

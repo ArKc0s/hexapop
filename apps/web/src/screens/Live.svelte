@@ -23,7 +23,7 @@
 <main class="live">
   <header>
     <button class="back" onclick={leave}>← Quitter</button>
-    <span class="riso logo" data-t="HEXA">HEXA</span>
+    <span class="display logo">HEXA</span>
     {#if room}<span class="chip">Salon {room.code}</span>{/if}
     {#if live.question}<span class="chip tabnum">{live.question.index + 1}/{live.question.total}</span>{/if}
     {#if me}<span class="score tabnum">{me.score} pts · {myRank}{myRank === 1 ? "er" : "e"}</span>{/if}
@@ -39,12 +39,12 @@
         {/each}
       </ol>
       <div class="cta">
-        {#if me?.host}<button class="btn" onclick={() => live.send({ t: "rematch" })}>Revanche</button>{:else}<span>L'hôte peut lancer une revanche.</span>{/if}
+        {#if me?.host}<button class="btn accent" onclick={() => live.send({ t: "rematch" })}>Revanche</button>{:else}<span>L'hôte peut lancer une revanche.</span>{/if}
         <button class="btn ghost" onclick={leave}>Accueil</button>
       </div>
     </section>
   {:else if room?.phase === "countdown"}
-    <div class="count riso" data-t="PRÊTS ?">PRÊTS ?</div>
+    <div class="count display">Prêts ?</div>
   {:else if me?.eliminated}
     <p class="out">Éliminé ! Tu regardes la suite en spectateur.</p>
     <StageView />
@@ -70,13 +70,13 @@
 </main>
 
 <style>
-  .live { max-width: 1320px; margin: 0 auto; padding: 14px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+  .live { max-width: 1320px; margin: 0 auto; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .back { background: none; border: 0; cursor: pointer; font-weight: 600; padding: 0; }
-  .logo { font-size: 28px; margin-right: auto; }
-  .score { font-family: var(--f-pop); font-size: 20px; }
+  
+  .logo { font-size: 22px; margin-right: auto; color: var(--blue); }
+  .score { font-family: var(--f-num); font-weight: 600; font-size: 17px; }
   .warn { background: var(--pink); }
-  .count { font-size: clamp(80px, 16vw, 180px); text-align: center; padding: 60px 0; }
+  .count { font-size: clamp(64px, 12vw, 140px); text-align: center; padding: 60px 0; text-transform: uppercase; }
   .mini { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
   .mini li { display: grid; grid-template-columns: 24px 1fr auto 64px; gap: 8px; padding: 3px 8px; border-radius: 8px; }
   .mini li.me { background: var(--yellow); }
@@ -88,7 +88,8 @@
   .end { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; width: 100%; }
   .end h1 { font-size: clamp(56px, 10vw, 96px); margin: 0; }
   .rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 18px; }
-  .rank li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; padding: 6px 10px; border-radius: 10px; border: 2px solid var(--ink); background: #fff; }
+  .rank li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
   .rank li.me { background: var(--yellow); }
   .cta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
 </style>

@@ -15,7 +15,10 @@ export async function sendMail(to: string, subject: string, text: string): Promi
     console.log(`[mail non configuré] à ${to} : ${subject}\n${text}`);
     return;
   }
-  await transport.sendMail({ from: `Hexa <${config.smtp.from}>`, to, subject, text });
+  const info = await transport.sendMail({ from: `Hexa <${config.smtp.from}>`, to, subject, text });
+  // Journal minimal (sans l'adresse complète) pour suivre la délivrabilité.
+  const masked = to.replace(/^(.).*(@.*)$/, "$1***$2");
+  console.log(`[mail] « ${subject} » → ${masked} : ${info.messageId} ${info.response}`);
 }
 
 export const verifyMail = (pseudo: string, link: string) =>

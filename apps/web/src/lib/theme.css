@@ -1,20 +1,24 @@
-/* Hexa : risographie pop. Papier, trois encres (rose fluo, bleu riso, jaune), encre de texte. */
+/* Hexa : papier, encre, et l'effet riso réservé à un seul moment fort par écran.
+   Display (Bowlby) pour l'indice et le logo, Schibsted pour le texte, Plex Mono pour les chiffres. */
 :root {
-  --paper: #f5f1e8;
-  --paper-2: #ece6d8;
-  --ink: #1b1a3a;
-  --ink-soft: #55536f;
+  --paper: #f4f0e6;
+  --paper-2: #ebe5d6;
+  --card: #fbf8f1;
+  --ink: #1d1b33;
+  --ink-soft: #5d5a72;
+  --line: #cfc8b6;
   --pink: #ff48b0;
-  --blue: #0078bf;
-  --yellow: #ffe800;
-  --ok: #0078bf;
-  --ko: #ff48b0;
+  --blue: #0a72b8;
+  --yellow: #ffe14d;
+  --ok: #0a72b8;
+  --ko: #f0399d;
   --tint-a: #ffd3e8;
   --tint-b: #cfe6f5;
   --tint-c: #fff3a0;
   --f-pop: "Bowlby One", Impact, "Arial Black", sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --r: 14px;
+  --f-body: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 12px;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -22,42 +26,69 @@ html, body { margin: 0; height: 100%; }
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--f-mono);
+  font-family: var(--f-body);
   font-size: 16px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
-/* Grain d'impression, très léger */
 body::after {
-  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: .12; mix-blend-mode: multiply;
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: .08; mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 .2 0 0 0 0 .2 0 0 0 0 .3 0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 #app { min-height: 100%; }
-button, input { font: inherit; color: inherit; }
-:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; }
 
-.riso { font-family: var(--f-pop); color: var(--blue); position: relative; line-height: .9; isolation: isolate; }
-.riso::before { content: attr(data-t); position: absolute; left: .06em; top: .06em; color: var(--pink); z-index: -1; mix-blend-mode: multiply; }
+/* L'effet riso : à n'utiliser qu'une fois par écran. */
+.riso { font-family: var(--f-pop); color: var(--blue); position: relative; line-height: .9; isolation: isolate; font-weight: 400; }
+.riso::before { content: attr(data-t); position: absolute; left: .05em; top: .05em; color: var(--pink); z-index: -1; mix-blend-mode: multiply; }
 
+.display { font-family: var(--f-pop); font-weight: 400; line-height: 1; letter-spacing: .005em; margin: 0; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.tabnum { font-variant-numeric: tabular-nums; }
+
+/* Boutons : encre par défaut, un seul « accent » par écran. */
 .btn {
-  font-family: var(--f-pop); font-size: 18px; letter-spacing: .01em; text-transform: uppercase;
-  border: 3px solid var(--ink); background: var(--yellow); padding: 10px 18px; border-radius: 999px; cursor: pointer;
-  box-shadow: 4px 4px 0 var(--pink); transition: transform .08s, box-shadow .08s;
+  font-family: var(--f-body); font-weight: 700; font-size: 16px;
+  border: 0; background: var(--ink); color: var(--paper); padding: 12px 20px; border-radius: 10px; cursor: pointer;
+  transition: background .12s, transform .08s;
+  display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
 }
-.btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--pink); }
-.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--pink); }
-.btn.ghost { background: transparent; box-shadow: none; }
-.btn.blue { background: var(--blue); color: #fff; box-shadow: 4px 4px 0 var(--ink); }
-.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn:hover { background: #34315a; }
+.btn:active { transform: translateY(1px); }
+.btn.accent { background: var(--yellow); color: var(--ink); box-shadow: 3px 3px 0 var(--pink); }
+.btn.accent:hover { background: #ffd61a; }
+.btn.ghost { background: transparent; color: var(--ink); padding: 12px 4px; text-decoration: underline; text-underline-offset: 3px; }
+.btn.ghost:hover { color: var(--blue); }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn kbd { font-family: var(--f-num); font-size: 12px; opacity: .6; }
 
-.chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; padding: 3px 10px; border: 2px solid var(--ink); border-radius: 999px; background: transparent; }
-.chip.on { background: var(--yellow); }
+.link { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.link:hover { color: var(--blue); }
+.back { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; color: var(--ink-soft); font-size: 15px; }
+.back:hover { color: var(--ink); }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; padding: 3px 10px; border: 1.5px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink); }
+button.chip { cursor: pointer; }
+button.chip:hover { border-color: var(--ink); }
+.chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* Contrôle segmenté (niveau, saisie…) */
+.seg { display: inline-flex; border: 1.5px solid var(--ink); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 8px 14px; cursor: pointer; font-weight: 600; }
+.seg button + button { border-left: 1.5px solid var(--ink); }
+.seg button.on { background: var(--ink); color: var(--paper); }
+.seg button:disabled { cursor: default; }
 
 .field {
-  width: 100%; border: 3px solid var(--ink); border-radius: 10px; background: #fff; padding: 10px 12px; font-size: 18px; font-weight: 600;
+  width: 100%; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--card); padding: 10px 12px; font-size: 17px; font-weight: 500;
 }
-.field::placeholder { color: #a9a6b8; font-weight: 400; }
-.label { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; font-weight: 600; color: var(--ink-soft); }
-.tabnum { font-variant-numeric: tabular-nums; }
+.field::placeholder { color: #a7a3b5; font-weight: 400; }
+.field:focus { outline: none; box-shadow: 0 0 0 3px var(--yellow); }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--ink-soft); }
+
+.err { color: #b0005f; font-weight: 600; margin: 0; }
+.ok-text { color: var(--blue); font-weight: 600; margin: 0; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

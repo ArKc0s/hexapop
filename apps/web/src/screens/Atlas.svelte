@@ -18,7 +18,7 @@
 <main class="atlas">
   <section class="side">
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-    <h1 class="riso" data-t="ATLAS">ATLAS</h1>
+    <h1 class="display">ATLAS</h1>
     <p>Clique un département pour voir sa fiche. Révise région par région avant de jouer.</p>
     <div class="regs">
       <button class="chip" class:on={!region} onclick={() => (region = null)}>Toutes</button>
@@ -35,11 +35,11 @@
 <style>
   .atlas { max-width: 1320px; margin: 0 auto; padding: 24px 20px 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 28px; align-items: start; }
   .side { display: flex; flex-direction: column; gap: 14px; }
-  .back { align-self: flex-start; background: none; border: 0; cursor: pointer; font-weight: 600; padding: 0; }
-  h1 { font-size: 64px; margin: 0; }
+  .back { align-self: flex-start; }
+  h1 { font-size: 56px; margin: 0; }
   p { margin: 0; }
   .regs { display: flex; flex-wrap: wrap; gap: 6px; }
-  .regs .chip { cursor: pointer; }
+  
   .list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; max-height: 320px; overflow: auto; font-size: 14px; }
   .list button { background: none; border: 0; text-align: left; padding: 3px 4px; cursor: pointer; border-radius: 6px; }
   .list button.on { background: var(--yellow); }

@@ -1,89 +1,87 @@
 <script lang="ts">
-  import { MAP, IDF_SOURCE, IDF_TARGET, TINT_BY_DEP, zoomTransform } from "./map.ts";
+  import { MAP, IDF_SOURCE, IDF_TARGET, zoomTransform } from "./map.ts";
 
   export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near" | "done-ok" | "done-ko";
   interface Props {
     marks?: Record<string, Mark>;
     fills?: Record<string, string>;
-    tints?: boolean;
     interactive?: boolean;
     onpick?: (code: string) => void;
     label?: string;
   }
-  let { marks = {}, fills, tints = true, interactive = true, onpick, label = "Carte des départements" }: Props = $props();
+  let { marks = {}, fills, interactive = true, onpick, label = "Carte des départements" }: Props = $props();
 
   const codes = Object.keys(MAP.paths);
+  const regions = Object.values((MAP as unknown as { regions: Record<string, string> }).regions ?? {});
   const uid = "m" + Math.random().toString(36).slice(2, 7);
   const vb = MAP.viewBox.join(" ");
   const idfT = zoomTransform(IDF_SOURCE, IDF_TARGET);
 
-  function fillFor(code: string) {
-    if (fills?.[code]) return fills[code];
-    return tints ? TINT_BY_DEP[code] : "var(--paper)";
-  }
-  function click(e: MouseEvent) {
+  function pickFrom(e: Event) {
     if (!interactive) return;
     const code = (e.target as Element).getAttribute?.("data-code");
     if (code) onpick?.(code);
   }
   function key(e: KeyboardEvent) {
-    if (!interactive) return;
-    if (e.key !== "Enter" && e.key !== " ") return;
-    const code = (e.target as Element).getAttribute?.("data-code");
-    if (code) { e.preventDefault(); onpick?.(code); }
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickFrom(e); }
   }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<svg class="map" class:interactive viewBox={vb} role="img" aria-label={label} onclick={click} onkeydown={key}>
+<svg class="map" class:interactive viewBox={vb} role="img" aria-label={label} onclick={pickFrom} onkeydown={key}>
   <defs>
-    {#each codes as code (code)}
-      <path id="{uid}-{code}" d={MAP.paths[code]} />
-    {/each}
+    {#each codes as code (code)}<path id="{uid}-{code}" d={MAP.paths[code]} />{/each}
   </defs>
 
   {#each MAP.insets as b (b.code)}
-    <rect class="frame" x={b.x} y={b.y} width={b.w} height={b.h} rx="10" />
+    <rect class="frame" x={b.x} y={b.y} width={b.w} height={b.h} rx="8" />
   {/each}
-  <rect class="frame" x={IDF_TARGET.x} y={IDF_TARGET.y} width={IDF_TARGET.w} height={IDF_TARGET.h} rx="10" />
+  <rect class="frame" x={IDF_TARGET.x} y={IDF_TARGET.y} width={IDF_TARGET.w} height={IDF_TARGET.h} rx="8" />
+  <text class="cap" x={IDF_TARGET.x + IDF_TARGET.w / 2} y={IDF_TARGET.y + IDF_TARGET.h + 16} text-anchor="middle">Paris et petite couronne</text>
   <rect class="src" x={IDF_SOURCE.x - 3} y={IDF_SOURCE.y - 3} width={IDF_SOURCE.w + 6} height={IDF_SOURCE.h + 6} rx="3" />
-  <line class="src" x1={IDF_SOURCE.x + IDF_SOURCE.w + 3} y1={IDF_SOURCE.y} x2={IDF_TARGET.x} y2={IDF_TARGET.y + IDF_TARGET.h} />
 
-  <!-- Ombre rose décalée : silhouette uniquement, dessinée en premier -->
-  <g class="shadow" transform="translate(6 6)" aria-hidden="true">
+  <!-- Ombre rose : un léger décalage de la silhouette, la seule touche riso de la carte -->
+  <g class="shadow" transform="translate(4 4)" aria-hidden="true">
     {#each codes as code (code)}<use href="#{uid}-{code}" />{/each}
   </g>
 
   <g class="deps">
     {#each codes as code (code)}
-      <use href="#{uid}-{code}" data-code={code} class={marks[code] ?? ""} style="--f:{fillFor(code)}"
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <use href="#{uid}-{code}" data-code={code} class={marks[code] ?? ""} style={fills?.[code] ? `--f:${fills[code]}` : undefined}
         tabindex={interactive ? 0 : -1} role={interactive ? "button" : undefined} aria-label={interactive ? "département" : undefined} />
     {/each}
   </g>
+  <g class="regions" aria-hidden="true">
+    {#each regions as d, i (i)}<path {d} />{/each}
+  </g>
   <g class="deps zoom" transform={idfT}>
     {#each IDF_SOURCE.codes as code (code)}
-      <use href="#{uid}-{code}" data-code={code} class={marks[code] ?? ""} style="--f:{fillFor(code)}" />
+      <use href="#{uid}-{code}" data-code={code} class={marks[code] ?? ""} style={fills?.[code] ? `--f:${fills[code]}` : undefined} />
     {/each}
   </g>
 </svg>
 
 <style>
-  .map { display: block; width: 100%; height: 100%; user-select: none; -webkit-tap-highlight-color: transparent; }
-  .shadow use { fill: var(--pink); stroke: var(--pink); stroke-width: 2; }
-  .frame { fill: var(--paper); stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 5; }
-  .src { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 3 3; }
-  .deps use { fill: var(--f); stroke: var(--ink); stroke-width: .9; stroke-linejoin: round; transition: fill .12s; outline: none; }
-  .zoom use { stroke-width: .25; }
+  .map { display: block; width: 100%; height: auto; max-height: 100%; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .shadow use { fill: var(--pink); }
+  .frame { fill: none; stroke: var(--line); stroke-width: 1.5; }
+  .cap { font: 600 13px var(--f-body); fill: var(--ink-soft); }
+  .src { fill: none; stroke: var(--ink-soft); stroke-width: 1; stroke-dasharray: 2 2; }
+  .deps use { fill: var(--f, var(--card)); stroke: #8d8799; stroke-width: .6; stroke-linejoin: round; transition: fill .12s; outline: none; }
+  .regions path { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; pointer-events: none; }
+  .zoom use { stroke-width: .18; }
   .interactive .deps use { cursor: pointer; }
-  .interactive .deps use:hover, .interactive .deps use:focus-visible { fill: var(--yellow); }
-  .deps use.sel { fill: var(--yellow); stroke-width: 2.4; }
-  .deps use.done-ok { fill: #7cbde4; }
-  .deps use.done-ko { fill: #ffa8d6; }
-  .deps use.near { fill: var(--yellow); fill-opacity: .6; stroke: var(--pink); stroke-width: 2.4; }
-  .deps use.hint { fill: var(--yellow); stroke-width: 2.4; animation: blink 1s ease-in-out infinite alternate; }
-  .deps use.ok { fill: var(--ok); }
-  .deps use.ko { fill: var(--ko); }
-  .deps use.miss { fill: var(--blue); animation: blink .6s ease-in-out 4 alternate; }
-  .zoom use.sel, .zoom use.hint, .zoom use.near { stroke-width: .6; }
-  @keyframes blink { from { fill-opacity: 1; } to { fill-opacity: .45; } }
+  .interactive .deps use:hover, .interactive .deps use:focus-visible { fill: var(--paper-2); stroke: var(--ink); stroke-width: 1.2; }
+  .deps use.hint { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse 1.1s ease-in-out infinite alternate; }
+  .deps use.sel { fill: var(--ink); stroke: var(--ink); }
+  .deps use.near { fill: #9fd3f0; stroke: var(--ink); stroke-width: 1.2; }
+  .deps use.ok { fill: var(--ok); stroke: var(--ink); stroke-width: 1.2; }
+  .deps use.ko { fill: var(--ko); stroke: var(--ink); stroke-width: 1.2; }
+  .deps use.miss { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse .5s ease-in-out 6 alternate; }
+  .deps use.done-ok { fill: #bcdcf0; }
+  .deps use.done-ko { fill: #ffd0e7; }
+  .zoom use.hint, .zoom use.sel, .zoom use.ok, .zoom use.ko, .zoom use.miss, .zoom use.near { stroke-width: .45; }
+  /* Clignotement opaque : l'ombre rose ne doit pas transparaître. */
+  @keyframes pulse { from { fill: var(--yellow); } to { fill: #fff6c4; } }
 </style>

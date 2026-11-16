@@ -70,7 +70,9 @@ async function run(cmd, input) {
   const out = await mapshaper.applyCommands(cmd, input);
   return out;
 }
-const geo = readFileSync(src("dep-om.geojson"), "utf8");
+const geoRaw = JSON.parse(readFileSync(src("dep-om.geojson"), "utf8"));
+for (const f of geoRaw.features) f.properties.region = depByCode.get(f.properties.code)?.region ?? "";
+const geo = JSON.stringify(geoRaw);
 
 // 1) Limitrophes : arcs partagés dans la topologie (géométrie non simplifiée)
 {
@@ -103,12 +105,15 @@ const geo = readFileSync(src("dep-om.geojson"), "utf8");
 const W = 1000; // largeur de la métropole en unités SVG
 const LAMBERT93 = "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m";
 
-async function projected(filter, proj, pct) {
+async function projected(filter, proj, pct, withRegions = false) {
+  const dissolve = withRegions ? `-dissolve region + name=regions -o regions.json format=geojson target=regions ` : "";
   const out = await run(
-    `-i in.json snap -filter '${filter}' -proj ${proj} -simplify ${pct} keep-shapes -o out.json format=geojson`,
+    `-i in.json snap name=deps -filter '${filter}' -proj ${proj} -simplify ${pct} keep-shapes ${dissolve}-o out.json format=geojson target=deps`,
     { "in.json": geo },
   );
-  return JSON.parse(out["out.json"]);
+  const fc = JSON.parse(out["out.json"]);
+  if (withRegions) fc.regions = JSON.parse(out["regions.json"]);
+  return fc;
 }
 
 function bbox(fc) {
@@ -122,8 +127,8 @@ function bbox(fc) {
 }
 
 // Convertit des coordonnées projetées (y vers le haut) en chemin SVG dans une boîte donnée.
-function toPaths(fc, box, scale) {
-  const [x0, , , y1] = bbox(fc);
+function toPaths(fc, box, scale, key = "code", origin = null) {
+  const [x0, , , y1] = origin ?? bbox(fc);
   const r = (n) => Math.round(n * 10) / 10;
   const pt = ([x, y]) => [r(box.x + (x - x0) * scale), r(box.y + (y1 - y) * scale)];
   const paths = {}, centers = {};
@@ -140,7 +145,7 @@ function toPaths(fc, box, scale) {
       if (kept.length < 4) continue;
       d += "M" + kept.slice(0, -1).map((p) => p.join(",")).join("L") + "Z";
     }
-    paths[f.properties.code] = d;
+    paths[f.properties[key]] = d;
   }
   return { paths, pt };
 }
@@ -153,12 +158,13 @@ async function labelPoints(filter, proj, pt) {
 }
 
 const metroFilter = "code.length == 2";
-const metro = await projected(metroFilter, `'${LAMBERT93}'`, "7%");
+const metro = await projected(metroFilter, `'${LAMBERT93}'`, "7%", true);
 const [mx0, my0, mx1, my1] = bbox(metro);
 const mScale = W / (mx1 - mx0);
 const metroH = Math.round((my1 - my0) * mScale);
 const metroBox = { x: 0, y: 0, w: W, h: metroH };
 const m = toPaths(metro, metroBox, mScale);
+const regionPaths = toPaths(metro.regions, metroBox, mScale, "region", bbox(metro)).paths;
 const paths = { ...m.paths };
 const labels = await labelPoints(metroFilter, `'${LAMBERT93}'`, m.pt);
 
@@ -197,6 +203,8 @@ const map = {
   zooms,
   labels,
   paths,
+  /** Contours des régions de métropole (même topologie que les départements). */
+  regions: regionPaths,
 };
 
 // ---------- Contrôles ----------
