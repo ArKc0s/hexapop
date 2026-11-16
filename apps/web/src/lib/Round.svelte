@@ -50,6 +50,9 @@
   let submitted = $state(false);
   let nearDraft = $state("");
   let nearError = $state("");
+  /** Valider sans avoir placé le département : on prévient une fois avant d'envoyer. */
+  let nudge = $state(false);
+  const needsPlacing = $derived(!result && !submitted && has("carte") && !sel);
 
   // La carte ne sert qu'à placer le département ; les voisins se tapent (nom ou numéro).
   const mapTarget = $derived(has("carte") ? "carte" : null);
@@ -76,11 +79,11 @@
   raf = requestAnimationFrame(tick);
   onDestroy(() => cancelAnimationFrame(raf));
   const remaining = $derived(Math.max(0, Math.min(q.durationMs, q.durationMs - (now - startedAt))));
-  $effect(() => { if (remaining <= 0 && !submitted && !result) submit(); });
+  $effect(() => { if (remaining <= 0 && !submitted && !result) submit(true); });
 
   function pick(code: string) {
     if (result || submitted) return;
-    if (mapTarget === "carte") sel = sel === code ? null : code;
+    if (mapTarget === "carte") { sel = sel === code ? null : code; nudge = false; }
   }
 
   function addSousPref() {
@@ -89,8 +92,13 @@
     spDraft = "";
   }
 
-  function submit() {
+  function submit(force = false) {
     if (submitted || result) return;
+    if (!force && needsPlacing && !nudge) {
+      nudge = true;
+      if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+      return;
+    }
     if (spDraft.trim()) addSousPref();
     if (nearDraft.trim()) addNear();
     nearDraft = ""; nearError = "";
@@ -167,7 +175,7 @@
   const mapHelp = $derived(result ? "" : mapTarget !== "carte" ? "" : sel ? `Placé ! Tu peux changer en ${coarse ? "touchant" : "cliquant"} un autre département.` : coarse ? "Touche la région, puis le département. Pince pour zoomer." : "Clique le département sur la carte.");
 </script>
 
-<div class="round" class:review={!!result} class:placing={!result && mapTarget === "carte" && !sel}>
+<div class="round" class:review={!!result} class:placing={!result && mapTarget === "carte" && !sel} class:nudge={nudge && needsPlacing}>
   <div class="mapwrap">
     {#if mobile && !result}
       <div class="timer top" aria-label="Temps restant">
@@ -176,7 +184,17 @@
       </div>
     {/if}
     <div class="maphead">
-      <span class="help">{mapHelp}</span>
+      {#if needsPlacing}
+        {#key nudge}
+          <div class="callout" class:nudge role="status">
+            <Icon name="pin" size={18} />
+            <span>{nudge ? "Tu n'as pas placé" : "Place"} <b>{q.hint === "numero" ? `le ${d.code}` : d.nom}</b>{nudge ? " !" : " sur la carte"}</span>
+          </div>
+        {/key}
+        <span class="help sub">{coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
+      {:else}
+        <span class="help">{mapHelp}</span>
+      {/if}
     </div>
     <Map {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} />
   </div>
@@ -205,7 +223,7 @@
         {@const r = fieldResult("carte")}
         <div class="f carte" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
           <span class="label">{LABELS.carte}</span>
-          <span class="state">{#if r}{r.score === 1 ? "Bien placé" : "C'était " + expectedLabel("carte", r.expected)}{:else if sel}Placé ✓ <button class="link" onclick={() => (sel = null)}>Changer</button>{:else}À placer sur la carte{/if}</span>
+          <span class="state">{#if r}{r.score === 1 ? "Bien placé" : "C'était " + expectedLabel("carte", r.expected)}{:else if sel}Placé ✓ <button class="link" onclick={() => (sel = null)}>Changer</button>{:else}<span class="todo" class:nudge><Icon name="pin" size={15} /> À placer sur la carte {mobile ? "↑" : "←"}</span>{/if}</span>
         </div>
       {/if}
 
@@ -299,7 +317,7 @@
         </ul>
       {/if}
       {#if !result}
-        <button class="btn big" onclick={submit} disabled={submitted}>{submitted ? "Envoyé" : "Valider"} <kbd>↵</kbd></button>
+        <button class="btn big" onclick={() => submit()} disabled={submitted}>{submitted ? "Envoyé" : nudge && needsPlacing ? "Valider sans placer" : "Valider"} <kbd>↵</kbd></button>
       {:else}
         {@render action?.()}
       {/if}
@@ -310,7 +328,19 @@
 <style>
   .round { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr); gap: 22px; align-items: start; }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .maphead { min-height: 38px; display: flex; align-items: center; }
+  .maphead { min-height: 38px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  /* Rappel « place-le sur la carte » : bulle jaune qui rebondit, rose et secouée si on valide sans placer */
+  .callout { display: inline-flex; align-items: center; gap: 7px; background: var(--yellow); color: var(--ink); font-weight: 800; font-size: 16px; padding: 7px 13px 7px 10px; border-radius: 999px; box-shadow: 0 3px 0 var(--yellow-d); animation: pop-in .25s, bob 1.6s ease-in-out .3s infinite; }
+  .callout b { font-weight: 900; }
+  .callout.nudge { background: var(--pink); color: #fff; box-shadow: 0 3px 0 var(--pink-d); animation: shake .35s 2; }
+  .help.sub { font-size: 13px; }
+  .round.placing .mapwrap :global(.wrap) { border-radius: 20px; animation: ring 1.8s ease-in-out infinite; }
+  .round.nudge .mapwrap :global(.wrap) { animation: ring-ko .9s ease-in-out 2; }
+  .todo { display: inline-flex; align-items: center; gap: 5px; background: #fff4c2; color: var(--ink); font-weight: 800; padding: 3px 10px; border-radius: 999px; box-shadow: inset 0 0 0 2px var(--yellow); }
+  .todo.nudge { background: #ffe1ef; box-shadow: inset 0 0 0 2px var(--pink); color: var(--pink-d); }
+  @keyframes bob { 50% { transform: translateY(-3px); } }
+  @keyframes ring { 0%, 100% { box-shadow: inset 0 0 0 0 rgba(255, 217, 61, 0); } 50% { box-shadow: inset 0 0 0 4px rgba(255, 217, 61, .9); } }
+  @keyframes ring-ko { 50% { box-shadow: inset 0 0 0 4px var(--pink); } }
   .help { font-size: 15px; color: var(--soft); font-weight: 700; }
   .panel { display: flex; flex-direction: column; gap: 16px; background: var(--card); border-radius: 28px; padding: 22px 22px 18px; }
   .timer { display: flex; align-items: center; gap: 10px; }
