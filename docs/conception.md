@@ -1,6 +1,6 @@
 # Hexa · Conception du jeu (refonte des modes et de la progression)
 
-Document de travail, à valider avant de coder. Version 1 du 2026-11-16.
+Document de travail, à valider avant de coder. **Version 2 du 2026-11-16** (intègre les retours de jeu de Léo et des testeurs, voir section 11).
 Il couvre les chantiers 1 (progression) et 2 (modes et mécaniques) de la [feuille de route](roadmap.md) : ils se conçoivent ensemble, parce que chaque mode nourrit la progression et que la progression décide de ce qu'on joue ensuite.
 
 ---
@@ -11,11 +11,11 @@ Il couvre les chantiers 1 (progression) et 2 (modes et mécaniques) de la [feuil
 
 Cinq principes, qui servent d'arbitre pour toutes les décisions qui suivent :
 
-1. **Une question = une chose à trouver.** Jamais trois en même temps.
-2. **Le jeu choisit pour toi** ce que tu joues en solo (quoi réviser, quoi découvrir, sous quelle forme). Zéro réglage avant de jouer.
+1. **Jamais deux inconnues dans une question.** On te donne toujours quelque chose que tu peux connaître.
+2. **Le jeu choisit pour toi** ce que tu joues en solo (quoi réviser, quoi découvrir). Les seuls réglages sont des préférences de confort (clavier ou propositions), changeables à tout moment.
 3. **Un seul indicateur de progrès**, visible partout : ta carte de France qui se remplit.
 4. **Chaque récompense mesure un vrai savoir.** Pas de compteur qui monte juste parce qu'on a joué.
-5. **Quatre portes d'entrée, pas plus.** Chacune a une promesse en une phrase.
+5. **Le jeu s'adapte au niveau du joueur**, y compris le défi du jour : un amateur ne doit jamais se sentir écrasé.
 
 ---
 
@@ -23,23 +23,29 @@ Cinq principes, qui servent d'arbitre pour toutes les décisions qui suivent :
 
 ### Ce qui marche (à garder)
 - La **carte** comme cœur du jeu, la DA (mascotte, boutons bonbon, riso), le ressenti tactile.
+- La **fiche complète** (placer + numéro + préfecture d'un coup) et le **« semi-bon »** : on est récompensé pour ce qu'on sait, même partiellement. Les joueurs aiment.
+- Le choix **clavier ou propositions** : parfois on a juste la flemme de taper.
 - Le **défi du jour** (rituel, partage, classement) et la **série**.
-- La **répétition espacée** (ce qu'on rate revient plus souvent) et l'idée que **la carte s'efface** si on ne révise pas.
-- Le **multi en direct** : duel à points de vie, soirée jusqu'à 100, équipe, handicap.
-- La **correction** avec la fiche du département.
+- La **répétition espacée** et l'idée que **la carte s'efface** si on ne révise pas.
+- Le **multi en direct** : duel à points de vie, **soirée** jusqu'à 100 (très appréciée), équipe, handicap.
 
 ### Ce qui coince
 
-**Trop de portes.** Accueil : Jouer, Défi du jour, Entre amis, Quêtes, puis Tour de France, Entraînement, Album, Atlas, Rappels. Dans Entraînement : Révisions, Éclair, Une région, Marathon. Dans Entre amis : Duel, Équipe, Soirée (+ battle royale). Un nouveau joueur ne sait pas par où commencer, un joueur régulier ne sait pas ce qui le fait le plus progresser.
+**Trop de portes.** Accueil : Jouer, Défi du jour, Entre amis, Quêtes, puis Tour de France, Entraînement, Album, Atlas, Rappels. Dans Entraînement : Révisions, Éclair, Une région, Marathon. Un nouveau joueur ne sait pas par où commencer, un joueur régulier ne sait pas ce qui le fait le plus progresser.
 
-**Des réglages avant de jouer.** Normal ou expert, 4 propositions ou clavier : deux décisions qu'un débutant ne sait pas prendre, et qui changent la récompense (vignette bronze, argent ou or).
+**C'est dur pour un amateur**, surtout le défi du jour (retour global des testeurs). Trois causes :
+- des questions à **deux inconnues** (« place le 87 » : il faut savoir quel département porte le 87 *et* où il est) ;
+- la **fiche complète d'entrée de jeu**, sur des départements jamais vus ;
+- un **défi unique** pour tout le monde, calibré pour quelqu'un qui connaît déjà.
+
+**Le réglage normal / expert** est une décision qu'un débutant ne sait pas prendre, et l'expert arrive comme un mur.
 
 **Huit compteurs qui se marchent dessus.**
 
 | Compteur | Ce qu'il mesure vraiment | Problème |
 |---|---|---|
 | XP et niveaux | le temps passé | monte même sans rien apprendre |
-| Quêtes du jour | des objectifs variés | doublon avec le défi et la série |
+| Quêtes du jour (3) | des objectifs variés | doublon avec le défi et la série |
 | Étoiles de région (Tour) | la réussite d'une manche | réussir une fois ≠ savoir |
 | Vignettes bronze / argent / or | le format de réponse utilisé | mesure le réglage, pas le savoir |
 | « Ta France » en % | la répétition espacée | le seul vrai indicateur, mais caché à droite |
@@ -49,114 +55,141 @@ Cinq principes, qui servent d'arbitre pour toutes les décisions qui suivent :
 
 Trois d'entre eux (étoiles, vignettes, « Ta France ») prétendent dire « tu connais ce département », et ne sont pas d'accord entre eux.
 
-**Un tour trop chargé.** Chaque tour donne un indice (nom, numéro ou carte) et demande *tout le reste* : placer + numéro + préfecture, et en expert sous-préfectures + voisins. Pour un débutant c'est trois inconnues à la fois, 20 secondes de stress, et un écran mobile très dense. Résultat : on « réussit à 33 % » sans savoir ce qu'on a appris.
-
 ---
 
 ## 2. Ce qu'il y a à apprendre
 
 On découpe le savoir en **facettes**. Un département, c'est :
 
-| Facette | Question type | Niveau |
+| Facette | Exemple | Niveau |
 |---|---|---|
-| **Carte** | « Où est le Finistère ? » | base |
-| **Numéro** | « Quel est le numéro du Finistère ? » / « Quel département porte le 29 ? » | base |
-| **Préfecture** | « Quelle est la préfecture du Finistère ? » / « Quimper est la préfecture de… ? » | base |
-| Sous-préfectures | « Cite les sous-préfectures du Finistère » | expert |
-| Voisins | « Lequel n'est pas voisin du Finistère ? » | expert |
+| **Carte** | où est le Finistère | base |
+| **Numéro** | le Finistère, c'est le 29 | base |
+| **Préfecture** | la préfecture du Finistère, c'est Quimper | base |
+| Sous-préfectures | Brest, Châteaulin, Morlaix | expert |
+| Voisins | Côtes-d'Armor, Morbihan | expert |
 
 Soit **101 × 3 = 303 facettes de base**, puis 202 facettes expert. Les futurs contenus de la feuille de route (chefs-lieux de région, gentilés…) deviennent simplement **de nouvelles facettes**, sans nouveau mode.
 
-Le nom du département sert d'ancre : chaque question relie le nom à une facette, dans un sens ou dans l'autre (les deux sens sont tirés au hasard, ça ancre mieux).
-
-**Règle : jamais deux inconnues dans une même question.** « Place le 87 » demande de savoir quel département porte le 87 *et* où il se trouve : pour un débutant, c'est impossible (retour d'un testeur, voir section 11). Une question passe donc toujours par le nom (nom → facette, ou facette → nom). Les questions qui relient deux facettes entre elles (numéro → carte, préfecture → numéro…) ne sont proposées qu'en défi avancé, et seulement quand les deux facettes sont déjà des étoiles du joueur.
+**Jamais deux inconnues.** Une question donne un **indice** que le joueur peut connaître, et chaque champ demandé ne dépend que de cet indice. L'indice est le **nom** ou le **département qui clignote sur la carte** ; le **numéro** ou la **préfecture** ne servent d'indice que si le joueur les connaît déjà pour ce département (facette déjà gagnée). Ainsi « place le 87 » n'arrive qu'à quelqu'un qui sait que le 87 est la Haute-Vienne.
 
 ---
 
-## 3. La règle d'un tour (la même partout)
+## 3. La règle d'un tour
 
-> **Une question, une réponse, la correction tout de suite.**
+> **On te donne un indice, tu remplis ce qu'on te demande, correction tout de suite.**
 
-1. **Une question, une seule chose à trouver** (voir tableau ci-dessus).
-2. **La forme de la réponse s'adapte à ce que tu sais déjà**, sans réglage :
-   - facette jamais vue → **on te la montre d'abord** (carte « À retenir : le Finistère, c'est le 29 », 2 secondes), puis question en **4 propositions** ;
-   - facette déjà réussie en propositions → **sans aide** : clavier pour le numéro et la préfecture, carte entière pour la position ;
-   - pour la carte, les « 4 propositions » sont **4 départements surlignés sur la carte** : on apprend à situer sans devoir viser au pixel sur mobile.
-3. **Correction immédiate** : juste ou faux, la bonne réponse, la carte qui montre le département, la mini-fiche (numéro, préfecture, région). Un geste pour continuer.
-4. **Chrono** : aucun en solo (on apprend, on ne stresse pas). La vitesse ne compte qu'au défi du jour et entre amis, où elle donne un bonus de points.
+### 3.1 Deux formats, qui se suivent naturellement
+- **Question simple** : une seule chose à trouver (« Où est le Finistère ? »). Pour **découvrir** un département et pour les facettes encore fragiles.
+- **Fiche complète** : plusieurs choses à la fois (placer + numéro + préfecture), avec **le semi-bon** (2 sur 3, c'est 2 facettes qui progressent). Pour **consolider** : elle arrive dès que chaque facette du département a été vue au moins une fois.
 
-Conséquences : des questions de 3 à 8 secondes, une séance de 12 questions en 2 minutes environ, un écran mobile simple (une question, une zone de réponse), et un résultat lisible (« juste » ou « faux », plus de « 33 % »).
+Concrètement : on découvre le Finistère en questions simples, puis il revient en fiche complète. Le joueur passe de l'un à l'autre sans le choisir, et la fiche complète devient le signe qu'on progresse.
+
+### 3.2 La forme de la réponse : préférence du joueur
+- **Propositions ou clavier**, au choix, **changeable à tout moment** (un bouton dans la question, mémorisé).
+- Pour la carte, les « propositions » sont **4 départements surlignés** : on apprend à situer sans viser au pixel sur mobile. Sans propositions, on vise sur la carte entière (avec le zoom par région).
+- Les deux formats font progresser. Pour que les propositions restent un vrai test, **elles deviennent plus piégeuses à mesure qu'on progresse** : au début, 4 réponses très différentes ; ensuite, 4 départements de la même région, des numéros proches, des préfectures voisines.
+
+### 3.3 Première rencontre
+Une facette jamais vue est **d'abord montrée** (« À retenir : le Finistère, c'est le 29 », 2 secondes), puis demandée en propositions faciles. Impossible d'échouer sur un département qu'on n'a jamais vu.
+
+### 3.4 Correction et chrono
+- **Correction immédiate** : la fiche de correction actuelle (✓ / ✗ par champ, bonne réponse, carte).
+- **Pas de chrono en solo.** Le chrono et le bonus de vitesse restent au défi du jour et entre amis.
 
 ---
 
 ## 4. La progression
 
 ### 4.1 Un seul indicateur : ta carte de France
-Chaque facette de base gagnée allume **une étoile** sur son département. Un département a donc **0 à 3 étoiles** (carte, numéro, préfecture), et la carte se colore en conséquence : blanc, puis de plus en plus bleu. **« Ta France » = étoiles gagnées / 303**, affiché en grand sur l'accueil et à la fin de chaque séance.
+Chaque facette de base gagnée allume **une étoile** sur son département. Un département a donc **0 à 3 étoiles** (carte, numéro, préfecture), et la carte se colore en conséquence. **« Ta France » = étoiles gagnées / 303**, affiché en grand sur l'accueil et à la fin de chaque séance.
 
-**Gagner une étoile** = réussir la facette **sans aide** (clavier ou carte entière). Réussir en 4 propositions la fait avancer mais ne suffit pas.
+- **Gagner une étoile** : réussir la facette au clavier, à la carte entière, ou en propositions piégeuses.
+- **L'étoile s'entretient** : la répétition espacée planifie sa révision ; si on la laisse passer, elle **pâlit** et revient en priorité à la séance suivante.
+- **L'étoile dorée** : réussie plusieurs fois, à des jours d'écart. Ancrée pour de bon.
 
-**L'étoile s'entretient** (ce qui existe déjà, en plus lisible) : la répétition espacée planifie la prochaine révision ; si on la laisse passer, l'étoile **pâlit** sur la carte et revient en priorité dans la séance suivante. Une étoile revue avec succès plusieurs fois à des jours d'écart devient **dorée** (ancrée pour de bon).
+### 4.2 Les niveaux du joueur
+Trois niveaux, qui découlent de « Ta France » (pas d'XP) et décident de la difficulté du défi du jour et des propositions :
 
-### 4.2 Le niveau expert devient un contenu, pas un réglage
-Quand une région a toutes ses étoiles de base, ses facettes expert (sous-préfectures, voisins) s'ouvrent. Un département maîtrisé en expert gagne une **couronne**. Le joueur avancé continue de progresser après 100 %, sans jamais avoir eu à cocher « expert ».
+| Niveau | Atteint à | Ce que ça change |
+|---|---|---|
+| **Découverte** | dès le début | indices nom et carte uniquement, propositions faciles |
+| **Confirmé** | 50 % de « Ta France » | tous les indices, propositions piégeuses |
+| **Expert** | 90 % | facettes expert dans le défi, sous-préfectures et voisins |
 
-### 4.3 Les titres
-Ils découlent directement de « Ta France » (Touriste, Routard, Facteur, Sous-préfet, Préfet, Géomètre de l'IGN) : c'est un habillage du pourcentage, pas un compteur de plus.
+Le joueur peut **redescendre d'un niveau** pour le défi s'il le veut (« Défi Découverte » même en étant Confirmé), jamais monter au-dessus du sien. Les titres actuels (Touriste, Routard, Facteur, Sous-préfet, Préfet, Géomètre de l'IGN) restent comme habillage plus fin du pourcentage.
 
-### 4.4 Ce qui reste à côté
-- **La série** (jours d'affilée) et son joker : l'habitude. Un jour compte dès qu'on a fait une séance ou le défi.
-- **Les succès** (ex-badges) : des exploits rares (Bout du monde, Inarrêtable, Marathonien…), rangés dans le profil, jamais au premier plan.
+### 4.3 L'expert devient un contenu, pas un réglage
+Quand une région a toutes ses étoiles de base, ses facettes expert (sous-préfectures, voisins) s'ouvrent. Un département maîtrisé en expert gagne une **couronne**. On continue de progresser après 100 %, sans jamais avoir eu à cocher « expert ».
 
-### 4.5 Ce qu'on retire ou fusionne
+### 4.4 Le rendez-vous quotidien
+Les **3 quêtes** sont remplacées par **un objectif du jour** simple et réglable : 1 séance (≈ 2 min), 3 séances, ou 5 séances. Il alimente la **série** (et son joker). Le défi du jour compte comme une séance.
+
+C'est la même rétention que les quêtes (une raison de revenir chaque jour, une flamme à ne pas casser) sans la dispersion : un seul objectif, et il fait apprendre. Les autres raisons de revenir existent déjà : les étoiles qui pâlissent (notification), le défi du jour, les amis.
+
+### 4.5 Le Hall of Fame
+Pour les comptes connectés, trois tableaux :
+- **Défi du jour** : classements de la semaine et du mois, **par niveau** (Découverte, Confirmé, Expert).
+- **Marathon** : meilleur score sur les 101 en fiche complète (justesse d'abord, temps ensuite).
+- **Légendes** : les joueurs qui ont atteint 100 % de « Ta France », puis toutes les étoiles dorées, puis toutes les couronnes, avec la date.
+
+### 4.6 Ce qui reste à côté
+- **Les succès** (ex-badges) : des exploits rares, rangés dans le profil, jamais au premier plan.
+
+### 4.7 Ce qu'on retire ou fusionne
 
 | Aujourd'hui | Demain |
 |---|---|
-| XP et niveaux | **retirés** (« Ta France » joue ce rôle, et mesure un vrai savoir) |
-| Quêtes du jour | **retirées** (le défi du jour et la série portent le rendez-vous quotidien) |
+| XP et niveaux 1, 2, 3… | **retirés** (remplacés par « Ta France » et les 3 niveaux de joueur) — voir question 2 |
+| 3 quêtes du jour | **remplacées** par un objectif du jour |
 | Étoiles de région du Tour | **remplacées** par les étoiles des départements de la région |
-| Vignettes bronze / argent / or et Album | **remplacées** par les étoiles des départements ; l'Album fusionne avec l'Atlas |
+| Vignettes bronze / argent / or et Album | **remplacées** par les étoiles et la couronne ; l'Album fusionne avec l'Atlas |
 | Rangs | **gardés**, calculés à partir de « Ta France » |
-| Badges | **gardés** sous le nom de succès, en secondaire |
-| Normal / expert, propositions / clavier | **supprimés** comme réglages ; le jeu adapte tout seul |
+| Badges | **gardés** sous le nom de succès |
+| Réglage normal / expert | **supprimé** : l'expert s'ouvre région par région |
+| Choix clavier / propositions | **gardé**, comme préférence changeable à tout moment |
 
 ---
 
-## 5. Les quatre portes
+## 5. Les modes
 
-| Porte | Promesse en une phrase | Pour qui |
-|---|---|---|
-| **Continuer** (gros bouton de l'accueil) | « Ta séance de 2 minutes : on révise ce qui s'efface et on découvre la suite. » | tout le monde, tous les jours |
-| **Défi du jour** | « Les mêmes 10 questions pour tout le monde, un seul essai, compare-toi. » | le rituel, le partage |
-| **Entre amis** | « Joue en direct contre tes amis, ou avec eux. » | les soirées, le couple |
-| **Partie libre** | « Choisis ta zone et ce que tu veux réviser. » | ceux qui veulent un contrôle précis |
+| Porte | Promesse en une phrase |
+|---|---|
+| **Continuer** (gros bouton de l'accueil) | « Ta séance de 2 minutes : on révise ce qui s'efface et on découvre la suite. » |
+| **Défi du jour** | « 10 départements, les mêmes pour tout le monde, à ton niveau. » |
+| **Entre amis** | « Duel, soirée ou équipe, en direct. » |
+| **Entraînement** | « Choisis exactement ce que tu veux réviser. » |
 
 ### Continuer (le parcours)
-- Le jeu compose la séance : **d'abord les étoiles qui pâlissent**, puis **2 ou 3 départements nouveaux** de la région en cours, puis les facettes à faire progresser.
-- **Région en cours** : au départ, ta région (« Tu viens d'où ? » au premier lancement, réponse facultative), puis une région voisine, comme le Tour de France actuel. La carte de l'accueil permet de choisir une autre région à tout moment.
+- Le jeu compose la séance : **d'abord les étoiles qui pâlissent**, puis **2 ou 3 départements nouveaux** de la région en cours (questions simples), puis les départements à consolider (fiches complètes).
+- **Région en cours** : au départ, ta région (« Tu viens d'où ? » au premier lancement, facultatif), puis une région voisine, comme le Tour de France actuel. La carte de l'accueil permet de choisir une autre région.
 - C'est l'ancien Tour de France + les Révisions, fusionnés.
 
 ### Défi du jour
-Inchangé dans l'esprit, aligné sur la nouvelle règle : 10 questions à une facette, avec chrono et bonus de vitesse. Les bonnes réponses comptent aussi pour les étoiles (« toute bonne réponse sans aide compte, partout »).
+- **Les 10 mêmes départements pour tout le monde**, pour garder la comparaison et le partage.
+- **Ce qu'on te demande dépend de ton niveau** : Découverte (indice nom ou carte, propositions faciles), Confirmé (tous les indices, clavier ou propositions piégeuses), Expert (avec sous-préfectures et voisins).
+- **Un classement par niveau**, et le partage indique le niveau (« Défi n° 42 · Découverte · 8/10 »).
+- **Pas d'étoiles** : le défi reste une compétition. Les erreurs sont quand même notées, pour que ces départements reviennent dans tes séances.
 
 ### Entre amis
-Deux choix au lieu de trois :
-- **Contre** : à 2, c'est un duel à points de vie ; à plus, c'est une soirée (option battle royale).
-- **Ensemble** : l'équipe, avec les vies communes.
+On garde les trois formats, qui marchent bien :
+- **Duel** (à 2) : points de vie, revanche.
+- **Soirée** (3 à 100) : classement en direct, option battle royale, écran à projeter.
+- **Équipe** : vies communes.
 
-Le **handicap** devient automatique : chacun reçoit les questions sous la forme qui correspond à son niveau (propositions pour le débutant, clavier pour le joueur fort), et le score est normalisé.
+Le **handicap** se règle par défaut sur le niveau de chaque joueur (modifiable), et le score est normalisé : un Découverte peut battre un Expert.
 
-### Partie libre
-Un seul écran qui remplace Éclair, Une région et Marathon, avec un réglage précis de ce qu'on joue :
+### Entraînement
+On garde l'Entraînement, et il devient **beaucoup plus précis** : un seul écran qui remplace les 4 cases actuelles (Révisions, Éclair, Une région, Marathon). C'est là qu'on choisit exactement sur quoi s'entraîner, alors que Continuer choisit pour toi :
 - **Zone** : France, une région, outre-mer.
-- **Ce qu'on te donne** : le nom, le numéro, le département qui clignote sur la carte, la préfecture (un ou plusieurs).
-- **Ce qu'on te demande** : le placer, le nom, le numéro, la préfecture, et en expert sous-préfectures et voisins (un ou plusieurs).
-- **Longueur** : 10, 20, les 101.
+- **Ce qu'on te donne** : le nom, le département qui clignote sur la carte, le numéro, la préfecture (un ou plusieurs).
+- **Ce qu'on te demande** : le placer, le nom, le numéro, la préfecture, et en expert sous-préfectures et voisins. Un seul coché = questions simples ; plusieurs = fiche complète.
+- **Longueur** : 10, 20, les 101 (le **Marathon**, qui alimente le Hall of Fame).
 
-Exemples : un débutant coche « on me donne le nom » + « je le place » pour apprendre la carte seule ; un joueur qui révise ses numéros coche « on me donne la carte » + « je donne le numéro ». Les combinaisons à deux inconnues restent possibles ici puisque c'est le joueur qui les choisit. Ça compte pour les étoiles comme le reste.
+Exemples : un débutant coche « on me donne le nom » + « je le place » pour apprendre la carte seule ; un joueur qui révise ses numéros coche « on me donne la carte » + « je donne le numéro ». Ici les combinaisons à deux inconnues restent possibles, puisque c'est le joueur qui les choisit. L'Entraînement fait gagner des étoiles comme Continuer.
 
 ### Accueil
-Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcentage, le défi du jour et Entre amis. Partie libre, Atlas et profil en secondaire. Plus de quêtes ni de niveau.
+Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcentage et l'objectif du jour, puis le défi et Entre amis. Entraînement, Atlas, Hall of Fame et profil en secondaire.
 
 ---
 
@@ -164,16 +197,14 @@ Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcen
 
 **Première minute**
 1. Ouverture : pas de compte, pas de menu. La mascotte : « Tu viens d'où ? » → il touche son département sur la carte (ou « passer »).
-2. Première séance tout de suite : les 3 ou 4 départements autour de chez lui, montrés puis demandés en propositions. Impossible d'échouer franchement.
-3. Fin de séance : « 4 étoiles ! Ta France : 1 % », sa région commence à se colorer.
+2. Première séance tout de suite : les 3 ou 4 départements autour de chez lui, montrés puis demandés en questions simples à propositions. Impossible d'échouer franchement.
+3. Fin de séance : « 4 étoiles ! Ta France : 1 % », sa région commence à se colorer, l'objectif du jour est rempli, la série démarre.
 
-**Première séance complète (2 minutes)** : il finit sa région de départ en propositions, et gagne ses premières étoiles sans aide sur les départements les plus faciles (le sien en premier).
+**Après la première séance** : la proposition de sauvegarder (compte), puis d'activer les rappels (« on te dit quand tes étoiles pâlissent »).
 
-**Après la séance** : la proposition de sauvegarder (compte), puis d'activer les rappels (« on te dit quand tes étoiles pâlissent »). Ce qui existe déjà, au bon moment.
+**Le lendemain** : notification « 3 étoiles pâlissent + le défi n° 42 est arrivé ». Continuer → révisions d'abord, puis la suite ; son premier défi est en Découverte, à sa portée.
 
-**Le lendemain** : notification « 3 étoiles pâlissent + le défi n° 42 est arrivé ». Continuer → révisions d'abord, puis la suite.
-
-**La première semaine** : 2 à 3 régions, une série de 7 jours, le premier défi partagé, le premier duel.
+**La première semaine** : 2 à 3 régions, les premières fiches complètes, une série de 7 jours, le premier défi partagé, le premier duel.
 
 ---
 
@@ -181,7 +212,7 @@ Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcen
 
 Personne ne doit perdre ce qu'il a gagné :
 - **Répétition espacée existante** (boîte par département) → chaque facette de base hérite de la boîte de son département ; boîte ≥ 4 = étoile.
-- **Vignettes** : argent ou or → 3 étoiles ; bronze → les facettes passent « vues en propositions ».
+- **Vignettes** : argent ou or → 3 étoiles ; bronze → facettes « vues ».
 - **Étoiles de région** → la région en cours et les régions ouvertes sont conservées.
 - **Badges** → succès, à l'identique.
 - **XP et niveau** → affichés une dernière fois (« ancien niveau 12 »), puis retirés.
@@ -191,24 +222,28 @@ Personne ne doit perdre ce qu'il a gagné :
 
 ## 8. Livraison par étapes
 
-1. **La nouvelle règle d'un tour** (une facette par question, réponse qui s'adapte, carte à 4 départements surlignés) dans **Partie libre**, à côté de l'existant : on la teste en vrai sans rien casser.
-2. **Les étoiles par facette et « Ta France »**, avec la migration des profils.
-3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? ». On retire alors Tour, Entraînement, quêtes, XP, vignettes.
-4. **Défi du jour et Entre amis** passés à la nouvelle règle (protocole temps réel à adapter).
-5. **Facettes expert** et couronnes.
+1. **Entraînement** avec les réglages « on te donne / on te demande », les deux formats (question simple, fiche complète), propositions ou clavier changeable en cours de partie, carte à 4 départements surlignés. À côté de l'existant : on teste en vrai sans rien casser. *(Répond directement au retour du testeur.)*
+2. **Les étoiles par facette, « Ta France » et les 3 niveaux**, avec la migration des profils.
+3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif du jour. On retire alors le Tour de France (remplacé par Continuer), les quêtes, l'XP et les vignettes.
+4. **Défi du jour par niveau** (classements séparés) et **Entre amis** à la nouvelle règle, handicap par niveau.
+5. **Facettes expert** et couronnes, puis **Hall of Fame**.
 
 Chaque étape est jouable et déployable seule.
 
 ---
 
-## 9. Questions ouvertes (à trancher par Léo)
+## 9. Décisions
 
-1. **Une facette par question** : d'accord pour abandonner le tour « fiche complète » (placer + numéro + préfecture d'un coup) ? C'est le plus gros changement, et celui qui simplifie tout le reste.
-2. **Retirer l'XP, les niveaux et les quêtes** : ok, ou on garde une forme d'XP « de compte » (visible en multi par exemple) ?
-3. **Pas de chrono en solo** : ok, ou un chrono doux (pas d'échec à zéro, juste un bonus) pour garder de la tension ?
-4. **Le défi du jour fait gagner des étoiles** : ok, ou il reste à part pour ne pas « farmer » ?
-5. **Entre amis en deux choix (Contre / Ensemble)** : ok ?
-6. **Le nom des étoiles** : étoiles, ou un habillage plus « voyage » (tampons de passeport sur chaque département) ?
+| # | Question | Décision |
+|---|---|---|
+| 1 | Une seule chose par question ? | **Non : deux formats.** Questions simples pour découvrir, fiche complète (avec semi-bon) pour consolider, et au choix à l'Entraînement. |
+| 2 | Retirer l'XP, les niveaux, les quêtes ? | **Quêtes → un objectif du jour.** XP : proposition de la retirer (« Ta France » + 3 niveaux de joueur la remplacent) ; **à confirmer par Léo**. |
+| 3 | Chrono en solo ? | **Retiré.** Reste au défi et entre amis. |
+| 4 | Le défi fait gagner des étoiles ? | **Non.** Ses erreurs reviennent quand même en séance. |
+| 5 | Entre amis ? | **On garde Duel, Soirée et Équipe.** |
+| 6 | Nom des étoiles ? | Étoiles par défaut ; habillage « tampons de passeport » **à trancher**. |
+| 7 | Clavier ou propositions ? | **Gardé** comme préférence changeable à tout moment ; propositions de plus en plus piégeuses. |
+| 8 | Expert trop dur pour les amateurs ? | **3 niveaux de joueur** ; l'expert s'ouvre région par région ; défi du jour à ton niveau. |
 
 ---
 
@@ -218,13 +253,17 @@ Avant l'étape 3, faire jouer 2 ou 3 débutants (dont au moins une personne qui 
 - Est-ce qu'ils savent quoi faire en arrivant ? (on observe, on ne guide pas)
 - Après 3 séances sur 3 jours : combien de départements savent-ils placer **sans le jeu**, sur une carte vierge ?
 - Ont-ils envie d'y revenir le lendemain ? Qu'est-ce qui les a fait revenir ?
-- Qu'ont-ils trouvé frustrant ?
+- Le défi Découverte est-il à leur portée ? Qu'ont-ils trouvé frustrant ?
 
 Les réponses décident des ajustements avant de retirer l'ancien système.
 
 ---
 
-## 11. Retours de testeurs
+## 11. Retours de testeurs et de Léo
 
-- **2026-11-16** : « J'aimerais pouvoir configurer l'entraînement précisément, choisir ce qu'il peut te demander de trouver. Quand le jeu me dit de placer le 87, moi qui ne connais rien, c'est juste impossible, alors que placer un département nommé ou affiché sur la carte, c'est plus simple pour moi. »
-  → Intégré : règle « jamais deux inconnues » (section 2) et réglages « ce qu'on te donne / ce qu'on te demande » de la Partie libre (section 5). Livré à l'étape 1.
+- **2026-11-16, testeur** : « J'aimerais pouvoir configurer l'entraînement précisément, choisir ce qu'il peut te demander de trouver. Quand le jeu me dit de placer le 87, moi qui ne connais rien, c'est juste impossible, alors que placer un département nommé ou affiché sur la carte, c'est plus simple pour moi. »
+  → Règle « jamais deux inconnues » (section 2) et réglages « on te donne / on te demande » de l'Entraînement (section 5). Étape 1.
+- **2026-11-16, retour global des testeurs** : « Pour des amateurs, c'est dur, notamment le défi du jour. »
+  → 3 niveaux de joueur, défi du jour à ton niveau avec classement par niveau (sections 4.2 et 5). Étapes 2 et 4.
+- **2026-11-16, Léo** : aime être interrogé sur toutes les infos (on peut avoir « semi-bon ») ; ne veut pas perdre le choix clavier / propositions (« parfois on a la flemme de taper ») ; tient à la soirée ; demande sur quoi reposerait le Hall of Fame.
+  → Deux formats de tour (3.1), préférence de réponse (3.2), trois formats entre amis (5), Hall of Fame (4.5).
