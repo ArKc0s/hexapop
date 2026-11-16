@@ -57,7 +57,7 @@
         <b>Créer un duel</b><span>À deux : barres de vie. À plusieurs : course aux points.</span>
       </button>
       <button class="btn blue big door" onclick={() => create("plateau")} disabled={!session.me && name.trim().length < 2}>
-        <b>Battle royale</b><span>Jusqu'à 100 joueurs, éliminations à chaque tour jusqu'au dernier survivant. Idéal en soirée ou en stream.</span>
+        <b>Soirée plateau</b><span>Jusqu'à 100 joueurs, avec un écran à projeter ou à streamer. Mode battle royale en option.</span>
       </button>
     </div>
     <div class="join">
@@ -75,7 +75,7 @@
   {:else}
     <div class="room">
       <section class="card codecard">
-        <span class="k">{room.kind === "plateau" ? "Battle royale" : "Duel"} · code du salon</span>
+        <span class="k">{room.settings.elimination ? "Battle royale" : room.kind === "plateau" ? "Soirée plateau" : "Duel"} · code du salon</span>
         <div class="riso bigcode" data-t={room.code}>{room.code}</div>
         <p class="hint">Tes amis tapent ce code dans « Entre amis », ou ouvrent le lien.</p>
         <div class="share">
@@ -104,7 +104,7 @@
           <button class:on={room.settings.input === "choix"} disabled={!isHost} onclick={() => set({ input: "choix" })}>4 choix</button></div></div>
         <div class="rule"><span>Tours</span><div class="seg">
           {#each [10, 20, 50, 101] as n (n)}<button class:on={room.settings.rounds === n} disabled={!isHost} onclick={() => set({ rounds: n })}>{n}</button>{/each}</div></div>
-        <div class="rule"><span>Élimination</span><div class="seg">
+        <div class="rule"><span>Battle royale (élimination)</span><div class="seg">
           <button class:on={room.settings.elimination} disabled={!isHost} onclick={() => set({ elimination: true })}>Oui</button>
           <button class:on={!room.settings.elimination} disabled={!isHost} onclick={() => set({ elimination: false })}>Non</button></div></div>
         {#if room.settings.elimination}<p class="hint">Battle royale : à partir du 3e tour, le dernier quart du classement est éliminé à chaque tour, jusqu'au dernier survivant. Les éliminés suivent la fin en spectateurs.</p>{/if}
