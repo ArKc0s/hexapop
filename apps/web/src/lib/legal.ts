@@ -1,9 +1,7 @@
-// Informations légales de l'éditeur. Les champs « À compléter » doivent être renseignés avant
-// d'ouvrir le site au public (LCEN, article 6 III : identité de l'éditeur d'un site).
+// Informations légales de l'éditeur (LCEN, article 6 III). Choix de l'éditeur : nom et email
+// publiés, pas d'adresse ni de téléphone (voir docs/rgpd.md, « Points ouverts »).
 export const EDITEUR = {
-  nom: "À compléter (prénom et nom de l'éditeur)",
-  adresse: "À compléter (adresse postale)",
-  telephone: "À compléter (numéro de téléphone)",
+  nom: "Léo WADIN",
   contact: "contact@hexapop.app",
 };
 

@@ -38,8 +38,8 @@ Pas de traitement de données sensibles, pas de profilage, pas de publicité, pa
 - Rectification : département de cœur modifiable ; autres demandes par email, sous un mois.
 
 ## Points ouverts
-- [ ] Renseigner l'identité de l'éditeur dans `apps/web/src/lib/legal.ts` (LCEN art. 6 III).
+- [x] Identité de l'éditeur : nom et email publiés. Choix assumé de ne pas publier d'adresse ni de téléphone : non strictement conforme à la LCEN pour un site auto-hébergé ; solution conforme possible plus tard via un hébergeur tiers (VPS), qui permet l'anonymat.
 - [ ] Créer l'adresse `contact@hexapop.app` (ou une redirection OVH).
-- [ ] Journaux Caddy : ajouter une rotation par durée (`roll_keep_for 8760h`) pour garantir les 12 mois annoncés.
-- [ ] Sauvegarde chiffrée de `/home/infra/hexapop/data` (aucune sauvegarde à ce jour) et procédure de restauration.
+- [x] Journaux Caddy : `roll_keep_for 8760h` ajouté (2026-11-16, LXC 109).
+- [ ] Sauvegarde quotidienne chiffrée (restic → Backblaze, `sauvegarde.sh quotidien` sur pve01, tag `hexapop`) : script en place, clé SSH à commande forcée à autoriser sur infra. Restauration : voir `apps/server/src/backup.ts`.
 - [ ] En cas de violation de données : notification à la CNIL sous 72 h (art. 33) et aux joueurs si risque élevé.

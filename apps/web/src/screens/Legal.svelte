@@ -5,7 +5,6 @@
   export type Doc = "mentions" | "confidentialite" | "cgu";
   let { doc }: { doc: Doc } = $props();
   const TITLES: Record<Doc, string> = { mentions: "Mentions légales", confidentialite: "Confidentialité", cgu: "Conditions d'utilisation" };
-  const todo = (s: string) => s.startsWith("À compléter");
 </script>
 
 <main class="legal">
@@ -22,15 +21,13 @@
     <h2>Éditeur</h2>
     <p>Hexa (hexapop.app) est un site non commercial, édité à titre personnel par :</p>
     <ul>
-      <li class:todo={todo(EDITEUR.nom)}>{EDITEUR.nom}</li>
-      <li class:todo={todo(EDITEUR.adresse)}>{EDITEUR.adresse}</li>
-      <li class:todo={todo(EDITEUR.telephone)}>{EDITEUR.telephone}</li>
+      <li>{EDITEUR.nom}, particulier</li>
       <li>Contact : {EDITEUR.contact}</li>
     </ul>
-    <p>Directeur de la publication : <span class:todo={todo(EDITEUR.nom)}>{EDITEUR.nom}</span>.</p>
+    <p>Directeur de la publication : {EDITEUR.nom}.</p>
 
     <h2>Hébergement</h2>
-    <p>Le site et ses données sont hébergés en France, sur un serveur exploité par l'éditeur (coordonnées ci-dessus).</p>
+    <p>Le site et ses données sont hébergés en France, sur un serveur exploité par l'éditeur.</p>
     <p>Diffusion et protection : Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis.</p>
     <p>Envoi des emails : OVH SAS, 2 rue Kellermann, 59100 Roubaix, France.</p>
 
@@ -123,7 +120,6 @@
   p, li { max-width: 68ch; margin: 0; }
   ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
   .lead { font-size: 18px; font-weight: 500; }
-  .todo { background: var(--yellow); padding: 0 4px; font-weight: 700; }
   .table { overflow-x: auto; }
   table { border-collapse: collapse; font-size: 14px; min-width: 620px; }
   th, td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); }
