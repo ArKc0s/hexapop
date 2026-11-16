@@ -9,6 +9,7 @@ import {
 import { resetMail, sendMail, verifyMail } from "./mail.ts";
 import { dailyNumber, leaderboard, rankOf, today } from "./daily.ts";
 import { stats } from "./rooms.ts";
+import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
 
 const COOKIE = "hexa_session";
 const DUMMY_HASH = await hashPassword("factice-" + Math.random());
@@ -57,7 +58,11 @@ function setCookie(token: string, expiresAt: number) {
 }
 const clearCookie = `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secureCookie ? "; Secure" : ""}`;
 
-const publicUser = (u: User) => ({ id: u.id, pseudo: u.pseudo, email: u.email, emailVerified: !!u.email_verified, home: u.home_dep });
+const publicUser = (u: User) => {
+  const links = (db.prepare("SELECT provider FROM oauth_identities WHERE user_id = ?").all(u.id) as { provider: string }[]).map((r) => r.provider);
+  const pw = db.prepare("SELECT pass_hash FROM users WHERE id = ?").get(u.id) as { pass_hash: string } | undefined;
+  return { id: u.id, pseudo: u.pseudo, email: u.email, emailVerified: !!u.email_verified, home: u.home_dep, providers: links, hasPassword: !!pw?.pass_hash };
+};
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
 const PSEUDO_RE = /^[\p{L}\p{N}_.\- ]{2,20}$/u;
@@ -102,7 +107,8 @@ const routes: Record<string, Handler> = {
     need(rateLimit("login:" + clientIp(req), 30, 900_000) && rateLimit("login:" + login.toLowerCase(), 10, 900_000), 429, "rate_limited", "Trop de tentatives, réessaie dans 15 minutes.");
     const row = db.prepare("SELECT * FROM users WHERE email = ? OR pseudo = ?").get(login, login) as (User & { pass_hash: string }) | undefined;
     // Sans compte, on calcule quand même un hachage : même durée de réponse, pas d'énumération des comptes.
-    const check = await verifyPassword(password, row?.pass_hash ?? DUMMY_HASH);
+    const check = await verifyPassword(password, row?.pass_hash || DUMMY_HASH);
+    if (row && !row.pass_hash) check.ok = false; // compte créé via Google, Discord… : pas de mot de passe
     need(row && check.ok, 401, "bad_credentials", "Identifiant ou mot de passe incorrect.");
     if (check.rehash) db.prepare("UPDATE users SET pass_hash = ? WHERE id = ?").run(await hashPassword(password), row!.id);
     const sess = createSession(row!.id);
@@ -162,12 +168,18 @@ const routes: Record<string, Handler> = {
   "PATCH /api/me": async (req, res, user) => {
     const u = need(user, 401, "auth_required", "Non connecté.");
     const b = await body(req);
+    if ("pseudo" in b) {
+      const pseudo = s(b.pseudo);
+      need(PSEUDO_RE.test(pseudo), 400, "bad_pseudo", "Pseudo : 2 à 20 caractères (lettres, chiffres, espace, . _ -).");
+      need(!db.prepare("SELECT 1 FROM users WHERE pseudo = ? AND id != ?").get(pseudo, u.id), 409, "pseudo_taken", "Ce pseudo est déjà pris.");
+      db.prepare("UPDATE users SET pseudo = ? WHERE id = ?").run(pseudo, u.id);
+    }
     if ("home" in b) {
       const home = s(b.home) || null;
       need(!home || DEP.has(home), 400, "bad_home", "Département de cœur inconnu.");
       db.prepare("UPDATE users SET home_dep = ? WHERE id = ?").run(home, u.id);
     }
-    json(res, 200, { user: publicUser({ ...u, home_dep: "home" in b ? (s(b.home) || null) : u.home_dep }) });
+    json(res, 200, { user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(u.id) as unknown as User) });
   },
 
   "GET /api/profile": (_req, res, user) => {
@@ -201,6 +213,7 @@ const routes: Record<string, Handler> = {
       account: { ...row, created_at: iso(row.created_at), last_seen_at: iso(row.last_seen_at), password: "haché avec scrypt, non récupérable" },
       progress: progressRow ? JSON.parse(progressRow.data) : {},
       gameProfile: profileRow ? JSON.parse(profileRow.data) : null,
+      linkedAccounts: db.prepare("SELECT provider, email, created_at FROM oauth_identities WHERE user_id = ?").all(u.id),
       dailyResults: daily,
       activeSessions: sessions,
     }, { "content-disposition": `attachment; filename="hexa-${u.pseudo}-donnees.json"` });
@@ -211,8 +224,12 @@ const routes: Record<string, Handler> = {
     const u = need(user, 401, "auth_required", "Non connecté.");
     const b = await body(req);
     const row = db.prepare("SELECT pass_hash FROM users WHERE id = ?").get(u.id) as { pass_hash: string };
-    const check = await verifyPassword(typeof b.password === "string" ? b.password : "", row.pass_hash);
-    need(check.ok, 403, "bad_password", "Mot de passe incorrect.");
+    if (row.pass_hash) {
+      const check = await verifyPassword(typeof b.password === "string" ? b.password : "", row.pass_hash);
+      need(check.ok, 403, "bad_password", "Mot de passe incorrect.");
+    } else {
+      need(s(b.confirm).toLowerCase() === u.pseudo.toLowerCase(), 403, "bad_confirm", "Tape ton pseudo pour confirmer.");
+    }
     db.prepare("DELETE FROM users WHERE id = ?").run(u.id);
     json(res, 200, { ok: true }, { "set-cookie": clearCookie });
   },
@@ -240,6 +257,8 @@ const routes: Record<string, Handler> = {
     json(res, 200, { progress: merged });
   },
 
+  "GET /api/auth/providers": (_req, res) => json(res, 200, { providers: enabledProviders() }),
+
   "GET /api/daily": (_req, res, user) => {
     const day = today();
     const mine = user ? db.prepare("SELECT points, accuracy, elapsed_ms AS elapsedMs, grid, finished FROM daily_results WHERE day = ? AND user_id = ?").get(day, user.id) : null;
@@ -253,8 +272,117 @@ const routes: Record<string, Handler> = {
   },
 };
 
+// ---------- connexion via Google, Discord, Twitch, Apple ----------
+function redirect(res: ServerResponse, to: string, headers: Record<string, string> = {}) {
+  res.writeHead(302, { location: to, "cache-control": "no-store", ...headers });
+  res.end();
+}
+
+/** Pseudo libre dérivé du nom chez le fournisseur. */
+function freePseudo(name: string | null): string {
+  let base = (name ?? "").normalize("NFC").replace(/[^\p{L}\p{N}_.\- ]/gu, "").trim().slice(0, 16);
+  if (base.length < 2) base = "Joueur";
+  if (!db.prepare("SELECT 1 FROM users WHERE pseudo = ?").get(base)) return base;
+  for (let i = 0; i < 50; i++) {
+    const p = `${base.slice(0, 15)}${Math.floor(Math.random() * 9000 + 1000)}`;
+    if (!db.prepare("SELECT 1 FROM users WHERE pseudo = ?").get(p)) return p;
+  }
+  throw new HttpError(500, "pseudo", "Impossible de choisir un pseudo.");
+}
+
+/**
+ * Trouve ou crée le compte correspondant à une identité externe.
+ * Liaison automatique seulement si le fournisseur garantit l'email. Si le compte local n'avait jamais
+ * confirmé son email, son mot de passe est annulé : il a pu être créé par quelqu'un d'autre.
+ */
+export function resolveIdentity(provider: ProviderId, id: Identity): { userId: number; created: boolean; linked: boolean } {
+  const known = db.prepare("SELECT user_id FROM oauth_identities WHERE provider = ? AND subject = ?").get(provider, id.subject) as { user_id: number } | undefined;
+  if (known) return { userId: known.user_id, created: false, linked: false };
+  const link = (userId: number) => db.prepare("INSERT INTO oauth_identities (provider, subject, user_id, email, created_at) VALUES (?, ?, ?, ?, ?)").run(provider, id.subject, userId, id.email, now());
+  const email = id.email?.toLowerCase() ?? null;
+  if (!email || !id.emailVerified) throw new HttpError(400, "email_unverified", "Ton email n'est pas vérifié chez ce fournisseur : vérifie-le là-bas, ou crée un compte classique.");
+  const existing = db.prepare("SELECT id, email_verified FROM users WHERE email = ?").get(email) as { id: number; email_verified: number } | undefined;
+  if (existing) {
+    if (!existing.email_verified) {
+      db.prepare("UPDATE users SET email_verified = 1, pass_hash = '' WHERE id = ?").run(existing.id);
+      db.prepare("DELETE FROM sessions WHERE user_id = ?").run(existing.id);
+    }
+    link(existing.id);
+    return { userId: existing.id, created: false, linked: true };
+  }
+  const { lastInsertRowid } = db.prepare("INSERT INTO users (email, pseudo, pass_hash, email_verified, created_at) VALUES (?, ?, '', 1, ?)").run(email, freePseudo(id.name), now());
+  const userId = Number(lastInsertRowid);
+  link(userId);
+  return { userId, created: true, linked: false };
+}
+
+async function readForm(req: IncomingMessage): Promise<URLSearchParams> {
+  let raw = "";
+  for await (const c of req) { raw += c; if (raw.length > 16_384) break; }
+  return new URLSearchParams(raw);
+}
+
+async function oauthRoute(req: IncomingMessage, res: ServerResponse, path: string): Promise<boolean> {
+  const m = /^\/api\/auth\/oauth\/(google|discord|twitch|apple)\/(start|callback)$/.exec(path);
+  const un = /^\/api\/me\/oauth\/(google|discord|twitch|apple)$/.exec(path);
+  if (un && req.method === "DELETE") {
+    const u = need(userFromSession(sessionToken(req)), 401, "auth_required", "Non connecté.");
+    const pw = (db.prepare("SELECT pass_hash FROM users WHERE id = ?").get(u.id) as { pass_hash: string }).pass_hash;
+    const others = (db.prepare("SELECT COUNT(*) AS n FROM oauth_identities WHERE user_id = ? AND provider != ?").get(u.id, un[1]) as { n: number }).n;
+    need(pw || others > 0, 400, "last_login", "Définis d'abord un mot de passe ou lie un autre compte : sinon tu ne pourrais plus te connecter.");
+    db.prepare("DELETE FROM oauth_identities WHERE user_id = ? AND provider = ?").run(u.id, un[1]);
+    json(res, 200, { user: publicUser(u) });
+    return true;
+  }
+  if (!m) return false;
+  const provider = PROVIDERS[m[1] as ProviderId];
+  if (!provider.enabled()) { redirect(res, "/#oauth-erreur=indisponible"); return true; }
+
+  if (m[2] === "start") {
+    need(req.method === "GET", 405, "method", "Méthode non permise.");
+    need(rateLimit("oauth:" + clientIp(req), 30, 600_000), 429, "rate_limited", "Trop de tentatives, réessaie plus tard.");
+    const intent = new URL(req.url ?? "/", "http://x").searchParams.get("intent") === "link" ? "link" : "login";
+    const user = userFromSession(sessionToken(req));
+    if (intent === "link" && !user) { redirect(res, "/#oauth-erreur=connexion-requise"); return true; }
+    const { verifier, challenge } = pkce();
+    const state = newState({ provider: provider.id, verifier, intent, userId: user?.id ?? null });
+    redirect(res, provider.authUrl(state, challenge));
+    return true;
+  }
+
+  // Retour du fournisseur (GET, ou POST pour Apple)
+  const params = req.method === "POST" ? await readForm(req) : new URL(req.url ?? "/", "http://x").searchParams;
+  const pending = takeState(params.get("state") ?? "", provider.id);
+  if (!pending) { redirect(res, "/#oauth-erreur=expire"); return true; }
+  if (params.get("error") || !params.get("code")) { redirect(res, "/#oauth-erreur=annule"); return true; }
+  try {
+    const identity = await provider.identity(params.get("code")!, pending.verifier);
+    if (pending.intent === "link") {
+      const owner = db.prepare("SELECT user_id FROM oauth_identities WHERE provider = ? AND subject = ?").get(provider.id, identity.subject) as { user_id: number } | undefined;
+      if (owner && owner.user_id !== pending.userId) { redirect(res, "/#oauth-erreur=deja-lie"); return true; }
+      if (!owner) db.prepare("INSERT INTO oauth_identities (provider, subject, user_id, email, created_at) VALUES (?, ?, ?, ?, ?)").run(provider.id, identity.subject, pending.userId, identity.email, now());
+      redirect(res, `/#oauth-ok=lie-${provider.id}`);
+      return true;
+    }
+    const r = resolveIdentity(provider.id, identity);
+    const sess = createSession(r.userId);
+    redirect(res, `/#oauth-ok=${r.created ? "nouveau" : r.linked ? "lie-auto" : "connecte"}`, { "set-cookie": setCookie(sess.token, sess.expiresAt) });
+  } catch (e) {
+    const code = e instanceof HttpError ? e.code : "fournisseur";
+    if (!(e instanceof HttpError)) console.error(`[oauth ${provider.id}]`, e);
+    redirect(res, `/#oauth-erreur=${code}`);
+  }
+  return true;
+}
+
 export async function handleApi(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const path = (req.url ?? "/").split("?")[0];
+  try {
+    if (await oauthRoute(req, res, path)) return;
+  } catch (e) {
+    if (e instanceof HttpError) return json(res, e.status, { error: e.code, message: e.message });
+    console.error(e); return json(res, 500, { error: "internal", message: "Erreur interne." });
+  }
   const route = routes[`${req.method} ${path}`];
   try {
     if (!route) throw new HttpError(404, "not_found", "Route inconnue.");

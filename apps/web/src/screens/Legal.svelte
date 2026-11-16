@@ -50,6 +50,7 @@
         <thead><tr><th>Données</th><th>Pour quoi faire</th><th>Base légale</th><th>Durée</th></tr></thead>
         <tbody>
           <tr><td>Email, pseudo, mot de passe (haché), département de cœur (facultatif)</td><td>Créer et sécuriser ton compte, te connecter</td><td>Exécution du contrat (les conditions d'utilisation)</td><td>Jusqu'à la suppression du compte, ou 3 ans sans connexion. Compte jamais confirmé : 30 jours.</td></tr>
+          <tr><td>Si tu te connectes avec Google, Discord, Twitch ou Apple : l'identifiant de ton compte chez ce service, ton email (et s'il est vérifié), ton nom affiché</td><td>Te connecter sans mot de passe, lier ce compte au tien, proposer un pseudo</td><td>Exécution du contrat</td><td>Jusqu'à ce que tu délies ce compte ou supprimes le tien</td></tr>
           <tr><td>Progression, résultats du défi du jour</td><td>Sauvegarder ta progression, établir les classements</td><td>Exécution du contrat</td><td>Comme le compte</td></tr>
           <tr><td>Emails de vérification et de mot de passe oublié</td><td>Confirmer ton adresse, récupérer ton compte</td><td>Exécution du contrat</td><td>Liens valables 48 h et 1 h</td></tr>
           <tr><td>Adresse IP, date, page demandée</td><td>Sécurité du site, lutte contre les abus</td><td>Intérêt légitime</td><td>12 mois maximum (journaux techniques)</td></tr>
@@ -66,6 +67,10 @@
     <h2>Qui y a accès</h2>
     <p>Seul l'éditeur. Deux prestataires techniques interviennent pour son compte :</p>
     <ul>{#each SOUS_TRAITANTS as s (s.nom)}<li><b>{s.nom}</b> : {s.role}. {s.lieu}</li>{/each}</ul>
+
+    <h2>Connexion avec un autre service</h2>
+    <p>Quand tu choisis « Continuer avec Google » (ou Discord, Twitch, Apple), tu es redirigé vers ce service, qui nous transmet uniquement les informations listées plus haut, avec ton accord. Hexa ne reçoit jamais ton mot de passe chez ce service, ni l'accès à tes contacts ou à tes messages. Ce service traite ta connexion selon sa propre politique de confidentialité. Tu peux délier un compte à tout moment depuis « Ton compte ».</p>
+    <p>Si l'adresse email transmise est vérifiée et correspond à un compte Hexa existant, les deux sont liés automatiquement.</p>
 
     <h2>Cookies et stockage local</h2>
     <p>Le site n'utilise que des éléments strictement nécessaires à son fonctionnement, exemptés de consentement : c'est pourquoi il n'y a pas de bandeau cookies.</p>

@@ -15,7 +15,7 @@ let srv: ChildProcess;
 let logs = "";
 
 before(async () => {
-  srv = spawn(process.execPath, ["src/index.ts"], { env: { ...process.env, PORT: String(PORT), DB_PATH: join(dir, "t.db") }, stdio: ["ignore", "pipe", "pipe"] });
+  srv = spawn(process.execPath, ["src/index.ts"], { env: { ...process.env, PORT: String(PORT), DB_PATH: join(dir, "t.db"), GOOGLE_CLIENT_ID: "id-test", GOOGLE_CLIENT_SECRET: "secret-test" }, stdio: ["ignore", "pipe", "pipe"] });
   srv.stdout!.on("data", (d) => (logs += d));
   srv.stderr!.on("data", (d) => (logs += d));
   for (let i = 0; i < 50; i++) {
@@ -227,4 +227,20 @@ test("soirée plateau en solo : tous les tours sont joués", { timeout: 60_000 }
     assert.ok(s.nextAt, `le tour ${i + 1} doit être suivi d'un autre`);
   }
   a.ws.close();
+});
+
+test("connexion Google : fournisseurs listés, redirection avec state, retour invalide refusé", async () => {
+  const prov = await (await fetch(BASE + "/api/auth/providers")).json();
+  assert.deepEqual(prov.providers.map((p: { id: string }) => p.id), ["google"]);
+  const r = await fetch(BASE + "/api/auth/oauth/google/start", { redirect: "manual" });
+  assert.equal(r.status, 302);
+  const loc = new URL(r.headers.get("location")!);
+  assert.equal(loc.host, "accounts.google.com");
+  assert.ok(loc.searchParams.get("state") && loc.searchParams.get("code_challenge"));
+  const bad = await fetch(BASE + "/api/auth/oauth/google/callback?state=faux&code=x", { redirect: "manual" });
+  assert.equal(bad.headers.get("location"), "/#oauth-erreur=expire");
+  const off = await fetch(BASE + "/api/auth/oauth/discord/start", { redirect: "manual" });
+  assert.equal(off.headers.get("location"), "/#oauth-erreur=indisponible");
+  const link = await fetch(BASE + "/api/auth/oauth/google/start?intent=link", { redirect: "manual" });
+  assert.equal(link.headers.get("location"), "/#oauth-erreur=connexion-requise");
 });

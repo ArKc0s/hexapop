@@ -2,7 +2,8 @@ import type { Profile, Progress } from "@hexa/game";
 import { progress } from "./progress.svelte.ts";
 import { profile } from "./profile.svelte.ts";
 
-export interface Me { id: number; pseudo: string; email: string; emailVerified: boolean; home: string | null }
+export interface Me { id: number; pseudo: string; email: string; emailVerified: boolean; home: string | null; providers: string[]; hasPassword: boolean }
+export interface ProviderInfo { id: "google" | "discord" | "twitch" | "apple"; label: string }
 
 export class ApiError extends Error {
   code: string;
@@ -31,8 +32,11 @@ class Session {
   ready = $state(false);
   /** false quand le serveur est absent (prototype statique) : le jeu solo reste jouable. */
   online = $state(true);
+  /** Fournisseurs de connexion activés sur le serveur. */
+  providers = $state<ProviderInfo[]>([]);
 
   async load() {
+    api<{ providers: ProviderInfo[] }>("GET", "/auth/providers").then((r) => (this.providers = r.providers)).catch(() => {});
     try {
       const r = await api<{ user: Me }>("GET", "/me");
       this.me = r.user;
@@ -63,6 +67,14 @@ class Session {
   }
   async setHome(home: string | null) {
     const r = await api<{ user: Me }>("PATCH", "/me", { home });
+    this.me = r.user;
+  }
+  async setPseudo(pseudo: string) {
+    const r = await api<{ user: Me }>("PATCH", "/me", { pseudo });
+    this.me = r.user;
+  }
+  async unlink(provider: string) {
+    const r = await api<{ user: Me }>("DELETE", `/me/oauth/${provider}`);
     this.me = r.user;
   }
 

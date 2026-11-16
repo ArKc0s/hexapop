@@ -17,6 +17,8 @@
   import Album from "./screens/Album.svelte";
 
   nav.screen = screenFromHash();
+  // Retour de connexion externe : on nettoie l'adresse (le lien ne doit pas se rejouer).
+  if (location.hash.startsWith("#oauth-")) history.replaceState(null, "", location.pathname);
   // Lien modifié à la main ou bouton précédent : on suit le nouveau lien.
   window.addEventListener("hashchange", () => (nav.screen = screenFromHash()));
   session.load();

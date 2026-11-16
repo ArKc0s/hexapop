@@ -11,7 +11,7 @@ export type Screen =
   | { name: "results"; play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards }
   | { name: "album"; tab?: "plaques" | "badges" }
   | { name: "atlas" }
-  | { name: "account"; view?: "login" | "register" | "forgot" | "reset" | "verify" | "profile"; token?: string; then?: Screen }
+  | { name: "account"; view?: "login" | "register" | "forgot" | "reset" | "verify" | "profile"; token?: string; then?: Screen; notice?: string; oauthError?: string }
   | { name: "daily" }
   | { name: "lobby"; join?: string }
   | { name: "live" }
@@ -45,6 +45,9 @@ export function screenFromHash(): Screen {
   if (k === "plateau") return { name: "stage", code: v.toUpperCase() };
   if (k === "verifier") return { name: "account", view: "verify", token: v };
   if (k === "nouveau-mdp") return { name: "account", view: "reset", token: v };
+  // Retour de connexion via Google, Discord, Twitch ou Apple
+  if (k === "oauth-ok") return v.startsWith("lie-") && v !== "lie-auto" ? { name: "account", view: "profile", notice: v } : { name: "home" };
+  if (k === "oauth-erreur") return { name: "account", view: "login", oauthError: v };
   return { name: "home" };
 }
 

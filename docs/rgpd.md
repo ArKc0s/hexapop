@@ -15,9 +15,13 @@ L'éditeur du site (voir `apps/web/src/lib/legal.ts`). Contact : contact@hexapop
 | 3 | Emails transactionnels | email, pseudo | joueurs inscrits | vérification d'adresse, réinitialisation du mot de passe | contrat | jetons : 48 h / 1 h ; les emails envoyés restent chez OVH selon sa politique | OVH (France) |
 | 4 | Sessions | empreinte du jeton, identifiant du compte, expiration | joueurs inscrits | rester connecté | contrat | 60 jours | SQLite |
 | 5 | Sécurité | adresse IP, date, URL, user-agent | tous les visiteurs | lutte contre les abus, limitation des tentatives | intérêt légitime, art. 6.1.f | mémoire du serveur : quelques minutes ; journaux Caddy : 12 mois max (voir point ouvert) | Caddy (LXC 109), Cloudflare |
+| 7 | Connexion via un service tiers (Google, Discord, Twitch, Apple) | identifiant chez le service, email et indicateur « vérifié », nom affiché | joueurs qui choisissent ce mode | connexion sans mot de passe, liaison de comptes, pseudo proposé | contrat | jusqu'à la déliaison ou la suppression du compte | table `oauth_identities` |
 | 6 | Parties multijoueur invité | pseudo d'invité, réponses | invités | afficher le joueur, noter la partie | contrat | mémoire du serveur, le temps du salon | conteneur `hexapop` |
 
 Pas de traitement de données sensibles, pas de profilage, pas de publicité, pas de mesure d'audience.
+
+## Services de connexion tiers
+Google, Discord, Twitch et Apple sont des responsables de traitement indépendants pour l'authentification (pas des sous-traitants d'Hexa). Hexa ne demande que les portées minimales : `openid email profile` (Google), `identify email` (Discord), `openid user:read:email` (Twitch), `name email` (Apple). Liaison automatique uniquement sur email vérifié des deux côtés ; si le compte local n'était pas vérifié, son mot de passe et ses sessions sont annulés (protection contre la pré-création de compte).
 
 ## Sous-traitants
 - **Cloudflare, Inc.** (États-Unis) : CDN, TLS, protection. Transferts encadrés par le Data Privacy Framework et les clauses contractuelles types (DPA Cloudflare accepté avec les conditions du service).
