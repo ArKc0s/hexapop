@@ -1,7 +1,7 @@
 <script lang="ts">
   import { MAP, IDF_SOURCE, IDF_TARGET, TINT_BY_DEP, zoomTransform } from "./map.ts";
 
-  export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near";
+  export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near" | "done-ok" | "done-ko";
   interface Props {
     marks?: Record<string, Mark>;
     fills?: Record<string, string>;
@@ -77,7 +77,9 @@
   .interactive .deps use { cursor: pointer; }
   .interactive .deps use:hover, .interactive .deps use:focus-visible { fill: var(--yellow); }
   .deps use.sel { fill: var(--yellow); stroke-width: 2.4; }
-  .deps use.near { fill: #9fd3f0; stroke-width: 1.8; }
+  .deps use.done-ok { fill: #7cbde4; }
+  .deps use.done-ko { fill: #ffa8d6; }
+  .deps use.near { fill: var(--yellow); fill-opacity: .6; stroke: var(--pink); stroke-width: 2.4; }
   .deps use.hint { fill: var(--yellow); stroke-width: 2.4; animation: blink 1s ease-in-out infinite alternate; }
   .deps use.ok { fill: var(--ok); }
   .deps use.ko { fill: var(--ko); }

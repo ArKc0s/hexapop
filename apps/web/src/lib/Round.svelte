@@ -14,8 +14,10 @@
     /** Contenu affiché sous la correction (bouton suivant, classement…). */
     children?: import("svelte").Snippet;
     header?: import("svelte").Snippet;
+    /** Départements déjà joués dans la partie : restent colorés. */
+    history?: Record<string, Mark>;
   }
-  let { q, result = null, startedAt, onsubmit, children, header }: Props = $props();
+  let { q, result = null, startedAt, onsubmit, children, header, history = {} }: Props = $props();
 
   const d = $derived(dep(q.code));
   const has = (f: Field) => q.fields.includes(f);
@@ -75,7 +77,7 @@
   }
 
   const marks = $derived.by(() => {
-    const m: Record<string, Mark> = {};
+    const m: Record<string, Mark> = { ...history };
     if (!result) {
       if (q.hint === "carte") m[q.code] = "hint";
       for (const c of near) m[c] = "near";

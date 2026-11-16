@@ -1,6 +1,7 @@
 <script lang="ts">
   import { grade, makeGame, type Answer, type GameConfig, type RoundResult } from "@hexa/game";
   import Round from "../lib/Round.svelte";
+  import type { Mark } from "../lib/Map.svelte";
   import { nav } from "../lib/nav.svelte.ts";
   import { progress } from "../lib/progress.svelte.ts";
 
@@ -12,6 +13,7 @@
   let result = $state<RoundResult | null>(null);
   let results = $state<RoundResult[]>([]);
   const q = $derived(questions[i]);
+  const history = $derived(Object.fromEntries(results.filter((r) => r !== result).map((r) => [r.code, (r.accuracy >= 0.999 ? "done-ok" : "done-ko") as Mark])));
   const total = $derived(results.reduce((n, r) => n + r.points, 0));
 
   function submit(a: Answer) {
@@ -48,7 +50,7 @@
     <span class="score tabnum">{total} pts</span>
   </header>
   {#key i}
-    <Round {q} {result} {startedAt} onsubmit={submit}>
+    <Round {q} {result} {startedAt} {history} onsubmit={submit}>
       <button class="btn blue next" onclick={next}>{i + 1 >= questions.length ? "Voir le bilan" : "Suivant"} ↵</button>
     </Round>
   {/key}
