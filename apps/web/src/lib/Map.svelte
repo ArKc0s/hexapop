@@ -12,8 +12,12 @@
     zoomable?: boolean;
     onpick?: (code: string) => void;
     label?: string;
+    /** Mode propositions : seuls ces départements sont surlignés et sélectionnables. */
+    candidates?: string[];
   }
-  let { marks = {}, fills, interactive = true, zoomable = false, onpick, label = "Carte des départements" }: Props = $props();
+  let { marks = {}, fills, interactive = true, zoomable = false, onpick, label = "Carte des départements", candidates }: Props = $props();
+  const cand = $derived(candidates ? new Set(candidates) : null);
+  const allowed = (code: string) => !cand || cand.has(code);
 
   const codes = Object.keys(MAP.paths);
   // Outre-mer : pas de contour de région, on lui donne un trait d'encre.
@@ -75,6 +79,26 @@
     return [(x0 + x1) / 2 - w / 2, (y0 + y1) / 2 - h / 2, w, h];
   }
   export function resetZoom() { animateTo(null); }
+
+  /** Cadre englobant des propositions (métropole hors petite couronne), au ratio de la vue complète. */
+  function boxOf(list: string[]): number[] | null {
+    if (list.some((c) => OM.has(c) || IDF_SOURCE.codes.includes(c))) return null;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const c of list) for (const [, x, y] of MAP.paths[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
+      x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y);
+    }
+    const pad = 0.25, ratio = full[3] / full[2];
+    let w = Math.max((x1 - x0) * (1 + pad * 2), full[2] * 0.3), h = (y1 - y0) * (1 + pad * 2);
+    if (h / w > ratio) w = h / ratio; else h = w * ratio;
+    if (w >= full[2] * 0.8) return null;
+    return [(x0 + x1) / 2 - w / 2, (y0 + y1) / 2 - h / 2, w, h];
+  }
+  // Au doigt, on zoome tout de suite sur les 4 propositions quand elles sont proches.
+  $effect(() => {
+    if (!zoomable || !candidates?.length || !narrow) return;
+    const box = boxOf(candidates);
+    if (box) animateTo(box);
+  });
 
   // ---------- gestes ----------
   let svg: SVGSVGElement;
@@ -148,6 +172,12 @@
   function tap(target: Element | null) {
     const code = target?.getAttribute?.("data-code");
     if (!code || !interactive) return;
+    if (cand) {
+      if (!cand.has(code)) return;
+      if (navigator.vibrate) navigator.vibrate(15);
+      onpick?.(code);
+      return;
+    }
     const inZoomBox = !!target?.closest(".zoom");
     // Au doigt, vue complète : toucher une région de métropole zoome dessus d'abord.
     if (zoomable && coarse && !view && !OM.has(code) && !inZoomBox && tourRegionOf(code).code !== OUTRE_MER) {
@@ -170,21 +200,21 @@
   function pickFrom(e: Event) {
     if (!interactive || zoomable) return; // les cartes zoomables gèrent le toucher elles-mêmes
     const code = (e.target as Element).getAttribute?.("data-code");
-    if (code) onpick?.(code);
+    if (code && allowed(code)) onpick?.(code);
   }
   function key(e: KeyboardEvent) {
     if (!interactive) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       const code = (e.target as Element).getAttribute?.("data-code");
-      if (code) onpick?.(code);
+      if (code && allowed(code)) onpick?.(code);
     }
   }
 </script>
 
 <div class="wrap" class:zoomable>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <svg bind:this={svg} class="map" class:interactive class:zoomable viewBox={vb} role="img" aria-label={label}
+  <svg bind:this={svg} class="map" class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
     onclick={pickFrom} onkeydown={key} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onwheel={wheel}>
     <defs>
       {#each codes as code (code)}<path id="{uid}-{code}" d={MAP.paths[code]} />{/each}
@@ -205,8 +235,8 @@
     <g class="deps">
       {#each codes as code (code)}
         <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <use href="#{uid}-{code}" data-code={code} class="{marks[code] ?? ''} {OM.has(code) ? 'om' : ''}" style={fills?.[code] ? `--f:${fills[code]}` : undefined}
-          transform={shiftOf(code)} tabindex={interactive ? 0 : -1} role={interactive ? "button" : undefined} aria-label={interactive ? "département" : undefined} />
+        <use href="#{uid}-{code}" data-code={code} class="{marks[code] ?? ''} {OM.has(code) ? 'om' : ''} {cand?.has(code) ? 'cand' : ''}" style={fills?.[code] ? `--f:${fills[code]}` : undefined}
+          transform={shiftOf(code)} tabindex={interactive && allowed(code) ? 0 : -1} role={interactive ? "button" : undefined} aria-label={interactive ? "département" : undefined} />
       {/each}
     </g>
     <g class="regions" aria-hidden="true">
@@ -214,7 +244,7 @@
     </g>
     <g class="deps zoom" transform={idfT}>
       {#each IDF_SOURCE.codes as code (code)}
-        <use href="#{uid}-{code}" data-code={code} class={marks[code] ?? ""} style={fills?.[code] ? `--f:${fills[code]}` : undefined} />
+        <use href="#{uid}-{code}" data-code={code} class="{marks[code] ?? ''} {cand?.has(code) ? 'cand' : ''}" style={fills?.[code] ? `--f:${fills[code]}` : undefined} />
       {/each}
     </g>
   </svg>
@@ -241,8 +271,12 @@
   .regions path { fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; pointer-events: none; }
   .zoom use { stroke-width: .8; stroke: #8a806c; }
   .interactive .deps use { cursor: pointer; }
+  /* Propositions sur la carte : 4 départements surlignés, les autres en retrait */
+  .choosing .deps use:not(.cand) { cursor: default; fill: #f4efe4; }
+  .deps use.cand { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.8; }
+  .deps use.cand.sel { fill: var(--ink); stroke: var(--yellow) !important; stroke-width: 3 !important; }
   .interactive .deps use:focus-visible { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.2; }
-  @media (hover: hover) { .interactive .deps use:hover { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.2; } }
+  @media (hover: hover) { .interactive.choosing .deps use.cand:not(.sel):hover { fill: var(--yellow); } .interactive:not(.choosing) .deps use:hover { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.2; } }
   .deps use.hint { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse 1s ease-in-out infinite alternate; }
   .deps use.sel { fill: var(--ink); stroke: var(--ink); }
   .deps use.near { fill: #9fd3f0; stroke: var(--ink); stroke-width: 1.2; }

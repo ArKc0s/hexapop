@@ -7,6 +7,7 @@ Idées validées avec Léo, à planifier. Mise à jour : 2026-11-16.
 - **v1.1** : refonte gamifiée (mascotte, boutons tactiles), XP et niveaux, série, quêtes du jour, Tour de France à étoiles, album, badges, duel à points de vie, réactions.
 - **v1.1.1** : plaques à trois paliers (bronze au QCM, argent au clavier, or en expert), carte qui s'entretient (un département pas revu pâlit et ne compte plus qu'à moitié), voisins tapés au clavier en expert (nom ou numéro).
 
+- **v1.3** (étape 1 de la [refonte](conception.md)) : nouvel Entraînement configurable (raccourcis, on te donne / on te demande, zone, longueur), sans chrono, propositions ou clavier changeable en pleine partie, placement en propositions parmi 4 départements surlignés. Avant : connexion Google, appli installable et notifications, incitation à créer un compte, écran de jeu mobile sans défilement, correction lisible, rappel « place-le sur la carte ».
 - **v1.2** : handicap par joueur en salon (points normalisés sur le pourcentage), mode « En équipe » (3 vies communes, étoiles d'équipe), mobile : une question à la fois en 4 propositions et chrono fixé en haut.
 
 ## Chantiers de game design (prioritaires)

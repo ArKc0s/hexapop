@@ -1,6 +1,6 @@
 <script lang="ts">
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
-  import { combos, grade, makeGame, type Answer, type RoundResult } from "@hexa/game";
+  import { combos, grade, makeGame, type Answer, type InputMode, type RoundResult } from "@hexa/game";
   import Round from "../lib/Round.svelte";
   import type { Mark } from "../lib/Map.svelte";
   import Icon from "../lib/ui/Icon.svelte";
@@ -22,13 +22,24 @@
   const history = $derived(Object.fromEntries(results.filter((r) => r !== result).map((r) => [r.code, (r.accuracy >= 0.999 ? "done-ok" : "done-ko") as Mark])));
   const comboNow = $derived(combos(results).at(-1) ?? 0);
 
+  // Entraînement : propositions ou clavier, changeable à tout moment et mémorisé.
+  const MODE_KEY = "hexa.answerMode";
+  const savedMode = (() => { try { return localStorage.getItem(MODE_KEY); } catch { return null; } })();
+  let answerMode = $state<InputMode>(savedMode === "choix" || savedMode === "libre" ? savedMode : play.config.input);
+  let usedChoices = false;
+  function setMode(m: InputMode) {
+    answerMode = m;
+    try { localStorage.setItem(MODE_KEY, m); } catch { /* navigation privée */ }
+  }
+
   function submit(a: Answer) {
+    if (answerMode === "choix") usedChoices = true;
     result = grade(q, a);
     results = [...results, result];
   }
   function finish() {
     if (play.learn) progress.record(results);
-    const rewards = profile.record({ mode: play.mode, level: play.config.level, input: play.config.input, results, region: play.region, now: Date.now() });
+    const rewards = profile.record({ mode: play.mode, level: play.config.level, input: play.config.switchable ? (usedChoices ? "choix" : "libre") : play.config.input, results, region: play.region, now: Date.now() });
     nav.go({ name: "results", play, questions, results, rewards });
   }
   function next() {
@@ -66,7 +77,8 @@
     <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
   </header>
   {#key i}
-    <Round {q} {result} {startedAt} {history} combo={comboNow} onsubmit={submit}>
+    <Round {q} {result} {startedAt} {history} combo={comboNow} onsubmit={submit}
+      answerMode={play.config.switchable ? answerMode : undefined} onmode={play.config.switchable ? setMode : undefined}>
       {#snippet action()}<button class="btn blue big" onclick={next}>{i + 1 >= questions.length ? "Voir mes récompenses" : "Suivant"} <kbd>↵</kbd></button>{/snippet}
     </Round>
   {/key}

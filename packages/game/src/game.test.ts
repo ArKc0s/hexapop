@@ -87,3 +87,36 @@ test("un département pâlit quand sa révision est très en retard", () => {
   assert.equal(isFading(p, "13", 61 * DAY), true);
   assert.equal(isFading(p, "75", 1e12), false);
 });
+
+test("entraînement : on te donne / on te demande, sans chrono", async () => {
+  const { playable } = await import("./round.ts");
+  // On me donne le nom, je le place : une seule chose à trouver, jamais l'indice.
+  const qs = makeGame({ seed: 7, level: "normal", input: "choix", hints: ["nom"], ask: ["carte"], durationMs: 0, switchable: true });
+  assert.equal(qs.length, 101);
+  for (const q of qs) {
+    assert.equal(q.hint, "nom");
+    assert.deepEqual(q.fields, ["carte"]);
+    assert.equal(q.mapChoices?.length, 4);
+    assert.ok(q.mapChoices!.includes(q.code));
+    assert.equal(new Set(q.mapChoices).size, 4);
+  }
+  // Sans chrono : pas de bonus de vitesse, les points ne dépendent que de la justesse.
+  const r = grade(qs[0], { carte: qs[0].code, elapsedMs: 999_999 });
+  assert.equal(r.accuracy, 1);
+  assert.equal(r.points, 100);
+  // Indice préfecture ; l'indice n'est jamais demandé.
+  const p = makeGame({ seed: 3, level: "normal", input: "libre", hints: ["prefecture", "carte"], ask: ["carte", "nom", "prefecture"], rounds: 40, durationMs: 0 });
+  for (const q of p) assert.ok(!q.fields.includes(q.hint as never) && q.fields.length > 0);
+  assert.ok(p.some((q) => q.hint === "prefecture"));
+  // Voisins demandés mais absents (outre-mer) : on retombe sur un autre champ ou on l'ignore, jamais un tour vide.
+  const om = makeGame({ seed: 1, level: "expert", input: "libre", hints: ["nom"], ask: ["limitrophes", "numero"], codes: ["971", "29"], durationMs: 0 });
+  for (const q of om) assert.ok(q.fields.length > 0);
+  assert.equal(playable(["nom"], ["nom"]), false);
+  assert.equal(playable(["nom", "carte"], ["nom"]), true);
+});
+
+test("le défi et les salons ne changent pas (tirages identiques sans switchable)", () => {
+  const a = makeGame({ seed: 42, level: "normal", input: "choix", rounds: 10 });
+  assert.ok(a.every((q) => !q.mapChoices));
+  assert.deepEqual(a.map((q) => q.code), makeGame({ seed: 42, level: "normal", input: "choix", rounds: 10 }).map((q) => q.code));
+});

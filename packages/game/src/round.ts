@@ -5,7 +5,7 @@ import { rng, shuffle, type Rng } from "./random.ts";
 export type Level = "normal" | "expert";
 export type InputMode = "choix" | "libre";
 /** Ce qu'on montre au joueur pour lancer le tour. */
-export type Hint = "nom" | "numero" | "carte";
+export type Hint = "nom" | "numero" | "carte" | "prefecture";
 /** Ce que le joueur doit retrouver. */
 export type Field = "carte" | "nom" | "numero" | "prefecture" | "sousPrefectures" | "limitrophes";
 export type ChoiceField = "nom" | "numero" | "prefecture";
@@ -15,9 +15,12 @@ export interface Question {
   code: string;
   hint: Hint;
   fields: Field[];
+  /** Durée du chrono ; 0 = sans chrono (entraînement solo). */
   durationMs: number;
   /** Propositions pour le mode choix multiples (absent en saisie libre). */
   choices?: Partial<Record<ChoiceField, string[]>>;
+  /** Pour placer sur la carte en mode propositions : 4 départements surlignés, dont le bon. */
+  mapChoices?: string[];
 }
 
 export interface Answer {
@@ -55,13 +58,22 @@ export interface GameConfig {
   /** Nombre de tours ; défaut : tous les codes. */
   rounds?: number;
   hints?: Hint[];
+  /** Ce que le joueur doit retrouver ; défaut : tout sauf l'indice (+ expert selon le niveau). */
+  ask?: Field[];
+  /** 0 = sans chrono. */
   durationMs?: number;
+  /** Prépare toujours les propositions, pour basculer clavier / propositions en cours de partie. */
+  switchable?: boolean;
 }
 
 export const POINTS_PER_FIELD = 100;
 export const DEFAULT_DURATION: Record<Level, number> = { normal: 20_000, expert: 60_000 };
 
-export function fieldsFor(d: Departement, hint: Hint, level: Level): Field[] {
+/** Champs demandés pour un indice donné ; avec `ask`, seulement ceux-là (jamais l'indice lui-même). */
+export function fieldsFor(d: Departement, hint: Hint, level: Level, ask?: Field[]): Field[] {
+  if (ask) {
+    return ask.filter((f) => f !== hint && (f !== "sousPrefectures" || d.sousPrefectures.length > 0) && (f !== "limitrophes" || d.limitrophes.length > 0));
+  }
   const base: Field[] = ["carte", "nom", "numero", "prefecture"];
   const fields = base.filter((f) => f !== hint);
   if (level === "expert") {
@@ -79,8 +91,7 @@ function distractors(d: Departement, r: Rng): Departement[] {
   return [...near.slice(0, 2), ...region.slice(0, 1), ...rest].slice(0, 3);
 }
 
-function makeChoices(d: Departement, fields: Field[], r: Rng): Question["choices"] {
-  const others = distractors(d, r);
+function makeChoices(d: Departement, fields: Field[], others: Departement[], r: Rng): Question["choices"] {
   const out: Question["choices"] = {};
   const pick = (f: ChoiceField, get: (x: Departement) => string) => {
     if (fields.includes(f)) out[f] = shuffle([d, ...others].map(get), r);
@@ -91,6 +102,11 @@ function makeChoices(d: Departement, fields: Field[], r: Rng): Question["choices
   return out;
 }
 
+/** Une configuration est jouable si au moins un indice laisse quelque chose à trouver. */
+export function playable(hints: Hint[], ask: Field[]): boolean {
+  return hints.some((h) => ask.some((f) => f !== h));
+}
+
 export function makeGame(cfg: GameConfig): Question[] {
   const r = rng(cfg.seed);
   const pool = cfg.codes ?? DEPARTEMENTS.map((d) => d.code);
@@ -99,10 +115,19 @@ export function makeGame(cfg: GameConfig): Question[] {
   const duration = cfg.durationMs ?? DEFAULT_DURATION[cfg.level];
   return codes.map((code, index) => {
     const d = dep(code);
-    const hint = hints[Math.floor(r() * hints.length)];
-    const fields = fieldsFor(d, hint, cfg.level);
+    // Indice tiré au hasard parmi ceux qui laissent quelque chose à trouver pour ce département.
+    const usable = cfg.ask ? hints.filter((h) => fieldsFor(d, h, cfg.level, cfg.ask).length > 0) : hints;
+    const from = usable.length ? usable : hints;
+    const hint = from[Math.floor(r() * from.length)];
+    let fields = fieldsFor(d, hint, cfg.level, cfg.ask);
+    if (!fields.length) fields = fieldsFor(d, hint, cfg.level);
     const q: Question = { index, code, hint, fields, durationMs: duration };
-    if (cfg.input === "choix") q.choices = makeChoices(d, fields, r);
+    if (cfg.input === "choix" || cfg.switchable) {
+      const others = distractors(d, r);
+      q.choices = makeChoices(d, fields, others, r);
+      // Réservé à l'entraînement : ne change pas les tirages du défi du jour ni des salons.
+      if (cfg.switchable && fields.includes("carte")) q.mapChoices = shuffle([d.code, ...others.map((x) => x.code)], r);
+    }
     return q;
   });
 }
@@ -114,6 +139,7 @@ export function clueFor(q: Question): string {
   const d = dep(q.code);
   if (q.hint === "nom") return d.nom;
   if (q.hint === "numero") return d.code;
+  if (q.hint === "prefecture") return d.prefecture;
   return d.code; // indice carte : le client surligne ce département
 }
 
@@ -142,11 +168,12 @@ export function grade(q: Question, a: Answer): RoundResult {
       case "limitrophes": return { field, score: gradeList(a.limitrophes, d.limitrophes, false), expected: d.limitrophes };
     }
   });
-  const elapsedMs = Math.min(Math.max(0, a.elapsedMs), q.durationMs);
+  const timed = q.durationMs > 0;
+  const elapsedMs = timed ? Math.min(Math.max(0, a.elapsedMs), q.durationMs) : Math.max(0, a.elapsedMs);
   const sum = fields.reduce((n, f) => n + f.score, 0);
   const accuracy = fields.length ? sum / fields.length : 0;
-  // Bonus vitesse : jusqu'à ×2 si on répond instantanément, ×1 à la fin du chrono.
-  const speed = 1 + (1 - elapsedMs / q.durationMs);
+  // Bonus vitesse : jusqu'à ×2 si on répond instantanément, ×1 à la fin du chrono ; aucun sans chrono.
+  const speed = timed ? 1 + (1 - elapsedMs / q.durationMs) : 1;
   const points = Math.round(sum * POINTS_PER_FIELD * speed);
   return { code: d.code, fields, accuracy, points, elapsedMs };
 }

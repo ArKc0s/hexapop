@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dep, DEPARTEMENTS, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type Question, type RoundResult } from "@hexa/game";
+  import { dep, DEPARTEMENTS, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
   import Map, { type Mark } from "./Map.svelte";
   import Fiche from "./Fiche.svelte";
   import { onDestroy, type Snippet } from "svelte";
@@ -22,8 +22,16 @@
     history?: Record<string, Mark>;
     /** Combo atteint avec ce tour (réponses parfaites d'affilée). */
     combo?: number;
+    /** Façon de répondre, réglable en cours de partie (entraînement) : sinon déduite de la question. */
+    answerMode?: InputMode;
+    onmode?: (m: InputMode) => void;
   }
-  let { q, result = null, startedAt, onsubmit, action, children, history = {}, combo = 0 }: Props = $props();
+  let { q, result = null, startedAt, onsubmit, action, children, history = {}, combo = 0, answerMode, onmode }: Props = $props();
+  /** Propositions affichées pour un champ (aucune en mode clavier). */
+  const usesChoices = $derived(answerMode ? answerMode === "choix" : !!q.choices);
+  const choicesOf = (f: ChoiceField) => (usesChoices ? q.choices?.[f] : undefined);
+  const candidates = $derived(usesChoices && !result ? q.mapChoices : undefined);
+  const timed = $derived(q.durationMs > 0);
 
   // Retour sonore et texte de la mascotte à l'arrivée du résultat.
   const PRAISE = ["Parfait !", "Bien joué !", "Imbattable.", "Ça, c'est du niveau préfet.", "Tu connais ta France !"];
@@ -40,6 +48,8 @@
   });
 
   const d = $derived(dep(q.code));
+  /** Comment désigner l'indice dans les consignes (« Place … sur la carte »). */
+  const target = $derived(q.hint === "numero" ? `le ${d.code}` : q.hint === "prefecture" ? `le département de ${d.prefecture}` : d.nom);
   const has = (f: Field) => q.fields.includes(f);
 
   let sel = $state<string | null>(null);
@@ -78,8 +88,8 @@
   const tick = () => { now = performance.now(); if (!result) raf = requestAnimationFrame(tick); };
   raf = requestAnimationFrame(tick);
   onDestroy(() => cancelAnimationFrame(raf));
-  const remaining = $derived(Math.max(0, Math.min(q.durationMs, q.durationMs - (now - startedAt))));
-  $effect(() => { if (remaining <= 0 && !submitted && !result) submit(true); });
+  const remaining = $derived(timed ? Math.max(0, Math.min(q.durationMs, q.durationMs - (now - startedAt))) : 1);
+  $effect(() => { if (timed && remaining <= 0 && !submitted && !result) submit(true); });
 
   function pick(code: string) {
     if (result || submitted) return;
@@ -144,7 +154,7 @@
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   });
-  const choiceFields = $derived(textFields.filter((f) => q.choices?.[f]));
+  const choiceFields = $derived(textFields.filter((f) => choicesOf(f)));
   const stepped = $derived(mobile && !result && choiceFields.length > 1);
   let step = $state(0);
   function choose(f: ChoiceField, opt: string) {
@@ -177,7 +187,7 @@
 
 <div class="round" class:review={!!result} class:placing={!result && mapTarget === "carte" && !sel} class:nudge={nudge && needsPlacing}>
   <div class="mapwrap">
-    {#if mobile && !result}
+    {#if mobile && !result && timed}
       <div class="timer top" aria-label="Temps restant">
         <div class="bar"><span style="transform:scaleX({remaining / q.durationMs})"></span></div>
         <span class="secs tabnum">{Math.ceil(remaining / 1000)} s</span>
@@ -188,27 +198,35 @@
         {#key nudge}
           <div class="callout" class:nudge role="status">
             <Icon name="pin" size={18} />
-            <span>{nudge ? "Tu n'as pas placé" : "Place"} <b>{q.hint === "numero" ? `le ${d.code}` : d.nom}</b>{nudge ? " !" : " sur la carte"}</span>
+            <span>{nudge ? "Tu n'as pas placé" : "Place"} <b>{target}</b>{nudge ? " !" : " sur la carte"}</span>
           </div>
         {/key}
-        <span class="help sub">{coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
+        <span class="help sub">{candidates ? "Choisis parmi les 4 départements surlignés" : coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
       {:else}
         <span class="help">{mapHelp}</span>
       {/if}
     </div>
-    <Map {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} />
+    <Map {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} {candidates} />
   </div>
 
   <section class="panel">
-    <div class="timer" class:hidden={mobile} aria-label="Temps restant">
+    <div class="timer" class:hidden={mobile || !timed} aria-label="Temps restant">
       <div class="bar"><span style="transform:scaleX({remaining / q.durationMs})"></span></div>
       <span class="secs tabnum">{result ? "" : Math.ceil(remaining / 1000) + " s"}</span>
     </div>
 
-    <div class="clue">
+    <div class="clue" class:has-sw={!!(answerMode && onmode && !result)}>
+      {#if answerMode && onmode && !result}
+        <button class="modesw" onclick={() => onmode(answerMode === "choix" ? "libre" : "choix")} aria-label={answerMode === "choix" ? "Répondre au clavier" : "Répondre avec des propositions"}>
+          {answerMode === "choix" ? "Au clavier" : "Propositions"}
+        </button>
+      {/if}
       {#if q.hint === "numero"}
         <span class="kicker">Le département numéro</span>
         <span class="riso bignum" data-t={d.code}>{d.code}</span>
+      {:else if q.hint === "prefecture"}
+        <span class="kicker">Le département de</span>
+        <h2 class="qname">{d.prefecture}</h2>
       {:else if q.hint === "nom"}
         <span class="kicker">Trouve</span>
         <h2 class="qname">{d.nom}</h2>
@@ -238,11 +256,11 @@
       {/if}
       {#each textFields as f, i (f)}
         {@const r = fieldResult(f)}
-        <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1} class:hidden={stepped && q.choices?.[f] && choiceFields.indexOf(f) !== step}>
-          <label class="label" class:hidden={stepped && !!q.choices?.[f]} for="in-{f}">{LABELS[f]}</label>
-          {#if q.choices?.[f]}
+        <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1} class:hidden={stepped && !!choicesOf(f) && choiceFields.indexOf(f) !== step}>
+          <label class="label" class:hidden={stepped && !!choicesOf(f)} for="in-{f}">{LABELS[f]}</label>
+          {#if choicesOf(f)}
             <div class="choices" role="radiogroup" aria-label={LABELS[f]}>
-              {#each q.choices[f]! as opt (opt)}
+              {#each choicesOf(f)! as opt (opt)}
                 <button role="radio" aria-checked={text[f] === opt} class="opt" class:on={text[f] === opt}
                   class:right={r && opt === r.expected} class:wrong={r && text[f] === opt && opt !== r.expected}
                   disabled={!!result || submitted} onclick={() => choose(f, opt)}>{opt}</button>
@@ -328,6 +346,10 @@
 <style>
   .round { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr); gap: 22px; align-items: start; }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .clue { position: relative; }
+  .clue.has-sw { padding-right: 118px; }
+  .modesw { position: absolute; right: 0; top: 0; border: 0; background: var(--bg); color: var(--ink); font-weight: 800; font-size: 13px; padding: 6px 11px; border-radius: 999px; cursor: pointer; box-shadow: 0 2px 0 var(--line); z-index: 1; }
+  .modesw:active { transform: translateY(2px); box-shadow: none; }
   .maphead { min-height: 38px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   /* Rappel « place-le sur la carte » : bulle jaune qui rebondit, rose et secouée si on valide sans placer */
   .callout { display: inline-flex; align-items: center; gap: 7px; background: var(--yellow); color: var(--ink); font-weight: 800; font-size: 16px; padding: 7px 13px 7px 10px; border-radius: 999px; box-shadow: 0 3px 0 var(--yellow-d); animation: pop-in .25s, bob 1.6s ease-in-out .3s infinite; }

@@ -240,7 +240,7 @@ Personne ne doit perdre ce qu'il a gagné :
 
 ## 8. Livraison par étapes
 
-1. **Entraînement** avec les réglages « on te donne / on te demande », les deux formats (question simple, fiche complète), propositions ou clavier changeable en cours de partie, carte à 4 départements surlignés. À côté de l'existant : on teste en vrai sans rien casser. *(Répond directement au retour du testeur.)*
+1. **Entraînement** avec les réglages « on te donne / on te demande », les deux formats (question simple, fiche complète), propositions ou clavier changeable en cours de partie, carte à 4 départements surlignés. À côté de l'existant : on teste en vrai sans rien casser. *(Répond directement au retour du testeur.)* ✅ **Livré le 2026-11-16** (raccourcis, on te donne / on te demande dont l'indice préfecture, zone, longueur, sans chrono, bascule propositions / clavier, 4 départements surlignés). Pas encore fait : la carte « À retenir » de première rencontre et les propositions de plus en plus piégeuses, qui dépendent des étoiles (étape 2).
 2. **Les étoiles par facette, « Ta France » et les 3 niveaux**, avec la migration des profils.
 3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif personnel facultatif. On retire alors le Tour de France (remplacé par Continuer), les quêtes et les niveaux d'XP ; l'XP devient des kilomètres et les vignettes des médailles.
 4. **Défi du jour par niveau** (classements séparés) et **Entre amis** à la nouvelle règle, handicap par niveau.
