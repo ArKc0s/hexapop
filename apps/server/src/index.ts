@@ -8,6 +8,8 @@ import { handleApi, sessionToken, clientIp } from "./api.ts";
 import { userFromSession, rateLimit } from "./auth.ts";
 import { handle, newPlayerId, send, fail, type Conn } from "./rooms.ts";
 import { purge } from "./db.ts";
+import { startPushScheduler } from "./push.ts";
+startPushScheduler();
 
 // Purge quotidienne des données arrivées à échéance (et une fois au démarrage).
 const runPurge = () => { const r = purge(); if (Object.values(r).some((n) => n > 0)) console.log("[purge]", r); };

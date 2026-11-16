@@ -15,6 +15,8 @@
   import Tour from "./screens/Tour.svelte";
   import Training from "./screens/Training.svelte";
   import Album from "./screens/Album.svelte";
+  import Reminders from "./screens/Reminders.svelte";
+  import { push } from "./lib/push.svelte.ts";
 
   nav.screen = screenFromHash();
   // Retour de connexion externe : on nettoie l'adresse (le lien ne doit pas se rejouer).
@@ -22,6 +24,7 @@
   // Lien modifié à la main ou bouton précédent : on suit le nouveau lien.
   window.addEventListener("hashchange", () => (nav.screen = screenFromHash()));
   session.load();
+  push.init();
 </script>
 
 {#if nav.screen.name === "home"}<Home />
@@ -31,6 +34,7 @@
 {:else if nav.screen.name === "tour"}{#key nav.screen}<Tour region={nav.screen.region} />{/key}
 {:else if nav.screen.name === "training"}<Training />
 {:else if nav.screen.name === "album"}<Album tab={nav.screen.tab} />
+{:else if nav.screen.name === "rappels"}<Reminders />
 {:else if nav.screen.name === "atlas"}<Atlas />
 {:else if nav.screen.name === "account"}{#key nav.screen}<Account {...nav.screen} />{/key}
 {:else if nav.screen.name === "daily"}<Daily />

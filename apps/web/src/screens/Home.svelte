@@ -111,6 +111,7 @@
       <button onclick={() => nav.go({ name: "training" })}>Entraînement</button>
       <button onclick={() => nav.go({ name: "album" })}>Album <span>{platesOwned(p)}/101</span></button>
       <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
+      <button onclick={() => nav.go({ name: "rappels" })}>Rappels</button>
     </nav>
   </section>
 

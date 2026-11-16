@@ -16,6 +16,7 @@ L'éditeur du site (voir `apps/web/src/lib/legal.ts`). Contact : contact@hexapop
 | 4 | Sessions | empreinte du jeton, identifiant du compte, expiration | joueurs inscrits | rester connecté | contrat | 60 jours | SQLite |
 | 5 | Sécurité | adresse IP, date, URL, user-agent | tous les visiteurs | lutte contre les abus, limitation des tentatives | intérêt légitime, art. 6.1.f | mémoire du serveur : quelques minutes ; journaux du proxy : 12 mois max | proxy HTTPS de l'éditeur, Cloudflare |
 | 7 | Connexion via un service tiers (Google, Discord, Twitch, Apple) | identifiant chez le service, email et indicateur « vérifié », nom affiché | joueurs qui choisissent ce mode | connexion sans mot de passe, liaison de comptes, pseudo proposé | contrat | jusqu'à la déliaison ou la suppression du compte | table `oauth_identities` |
+| 8 | Rappels (notifications) | adresse d'abonnement push de l'appareil, clés de chiffrement, réglages, dernier jour joué, série, nombre de départements à réviser | joueurs qui activent les rappels | envoyer au plus un rappel par jour | consentement, art. 6.1.a | jusqu'à désactivation, désinstallation ou expiration signalée par le service | table `push_subs` ; acheminement chiffré par Google FCM, Apple APNs, Mozilla |
 | 6 | Parties multijoueur invité | pseudo d'invité, réponses | invités | afficher le joueur, noter la partie | contrat | mémoire du serveur, le temps du salon | conteneur `hexapop` |
 
 Pas de traitement de données sensibles, pas de profilage, pas de publicité, pas de mesure d'audience.

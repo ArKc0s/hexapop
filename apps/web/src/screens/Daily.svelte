@@ -5,6 +5,7 @@
   import { live } from "../lib/socket.svelte.ts";
   import { api, session, GUEST_DAILY } from "../lib/api.svelte.ts";
   import SaveCard from "../lib/ui/SaveCard.svelte";
+  import PushCard from "../lib/ui/PushCard.svelte";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { progress } from "../lib/progress.svelte.ts";
@@ -114,6 +115,7 @@
   {/if}
 
   {#if (outcome || guestToday) && !session.me}<div class="savewrap"><SaveCard daily then={{ name: "daily" }} /></div>{/if}
+  {#if outcome || guestToday || info?.played}<div class="savewrap"><PushCard /></div>{/if}
 
   {#if board && (outcome || info?.played || guestToday)}
     <section class="boards">

@@ -9,6 +9,7 @@ import {
 import { resetMail, sendMail, verifyMail } from "./mail.ts";
 import { dailyNumber, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
 import { stats } from "./rooms.ts";
+import { DEFAULT_PREFS, cleanPrefs, pushEnabled, sendTo, validEndpoint, vapidPublicKey } from "./push.ts";
 import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
 
 const COOKIE = "hexa_session";
@@ -217,6 +218,7 @@ const routes: Record<string, Handler> = {
       progress: progressRow ? JSON.parse(progressRow.data) : {},
       gameProfile: profileRow ? JSON.parse(profileRow.data) : null,
       linkedAccounts: db.prepare("SELECT provider, email, created_at FROM oauth_identities WHERE user_id = ?").all(u.id),
+      notificationDevices: db.prepare("SELECT prefs, last_played_day, created_at FROM push_subs WHERE user_id = ?").all(u.id),
       dailyResults: daily,
       activeSessions: sessions,
     }, { "content-disposition": `attachment; filename="hexa-${u.pseudo}-donnees.json"` });
@@ -258,6 +260,53 @@ const routes: Record<string, Handler> = {
     db.prepare("INSERT INTO progress (user_id, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at")
       .run(u.id, JSON.stringify(merged), now());
     json(res, 200, { progress: merged });
+  },
+
+  // ---------- notifications ----------
+  "GET /api/push/key": (_req, res) => {
+    need(pushEnabled, 404, "push_off", "Notifications indisponibles.");
+    json(res, 200, { publicKey: vapidPublicKey() });
+  },
+  "POST /api/push/subscribe": async (req, res, user) => {
+    need(pushEnabled, 404, "push_off", "Notifications indisponibles.");
+    need(rateLimit("push:" + clientIp(req), 20, 3_600_000), 429, "rate_limited", "Trop de demandes.");
+    const b = await body(req);
+    const sub = (b.subscription ?? {}) as { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
+    need(validEndpoint(sub.endpoint) && typeof sub.keys?.p256dh === "string" && typeof sub.keys?.auth === "string", 400, "bad_subscription", "Abonnement invalide.");
+    const prefs = cleanPrefs(b.prefs ?? DEFAULT_PREFS);
+    db.prepare(`INSERT INTO push_subs (endpoint, p256dh, auth, user_id, prefs, created_at) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, user_id = COALESCE(excluded.user_id, push_subs.user_id), prefs = excluded.prefs`)
+      .run(sub.endpoint as string, sub.keys!.p256dh as string, sub.keys!.auth as string, user?.id ?? null, JSON.stringify(prefs), now());
+    json(res, 200, { ok: true, prefs });
+  },
+  "POST /api/push/prefs": async (req, res) => {
+    const b = await body(req);
+    need(validEndpoint(b.endpoint), 400, "bad_subscription", "Abonnement invalide.");
+    const prefs = cleanPrefs(b.prefs);
+    db.prepare("UPDATE push_subs SET prefs = ? WHERE endpoint = ?").run(JSON.stringify(prefs), b.endpoint as string);
+    json(res, 200, { ok: true, prefs });
+  },
+  "POST /api/push/unsubscribe": async (req, res) => {
+    const b = await body(req);
+    if (typeof b.endpoint === "string") db.prepare("DELETE FROM push_subs WHERE endpoint = ?").run(b.endpoint);
+    json(res, 200, { ok: true });
+  },
+  /** L'appareil signale qu'on a joué (jour, série, départements qui s'effacent) : sert à choisir le bon rappel. */
+  "POST /api/push/activity": async (req, res) => {
+    const b = await body(req);
+    if (validEndpoint(b.endpoint) && /^\d{4}-\d{2}-\d{2}$/.test(String(b.day))) {
+      db.prepare("UPDATE push_subs SET last_played_day = ?, streak = ?, fading = ?, comeback_stage = 0 WHERE endpoint = ?")
+        .run(String(b.day), Math.min(10_000, Math.max(0, Number(b.streak) | 0)), Math.min(101, Math.max(0, Number(b.fading) | 0)), b.endpoint as string);
+    }
+    json(res, 200, { ok: true });
+  },
+  "POST /api/push/test": async (req, res) => {
+    const b = await body(req);
+    need(rateLimit("pushtest:" + clientIp(req), 5, 3_600_000), 429, "rate_limited", "Trop d'essais, réessaie plus tard.");
+    const s = db.prepare("SELECT endpoint, p256dh, auth FROM push_subs WHERE endpoint = ?").get(String(b.endpoint)) as { endpoint: string; p256dh: string; auth: string } | undefined;
+    need(s, 404, "not_subscribed", "Cet appareil n'est pas abonné.");
+    const ok = await sendTo(s!, { title: "Hexa est prêt à te prévenir 🎉", body: "Tu recevras au plus une notification par jour.", url: "/", tag: "test" });
+    json(res, ok ? 200 : 502, { ok });
   },
 
   "GET /api/auth/providers": (_req, res) => json(res, 200, { providers: enabledProviders() }),
