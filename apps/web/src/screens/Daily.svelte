@@ -82,11 +82,11 @@
   {#if outcome || (!started && info?.played)}
     <section class="end">
       <div class="card">
-        <span class="riso big" data-t={String(outcome?.points ?? info?.mine?.points ?? 0)}>{outcome?.points ?? info?.mine?.points ?? 0}</span>
+        <span class="riso scoreline" data-t={String(outcome?.points ?? info?.mine?.points ?? 0)}>{outcome?.points ?? info?.mine?.points ?? 0}</span>
         <div class="grid" aria-label="Résultat case par case">{#each grid as g, i (i)}<i class="g{g}"></i>{/each}</div>
         {#if outcome?.rank || info?.rank}
           {@const r = outcome?.rank ? { rank: outcome.rank, players: outcome.players } : info?.rank}
-          <p><b>{r?.rank}{r?.rank === 1 ? "er" : "e"}</b> sur {r?.players} joueurs aujourd'hui</p>
+          <p><b>{r?.rank}{r?.rank === 1 ? "er" : "e"}</b> sur {r?.players} joueur{(r?.players ?? 0) > 1 ? "s" : ""} aujourd'hui</p>
         {:else if !session.me}
           <p>Score non classé (invité).</p>
         {/if}
@@ -103,7 +103,7 @@
         <ol class="lb">
           {#each board.top.slice(0, 20) as p, i (i)}
             <li class:me={p.name === session.me?.pseudo}><span class="tabnum">{i + 1}</span><span>{p.name}{p.home ? ` · ${p.home}` : ""}</span><b class="tabnum">{p.points}</b></li>
-          {:else}<li>Personne encore, tu ouvres le bal.</li>{/each}
+          {:else}<li class="empty">Personne encore, tu ouvres le bal.</li>{/each}
         </ol>
       </div>
       <div>
@@ -111,7 +111,7 @@
         <ol class="lb">
           {#each board.departements as d, i (d.code)}
             <li><span class="tabnum">{i + 1}</span><span>{d.nom} ({d.players})</span><b class="tabnum">{d.avg}</b></li>
-          {:else}<li>Il faut 3 joueurs d'un même département pour qu'il apparaisse.</li>{/each}
+          {:else}<li class="empty">Il faut 3 joueurs d'un même département pour qu'il apparaisse.</li>{/each}
         </ol>
       </div>
     </section>
@@ -132,10 +132,12 @@
   .go { align-self: flex-start; font-size: 22px; }
   .wait { font-weight: 600; }
   .err { color: #b0005f; font-weight: 600; }
-  .end { display: flex; justify-content: center; padding: 20px 0; }
+  .end { display: flex; justify-content: center; align-items: center; padding: 20px 0; }
   .card { border: 1.5px solid var(--ink); border-radius: var(--r); background: var(--card); padding: 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 6px 6px 0 var(--pink); }
   .card p { margin: 0; }
-  .big { font-size: 84px; }
+  .scoreline { font-size: 84px; }
+  .card { width: min(440px, 100%); padding: 28px !important; }
+  .card :global(.btn) { width: 100%; }
   .grid { display: flex; gap: 6px; }
   .grid i { width: 26px; height: 26px; border: 2px solid var(--ink); border-radius: 6px; }
   .g2 { background: var(--blue); } .g1 { background: var(--yellow); } .g0 { background: var(--pink); }
@@ -144,9 +146,10 @@
   .lb { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
   .lb li { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; padding: 4px 8px; border-radius: 8px; }
   .lb li.me { background: var(--yellow); }
+  .lb li.empty { display: block; color: var(--soft); font-weight: 600; }
   @media (max-width: 700px) { .boards { grid-template-columns: 1fr; } }
   @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
-  @media (min-width: 901px) { .daily { min-height: 100dvh; } .daily > :global(.round), .daily > .intro, .daily > .end { flex: 1; align-content: center; } .daily > .intro { justify-content: center; padding-top: 0; } }
+  @media (min-width: 901px) { .daily { min-height: 100dvh; } .daily > :global(.round), .daily > .intro { flex: 1; align-content: center; } .daily > .end { margin-top: auto; } .daily > .boards { margin-bottom: auto; } .daily > .intro { justify-content: center; padding-top: 0; } }
   .xp { font-weight: 800; color: var(--green-d); }
   .card { box-shadow: 0 6px 0 var(--line) !important; border: 0 !important; background: #fff !important; border-radius: 28px !important; }
   .lb li.me { background: #fff4c2 !important; }

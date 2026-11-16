@@ -12,6 +12,8 @@
   let { marks = {}, fills, interactive = true, onpick, label = "Carte des départements" }: Props = $props();
 
   const codes = Object.keys(MAP.paths);
+  // Outre-mer : pas de contour de région, on lui donne un trait d'encre.
+  const OM = new Set(MAP.insets.map((b) => b.code));
   const regions = Object.values((MAP as unknown as { regions: Record<string, string> }).regions ?? {});
   const uid = "m" + Math.random().toString(36).slice(2, 7);
   const vb = MAP.viewBox.join(" ");
@@ -48,7 +50,7 @@
   <g class="deps">
     {#each codes as code (code)}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-      <use href="#{uid}-{code}" data-code={code} class={marks[code] ?? ""} style={fills?.[code] ? `--f:${fills[code]}` : undefined}
+      <use href="#{uid}-{code}" data-code={code} class="{marks[code] ?? ''} {OM.has(code) ? 'om' : ''}" style={fills?.[code] ? `--f:${fills[code]}` : undefined}
         tabindex={interactive ? 0 : -1} role={interactive ? "button" : undefined} aria-label={interactive ? "département" : undefined} />
     {/each}
   </g>
@@ -65,12 +67,13 @@
 <style>
   .map { display: block; width: 100%; height: auto; max-height: 100%; user-select: none; -webkit-tap-highlight-color: transparent; }
   .shadow use { fill: var(--pink); }
-  .frame { fill: #fffdf8; stroke: var(--line); stroke-width: 1.5; }
+  .frame { fill: #fffdf8; stroke: #d6cdb9; stroke-width: 1.5; }
   .cap { font: 700 13px var(--f-ui); fill: var(--soft); }
   .src { fill: none; stroke: var(--soft); stroke-width: 1; stroke-dasharray: 2 2; }
-  .deps use { fill: var(--f, #fffdf8); stroke: #cbc2b0; stroke-width: .6; stroke-linejoin: round; transition: fill .15s; outline: none; transform-box: fill-box; transform-origin: center; }
-  .regions path { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; pointer-events: none; }
-  .zoom use { stroke-width: .18; }
+  .deps use { fill: var(--f, #fffdf8); stroke: #9a907c; stroke-width: .75; stroke-linejoin: round; transition: fill .15s; outline: none; transform-box: fill-box; transform-origin: center; }
+  .deps use.om { stroke: var(--ink); stroke-width: 1.5; }
+  .regions path { fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; pointer-events: none; }
+  .zoom use { stroke-width: .3; stroke: #8a806c; }
   .interactive .deps use { cursor: pointer; }
   .interactive .deps use:hover, .interactive .deps use:focus-visible { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.2; }
   .deps use.hint { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse 1s ease-in-out infinite alternate; }
