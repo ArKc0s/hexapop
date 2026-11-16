@@ -11,6 +11,7 @@ Les premiers retours disent tous un peu la même chose :
 - La **carte**, le style du jeu et la mascotte.
 - Les questions où l'on donne **tout d'un coup** (placer, numéro, préfecture) et où l'on peut avoir **à moitié bon**.
 - Le choix **4 propositions ou clavier**, changeable quand tu veux, même en pleine partie.
+- La collection **bronze, argent, or** (voir plus bas : elle change de sens).
 - Le **défi du jour**, la **série** (la flamme) et son joker.
 - **Entre amis** : le duel, la soirée (jusqu'à 100 joueurs) et le jeu en équipe.
 - Ce que tu as déjà gagné : rien ne sera perdu.
@@ -27,17 +28,17 @@ Les premiers retours disent tous un peu la même chose :
 | Tour de France, Révisions, Éclair, Région, Marathon : beaucoup de choix. | **Un gros bouton « Continuer »** : le jeu te prépare une séance de 2 minutes (révisions d'abord, puis la suite). Et un **Entraînement** où tu choisis précisément : la zone, ce qu'on te donne, ce qu'on te demande, la longueur. | Soit tu te laisses guider, soit tu choisis tout. Pas entre les deux. |
 | Un chrono à chaque question, même seul. | **Plus de chrono quand tu joues seul.** Il reste au défi du jour et entre amis. | Seul, on apprend ; on n'a pas besoin de stress. |
 | XP, niveaux, quêtes, vignettes, étoiles de région, pourcentage, rangs… | **Un seul compteur : ta carte de France.** Chaque département a 3 étoiles (le placer, son numéro, sa préfecture), et ta carte se colore à mesure que tu les gagnes. | Tous ces compteurs disaient « tu progresses » sans être d'accord entre eux. Une étoile, c'est un vrai savoir. |
+| Bronze avec les propositions, argent au clavier, or en expert. | **Une médaille par département selon ce que tu sais** : bronze quand tu as ses 3 étoiles, argent quand tu l'as retenu dans la durée, or quand tu maîtrises aussi le niveau expert. Ta carte prend les couleurs de tes médailles. | Avant, si tu préférais les propositions, tu restais en bronze même en connaissant tout. Maintenant la médaille dit vraiment ce que tu sais. |
 | Les quêtes du jour (3 objectifs). | Pour garder ta série, **une partie par jour suffit, toujours**. Tu peux te fixer un objectif perso en plus, si tu veux : le rater ne coûte rien. | Plus simple, et jamais frustrant. |
 
 ## Ce qui part
 - **L'XP et les niveaux**, remplacés par ta carte de France et les 3 niveaux Découverte, Confirmé, Expert.
 - **Les quêtes du jour**.
-- **Les vignettes bronze, argent, or**, remplacées par les étoiles.
 
 ## Bon à savoir
-- **Les étoiles s'entretiennent** : si tu ne revois pas un département pendant longtemps, son étoile pâlit et il revient dans tes séances.
+- **Les étoiles s'entretiennent** : si tu ne revois pas un département pendant longtemps, son étoile pâlit et il revient dans tes séances. Sa médaille ne se perd pas, mais elle se ternit jusqu'à la prochaine révision.
 - Le défi du jour ne fait pas gagner d'étoiles (c'est une compétition), mais tes erreurs reviennent dans tes séances.
-- Plus tard : un **Hall of Fame** (meilleurs scores au défi par niveau, records du Marathon, premiers à compléter toute la France).
+- Plus tard : un **Hall of Fame** (meilleurs scores au défi par niveau, records du Marathon, premiers à compléter toute la France, puis tout en argent, puis tout en or).
 
 ## On aimerait ton avis
 1. Est-ce que ça te donne envie de rejouer ? Qu'est-ce qui te manquerait ?

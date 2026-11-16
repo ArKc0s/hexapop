@@ -103,13 +103,26 @@ Une facette jamais vue est **d'abord montrée** (« À retenir : le Finistère, 
 ## 4. La progression
 
 ### 4.1 Un seul indicateur : ta carte de France
-Chaque facette de base gagnée allume **une étoile** sur son département. Un département a donc **0 à 3 étoiles** (carte, numéro, préfecture), et la carte se colore en conséquence. **« Ta France » = étoiles gagnées / 303**, affiché en grand sur l'accueil et à la fin de chaque séance.
+Chaque facette de base gagnée allume **une étoile** sur son département. Un département a donc **0 à 3 étoiles** (carte, numéro, préfecture), puis une **médaille** (4.3), et la carte se colore en conséquence. **« Ta France » = étoiles gagnées / 303**, affiché en grand sur l'accueil et à la fin de chaque séance.
 
 - **Gagner une étoile** : réussir la facette au clavier, à la carte entière, ou en propositions piégeuses.
 - **L'étoile s'entretient** : la répétition espacée planifie sa révision ; si on la laisse passer, elle **pâlit** et revient en priorité à la séance suivante.
-- **L'étoile dorée** : réussie plusieurs fois, à des jours d'écart. Ancrée pour de bon.
 
-### 4.2 Les niveaux du joueur
+### 4.2 Les médailles : bronze, argent, or
+On garde la collection bronze / argent / or que les joueurs aiment, mais elle mesure maintenant **à quel point tu connais chaque département**, et plus la façon dont tu as répondu (avant : propositions = bronze, clavier = argent, expert = or ; quelqu'un qui préférait les propositions ne pouvait jamais dépasser le bronze).
+
+| Médaille | Comment on l'obtient | Ce que ça veut dire |
+|---|---|---|
+| **Bronze** | les 3 étoiles du département | tu le connais |
+| **Argent** | ces 3 étoiles réussies encore plusieurs fois, à des jours d'écart (répétition espacée) | tu l'as retenu pour de bon |
+| **Or** | les facettes expert du département (sous-préfectures, voisins) | tu le connais sur le bout des doigts |
+
+- **Un seul système** : les étoiles d'un département débloquent sa médaille ; rien de parallèle.
+- **La carte de France prend les couleurs des médailles** : blanc, puis de plus en plus coloré selon les étoiles, puis bronze, argent, or.
+- **Un objectif après 100 %** : tout en argent, puis tout en or. L'Album reste la vitrine de la collection, fusionné avec l'Atlas (chaque département : ses étoiles, sa médaille, sa fiche).
+- Une médaille ne se perd pas, mais si ses étoiles pâlissent, elle est **ternie** sur la carte jusqu'à la prochaine révision réussie.
+
+### 4.3 Les niveaux du joueur
 Trois niveaux, qui découlent de « Ta France » (pas d'XP) et décident de la difficulté du défi du jour et des propositions :
 
 | Niveau | Atteint à | Ce que ça change |
@@ -120,33 +133,33 @@ Trois niveaux, qui découlent de « Ta France » (pas d'XP) et décident de la d
 
 Le joueur peut **redescendre d'un niveau** pour le défi s'il le veut (« Défi Découverte » même en étant Confirmé), jamais monter au-dessus du sien. Les titres actuels (Touriste, Routard, Facteur, Sous-préfet, Préfet, Géomètre de l'IGN) restent comme habillage plus fin du pourcentage.
 
-### 4.3 L'expert devient un contenu, pas un réglage
-Quand une région a toutes ses étoiles de base, ses facettes expert (sous-préfectures, voisins) s'ouvrent. Un département maîtrisé en expert gagne une **couronne**. On continue de progresser après 100 %, sans jamais avoir eu à cocher « expert ».
+### 4.4 L'expert devient un contenu, pas un réglage
+Quand une région a toutes ses étoiles de base, ses facettes expert (sous-préfectures, voisins) s'ouvrent. Un département maîtrisé en expert passe en **or**. On continue de progresser après 100 %, sans jamais avoir eu à cocher « expert ».
 
-### 4.4 Le rendez-vous quotidien
+### 4.5 Le rendez-vous quotidien
 **La série : une séance par jour suffit, toujours.** Une séance de Continuer (≈ 2 min), une partie d'Entraînement, le défi du jour ou une partie entre amis : n'importe laquelle garde la flamme allumée. La barre ne bouge jamais, et le joker de la semaine rattrape un jour oublié.
 
 Les **3 quêtes** sont retirées. À la place, un **objectif personnel facultatif**, que le joueur fixe lui-même s'il en a envie (par exemple 3 séances par jour) : l'atteindre fait passer la flamme du jour en doré, le manquer **ne coûte rien**. Il n'a aucun effet sur la série.
 
 Les raisons de revenir : la flamme à ne pas casser, les étoiles qui pâlissent (notification), le défi du jour, les amis.
 
-### 4.5 Le Hall of Fame
+### 4.6 Le Hall of Fame
 Pour les comptes connectés, trois tableaux :
 - **Défi du jour** : classements de la semaine et du mois, **par niveau** (Découverte, Confirmé, Expert).
 - **Marathon** : meilleur score sur les 101 en fiche complète (justesse d'abord, temps ensuite).
-- **Légendes** : les joueurs qui ont atteint 100 % de « Ta France », puis toutes les étoiles dorées, puis toutes les couronnes, avec la date.
+- **Légendes** : les joueurs qui ont atteint 100 % de « Ta France », puis tout en argent, puis tout en or, avec la date.
 
-### 4.6 Ce qui reste à côté
+### 4.7 Ce qui reste à côté
 - **Les succès** (ex-badges) : des exploits rares, rangés dans le profil, jamais au premier plan.
 
-### 4.7 Ce qu'on retire ou fusionne
+### 4.8 Ce qu'on retire ou fusionne
 
 | Aujourd'hui | Demain |
 |---|---|
 | XP et niveaux 1, 2, 3… | **retirés** (remplacés par « Ta France » et les 3 niveaux de joueur) |
 | 3 quêtes du jour | **retirées** ; objectif personnel facultatif, sans effet sur la série |
 | Étoiles de région du Tour | **remplacées** par les étoiles des départements de la région |
-| Vignettes bronze / argent / or et Album | **remplacées** par les étoiles et la couronne ; l'Album fusionne avec l'Atlas |
+| Vignettes bronze / argent / or et Album | **gardées sous forme de médailles**, qui mesurent le savoir et plus le format de réponse ; l'Album fusionne avec l'Atlas |
 | Rangs | **gardés**, calculés à partir de « Ta France » |
 | Badges | **gardés** sous le nom de succès |
 | Réglage normal / expert | **supprimé** : l'expert s'ouvre région par région |
@@ -215,7 +228,7 @@ Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcen
 
 Personne ne doit perdre ce qu'il a gagné :
 - **Répétition espacée existante** (boîte par département) → chaque facette de base hérite de la boîte de son département ; boîte ≥ 4 = étoile.
-- **Vignettes** : argent ou or → 3 étoiles ; bronze → facettes « vues ».
+- **Vignettes** : argent ou or → 3 étoiles, donc médaille de bronze (le joueur la refait monter en jouant) ; bronze → facettes « vues ».
 - **Étoiles de région** → la région en cours et les régions ouvertes sont conservées.
 - **Badges** → succès, à l'identique.
 - **XP et niveau** → affichés une dernière fois (« ancien niveau 12 »), puis retirés.
@@ -227,9 +240,9 @@ Personne ne doit perdre ce qu'il a gagné :
 
 1. **Entraînement** avec les réglages « on te donne / on te demande », les deux formats (question simple, fiche complète), propositions ou clavier changeable en cours de partie, carte à 4 départements surlignés. À côté de l'existant : on teste en vrai sans rien casser. *(Répond directement au retour du testeur.)*
 2. **Les étoiles par facette, « Ta France » et les 3 niveaux**, avec la migration des profils.
-3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif personnel facultatif. On retire alors le Tour de France (remplacé par Continuer), les quêtes, l'XP et les vignettes.
+3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif personnel facultatif. On retire alors le Tour de France (remplacé par Continuer), les quêtes et l'XP ; les vignettes deviennent des médailles.
 4. **Défi du jour par niveau** (classements séparés) et **Entre amis** à la nouvelle règle, handicap par niveau.
-5. **Facettes expert** et couronnes, puis **Hall of Fame**.
+5. **Facettes expert** et médailles d'or, puis **Hall of Fame**.
 
 Chaque étape est jouable et déployable seule.
 
@@ -247,6 +260,7 @@ Chaque étape est jouable et déployable seule.
 | 6 | Nom des étoiles ? | **Étoiles.** |
 | 7 | Clavier ou propositions ? | **Gardé** comme préférence changeable à tout moment ; propositions de plus en plus piégeuses. |
 | 8 | Expert trop dur pour les amateurs ? | **3 niveaux de joueur** ; l'expert s'ouvre région par région ; défi du jour à ton niveau. |
+| 9 | Retirer bronze / argent / or ? | **Non : gardés en médailles par département**, qui mesurent le savoir (bronze = 3 étoiles, argent = retenu dans la durée, or = expert). |
 
 ---
 
@@ -267,8 +281,10 @@ Les réponses décident des ajustements avant de retirer l'ancien système.
 - **2026-11-16, testeur** : « J'aimerais pouvoir configurer l'entraînement précisément, choisir ce qu'il peut te demander de trouver. Quand le jeu me dit de placer le 87, moi qui ne connais rien, c'est juste impossible, alors que placer un département nommé ou affiché sur la carte, c'est plus simple pour moi. »
   → Règle « jamais deux inconnues » (section 2) et réglages « on te donne / on te demande » de l'Entraînement (section 5). Étape 1.
 - **2026-11-16, retour global des testeurs** : « Pour des amateurs, c'est dur, notamment le défi du jour. »
-  → 3 niveaux de joueur, défi du jour à ton niveau avec classement par niveau (sections 4.2 et 5). Étapes 2 et 4.
+  → 3 niveaux de joueur, défi du jour à ton niveau avec classement par niveau (sections 4.3 et 5). Étapes 2 et 4.
 - **2026-11-16, Léo** : aime être interrogé sur toutes les infos (on peut avoir « semi-bon ») ; ne veut pas perdre le choix clavier / propositions (« parfois on a la flemme de taper ») ; tient à la soirée ; demande sur quoi reposerait le Hall of Fame.
-  → Deux formats de tour (3.1), préférence de réponse (3.2), trois formats entre amis (5), Hall of Fame (4.5).
+  → Deux formats de tour (3.1), préférence de réponse (3.2), trois formats entre amis (5), Hall of Fame (4.6).
 - **2026-11-16, Léo** : un objectif du jour à 1, 3 ou 5 séances pour garder sa série, « frustrant ».
-  → Une séance par jour suffit toujours pour la série ; l'objectif devient personnel, facultatif et sans effet sur la série (4.4).
+  → Une séance par jour suffit toujours pour la série ; l'objectif devient personnel, facultatif et sans effet sur la série (4.5).
+- **2026-11-16, Léo** : « On perd le bronze, argent, or, c'est dommage. »
+  → Gardés, en médailles par département qui mesurent le savoir et plus le format de réponse (4.2).
