@@ -3,6 +3,8 @@
   import Map, { type Mark } from "./Map.svelte";
   import Fiche from "./Fiche.svelte";
   import { onDestroy, type Snippet } from "svelte";
+  import Mascot from "./ui/Mascot.svelte";
+  import { sound } from "./sound.svelte.ts";
 
   interface Props {
     q: Question;
@@ -17,8 +19,24 @@
     children?: Snippet;
     /** Départements déjà joués dans la partie : restent colorés. */
     history?: Record<string, Mark>;
+    /** Combo atteint avec ce tour (réponses parfaites d'affilée). */
+    combo?: number;
   }
-  let { q, result = null, startedAt, onsubmit, action, children, history = {} }: Props = $props();
+  let { q, result = null, startedAt, onsubmit, action, children, history = {}, combo = 0 }: Props = $props();
+
+  // Retour sonore et texte de la mascotte à l'arrivée du résultat.
+  const PRAISE = ["Parfait !", "Bien joué !", "Imbattable.", "Ça, c'est du niveau préfet.", "Tu connais ta France !"];
+  const feedback = $derived.by(() => {
+    if (!result) return null;
+    if (result.accuracy >= 0.999) return { mood: combo >= 5 ? "wow" : "happy", text: combo >= 3 ? `Combo ×${combo} ! ${PRAISE[combo % PRAISE.length]}` : PRAISE[q.index % PRAISE.length] } as const;
+    if (result.accuracy > 0) return { mood: "think", text: `Presque ! C'était ${d.nom} (${d.code}).` } as const;
+    return { mood: "sad", text: `Raté : ${d.nom} (${d.code}). Tu le retiendras !` } as const;
+  });
+  $effect(() => {
+    if (!result) return;
+    if (result.accuracy >= 0.999) sound.play(combo >= 3 ? "combo" : "ok", combo);
+    else sound.play(result.accuracy > 0 ? "partial" : "ko");
+  });
 
   const d = $derived(dep(q.code));
   const has = (f: Field) => q.fields.includes(f);
@@ -138,7 +156,7 @@
   <section class="panel">
     <div class="timer" aria-label="Temps restant">
       <div class="bar"><span style="transform:scaleX({remaining / q.durationMs})"></span></div>
-      <span class="num secs">{result ? "–" : Math.ceil(remaining / 1000) + " s"}</span>
+      <span class="secs tabnum">{result ? "" : Math.ceil(remaining / 1000) + " s"}</span>
     </div>
 
     <div class="clue">
@@ -147,10 +165,10 @@
         <span class="riso bignum" data-t={d.code}>{d.code}</span>
       {:else if q.hint === "nom"}
         <span class="kicker">Trouve</span>
-        <h2 class="display qname">{d.nom}</h2>
+        <h2 class="qname">{d.nom}</h2>
       {:else}
         <span class="kicker">Il clignote sur la carte</span>
-        <h2 class="display qname">Quel est ce département ?</h2>
+        <h2 class="qname">Quel est ce département ?</h2>
       {/if}
     </div>
 
@@ -207,10 +225,11 @@
       {/if}
     </div>
 
-    {#if result}
-      <div class="gain">
-        <span class="display pts num">+{result.points}</span>
-        <span>{Math.round(result.accuracy * 100)} % juste · {(result.elapsedMs / 1000).toFixed(1)} s</span>
+    {#if result && feedback}
+      <div class="react">
+        <Mascot mood={feedback.mood} size={60} />
+        <div class="bubble">{feedback.text}</div>
+        <span class="pts tabnum" class:zero={result.points === 0}>+{result.points}</span>
       </div>
       <Fiche code={q.code} expert={has("sousPrefectures") || has("limitrophes")} />
       {@render children?.()}
@@ -218,7 +237,7 @@
 
     <div class="actions">
       {#if !result}
-        <button class="btn accent" onclick={submit} disabled={submitted}>{submitted ? "Envoyé" : "Valider"} <kbd>↵</kbd></button>
+        <button class="btn big" onclick={submit} disabled={submitted}>{submitted ? "Envoyé" : "Valider"} <kbd>↵</kbd></button>
       {:else}
         {@render action?.()}
       {/if}
@@ -227,47 +246,50 @@
 </div>
 
 <style>
-  .round { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 28px; align-items: start; }
+  .round { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr); gap: 22px; align-items: start; }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .maphead { min-height: 34px; display: flex; align-items: center; }
-  .help { font-size: 14px; color: var(--ink-soft); font-weight: 500; }
-  .panel { display: flex; flex-direction: column; gap: 18px; }
+  .maphead { min-height: 38px; display: flex; align-items: center; }
+  .help { font-size: 15px; color: var(--soft); font-weight: 700; }
+  .panel { display: flex; flex-direction: column; gap: 16px; background: var(--card); border-radius: 28px; padding: 22px 22px 18px; }
   .timer { display: flex; align-items: center; gap: 10px; }
-  .bar { flex: 1; height: 6px; background: var(--paper-2); border-radius: 3px; overflow: hidden; }
-  .bar span { display: block; height: 100%; background: var(--ink); transform-origin: left; }
-  .secs { font-size: 13px; color: var(--ink-soft); min-width: 34px; text-align: right; }
-  .clue { display: flex; flex-direction: column; gap: 4px; }
-  .kicker { font-size: 14px; color: var(--ink-soft); font-weight: 600; }
-  .bignum { font-size: 112px; }
-  .qname { font-size: clamp(28px, 3.2vw, 40px); text-transform: uppercase; line-height: 1.18; }
-  .fields { display: flex; flex-direction: column; gap: 16px; }
+  .bar { flex: 1; height: 10px; background: var(--bg-2); border-radius: 999px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--ink); border-radius: 999px; transform-origin: left; }
+  .secs { font-size: 15px; font-weight: 800; min-width: 34px; text-align: right; }
+  .clue { display: flex; flex-direction: column; gap: 2px; }
+  .kicker { font-size: 14px; color: var(--soft); font-weight: 700; }
+  .bignum { font-size: 104px; }
+  .qname { font-size: clamp(28px, 3vw, 38px); font-weight: 900; text-transform: uppercase; line-height: 1.04; letter-spacing: -.01em; }
+  .fields { display: flex; flex-direction: column; gap: 14px; }
   .f { display: flex; flex-direction: column; gap: 6px; }
-  .state { font-weight: 600; }
+  .state { font-weight: 700; }
   .f.ok .state, .f.ok .label { color: var(--blue); }
-  .f.ko .label { color: #b0005f; }
-  .exp { font-weight: 600; color: var(--ink); }
-  .exp::before { content: "Réponse : "; color: var(--ink-soft); font-weight: 500; }
-  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .opt { border: 1.5px solid var(--line); border-radius: 8px; background: var(--card); padding: 9px 12px; cursor: pointer; font-weight: 600; text-align: left; transition: border-color .1s; }
-  .opt:hover:not(:disabled) { border-color: var(--ink); }
-  .opt.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-  .opt.right { background: var(--blue); color: #fff; border-color: var(--blue); }
-  .opt.wrong { background: var(--ko); color: #fff; border-color: var(--ko); }
+  .f.ko .label { color: var(--pink-d); }
+  .exp { font-weight: 800; }
+  .exp::before { content: "Réponse : "; color: var(--soft); font-weight: 600; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { font-weight: 700; font-size: 16px; line-height: 1.15; background: #f6f2ea; border: 0; border-radius: 14px; padding: 12px; text-align: left; cursor: pointer; box-shadow: 0 3px 0 #e2dacb; transition: transform .08s, background .1s; }
+  .opt:hover:not(:disabled) { background: #fff4c2; }
+  .opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #e2dacb; }
+  .opt.on { background: var(--ink); color: #fff; box-shadow: 0 3px 0 #000; }
+  .opt.right { background: var(--blue); color: #fff; box-shadow: 0 3px 0 var(--blue-d); }
+  .opt.wrong { background: var(--pink); color: #fff; box-shadow: 0 3px 0 var(--pink-d); animation: shake .35s; }
   .opt:disabled { cursor: default; }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .gain { display: flex; align-items: baseline; gap: 12px; font-weight: 600; color: var(--ink-soft); }
-  .pts { font-size: 40px; color: var(--ink); }
+  .react { display: flex; align-items: center; gap: 12px; }
+  .react .bubble { flex: 1; }
+  .pts { font-family: var(--f-pop); font-size: 30px; color: var(--blue); animation: pop-in .4s cubic-bezier(.2, 1.6, .4, 1); }
+  .pts.zero { color: var(--soft); }
   .actions { display: flex; gap: 12px; align-items: center; }
-  .actions :global(.btn) { min-width: 140px; justify-content: center; }
+  .actions :global(.btn) { flex: 1; }
 
   @media (max-width: 900px) {
-    .round { grid-template-columns: 1fr; gap: 12px; }
-    .mapwrap { position: sticky; top: 0; z-index: 2; background: var(--paper); margin: 0 -16px; padding: 4px 16px 6px; border-bottom: 1px solid var(--line); }
-    .mapwrap :global(.map) { max-height: 40vh; }
+    .round { grid-template-columns: 1fr; gap: 10px; }
+    .mapwrap { position: sticky; top: 0; z-index: 2; background: var(--bg); margin: 0 -16px; padding: 2px 16px 6px; }
+    .mapwrap :global(.map) { max-height: 38vh; }
     .round.review .mapwrap { position: static; }
-    .bignum { font-size: 72px; }
+    .panel { padding: 16px; border-radius: 22px; }
+    .bignum { font-size: 68px; }
     .qname { font-size: 26px; }
-    .actions { position: sticky; bottom: 0; z-index: 3; background: var(--paper); margin: 0 -16px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
-    .actions :global(.btn) { flex: 1; }
+    .actions { position: sticky; bottom: 0; z-index: 3; background: var(--card); margin: 0 -16px -18px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; box-shadow: 0 -6px 16px -10px rgba(28, 26, 55, .25); }
   }
 </style>

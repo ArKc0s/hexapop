@@ -4,6 +4,9 @@
   import { live } from "../lib/socket.svelte.ts";
   import { api, session } from "../lib/api.svelte.ts";
   import { nav } from "../lib/nav.svelte.ts";
+  import { profile } from "../lib/profile.svelte.ts";
+  import Mascot from "../lib/ui/Mascot.svelte";
+  import type { Rewards } from "@hexa/game";
 
   interface Board { day: string; number: number; top: { name: string; home: string | null; points: number; elapsedMs: number; grid: string }[]; departements: { code: string; nom: string; players: number; avg: number }[] }
   interface DailyInfo { day: string; number: number; played: boolean; mine: { points: number; elapsedMs: number; grid: string; finished: number } | null; rank: { rank: number; players: number } | null }
@@ -22,6 +25,11 @@
     live.connect(session.me?.pseudo ?? "", () => live.create("daily"));
   }
   $effect(() => { if (live.daily) loadBoard(); });
+  // XP, plaques et badges du défi : une seule fois.
+  let rewards = $state<Rewards | null>(null);
+  $effect(() => {
+    if (live.daily && !rewards && live.myResults.length) rewards = profile.record({ mode: "daily", level: "normal", results: live.myResults, now: Date.now() });
+  });
   onDestroy(() => { if (live.room?.kind === "daily") live.leave(); });
 
   const total = $derived(live.room?.players[0]?.score ?? 0);
@@ -46,7 +54,7 @@
 <main class="daily">
   <header>
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-    <span class="display logo">HEXA</span>
+    <span class="riso logo" data-t="HEXA">HEXA</span>
     {#if info}<span class="chip">Défi n° {info.number}</span>{/if}
     {#if started && !outcome}<span class="score tabnum">{total} pts</span>{/if}
   </header>
@@ -57,14 +65,15 @@
 
   {#if !started && !(info?.played)}
     <section class="intro">
-      <h1 class="display">Défi du jour</h1>
+      <Mascot mood="happy" size={70} />
+      <h1 class="title">Défi du jour</h1>
       <p>10 départements tirés pour tout le monde. Carte, numéro, préfecture : plus tu vas vite, plus tu marques. Un seul essai, nouveau défi à minuit.</p>
       {#if !session.me}<p class="hint">Tu joues en invité : <button class="link" onclick={() => nav.go({ name: "account", view: "register", then: { name: "daily" } })}>crée un compte</button> pour entrer au classement.</p>{/if}
-      <button class="btn accent go" onclick={start}>Jouer le défi</button>
+      <button class="btn pink big go" onclick={start}>Jouer le défi</button>
     </section>
   {:else if started && !outcome && live.question}
     <LiveRound>
-      {#snippet action()}<button class="btn" onclick={() => live.send({ t: "next" })}>{live.question!.index + 1 >= live.question!.total ? "Voir le bilan" : "Suivant"} <kbd>↵</kbd></button>{/snippet}
+      {#snippet action()}<button class="btn blue big" onclick={() => live.send({ t: "next" })}>{live.question!.index + 1 >= live.question!.total ? "Voir le bilan" : "Suivant"} <kbd>↵</kbd></button>{/snippet}
     </LiveRound>
   {:else if started && !outcome}
     <p class="wait">Préparation du défi…</p>
@@ -81,7 +90,8 @@
         {:else if !session.me}
           <p>Score non classé (invité).</p>
         {/if}
-        <button class="btn accent" onclick={share}>{copied ? "Copié !" : "Partager"}</button>
+        {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.newPlates.length ? ` · ${rewards.newPlates.length} plaque${rewards.newPlates.length > 1 ? "s" : ""} pour l'album` : ""}</p>{/if}
+        <button class="btn pink big" onclick={share}>{copied ? "Copié !" : "Partager"}</button>
       </div>
     </section>
   {/if}
@@ -113,7 +123,7 @@
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   
   .logo { font-size: 22px; margin-right: auto; color: var(--blue); }
-  .score { font-family: var(--f-num); font-weight: 600; font-size: 18px; }
+  .score { font-family: var(--f-ui); font-weight: 600; font-size: 18px; }
   .intro { max-width: 640px; display: flex; flex-direction: column; gap: 14px; padding-top: 30px; }
   .intro h1 { font-size: clamp(40px, 7vw, 64px); text-transform: uppercase; }
   .intro p { margin: 0; font-size: 17px; }
@@ -137,4 +147,7 @@
   @media (max-width: 700px) { .boards { grid-template-columns: 1fr; } }
   @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
   @media (min-width: 901px) { .daily { min-height: 100dvh; } .daily > :global(.round), .daily > .intro, .daily > .end { flex: 1; align-content: center; } .daily > .intro { justify-content: center; padding-top: 0; } }
+  .xp { font-weight: 800; color: var(--green-d); }
+  .card { box-shadow: 0 6px 0 var(--line) !important; border: 0 !important; background: #fff !important; border-radius: 28px !important; }
+  .lb li.me { background: #fff4c2 !important; }
 </style>

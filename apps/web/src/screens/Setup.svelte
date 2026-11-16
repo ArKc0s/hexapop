@@ -10,7 +10,7 @@
   const beginner = mastery(progress.data, all) < 30;
 
   const TITLES: Record<SoloMode, [string, string]> = {
-    apprendre: ["Apprendre", "12 départements choisis pour toi. Ceux que tu rates reviennent plus souvent, et les nouveaux arrivent région par région."],
+    apprendre: ["Révisions", "12 départements choisis pour toi. Ceux que tu rates reviennent plus souvent, et les nouveaux arrivent région par région."],
     eclair: ["Éclair", "20 départements tirés au hasard."],
     region: ["Par région", "Tous les départements d'une région, dans le désordre."],
     marathon: ["Marathon", "Les 101 départements d'affilée, outre-mer compris. Compte 15 à 25 minutes."],
@@ -29,13 +29,13 @@
     else if (mode === "region") config = { ...base, codes: DEPARTEMENTS.filter((d) => d.region === region).map((d) => d.code) };
     else config = base;
     const title = mode === "region" ? REGIONS.find((r) => r.code === region)!.nom : TITLES[mode][0];
-    nav.go({ name: "play", config, title, learn: true });
+    nav.go({ name: "play", mode, config, title, learn: true });
   }
 </script>
 
 <main class="setup">
-  <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-  <h1 class="display">{TITLES[mode][0]}</h1>
+  <button class="back" onclick={() => nav.go({ name: "training" })}>← Entraînement</button>
+  <h1 class="title">{TITLES[mode][0]}</h1>
   <p class="lead">{TITLES[mode][1]}</p>
 
   {#if mode === "region"}
@@ -59,18 +59,18 @@
     <p class="hint">{input === "choix" ? "Idéal pour débuter." : "Les accents et les petites fautes de frappe sont tolérés."}</p>
   </section>
 
-  <div class="go"><button class="btn accent" onclick={start}>Jouer {count} département{count > 1 ? "s" : ""}</button></div>
+  <div class="go"><button class="btn big" onclick={start}>Jouer {count} département{count > 1 ? "s" : ""}</button></div>
 </main>
 
 <style>
   .setup { max-width: 640px; margin: 0 auto; padding: 24px 20px 60px; display: flex; flex-direction: column; gap: 22px; }
   .back { align-self: flex-start; }
-  h1 { font-size: clamp(44px, 8vw, 64px); text-transform: uppercase; color: var(--ink); padding-top: 6px; }
+  h1 { padding-top: 6px; }
   .lead { margin: -8px 0 0; font-size: 17px; max-width: 52ch; }
   section { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
   h2 { margin: 0; }
-  .hint { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  .hint { margin: 0; font-size: 14px; color: var(--soft); }
   .wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-  .go .btn { font-size: 18px; padding: 14px 26px; }
+
   @media (min-width: 701px) { .setup { min-height: 100dvh; justify-content: center; } }
 </style>

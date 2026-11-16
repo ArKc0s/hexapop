@@ -46,17 +46,17 @@
   <button class="back" onclick={leave}>← Accueil</button>
 
   {#if !room}
-    <h1 class="display">Entre amis</h1>
+    <h1 class="title">Entre amis</h1>
     {#if !session.me}
       <label class="label" for="l-name">Ton pseudo</label>
       <input id="l-name" class="field" maxlength="20" placeholder="ex. Inès" bind:value={name} />
       {#if name.trim().length < 2}<p class="hint">Choisis un pseudo pour créer ou rejoindre un salon, ou <button class="link" onclick={() => nav.go({ name: "account", view: "login", then: { name: "lobby" } })}>connecte-toi</button>.</p>{/if}
     {/if}
     <div class="choices">
-      <button class="door" onclick={() => create("duel")} disabled={!session.me && name.trim().length < 2}>
-        <b>Créer un duel</b><span>2 à 100 joueurs, tout le monde joue chaque tour.</span>
+      <button class="btn big door" onclick={() => create("duel")} disabled={!session.me && name.trim().length < 2}>
+        <b>Créer un duel</b><span>À deux : barres de vie. À plusieurs : course aux points.</span>
       </button>
-      <button class="door plateau" onclick={() => create("plateau")} disabled={!session.me && name.trim().length < 2}>
+      <button class="btn blue big door" onclick={() => create("plateau")} disabled={!session.me && name.trim().length < 2}>
         <b>Soirée plateau</b><span>Élimination à chaque manche jusqu'au dernier survivant. Idéal pour streamer.</span>
       </button>
     </div>
@@ -79,8 +79,8 @@
         <div class="riso bigcode" data-t={room.code}>{room.code}</div>
       </div>
       <div class="share">
-        <button class="btn ghost" onclick={copy}>{copied ? "Lien copié !" : "Copier le lien"}</button>
-        <a class="btn ghost" href={`#plateau=${room.code}`} target="_blank" rel="noopener">Écran plateau ↗</a>
+        <button class="btn white" onclick={copy}>{copied ? "Lien copié !" : "Copier le lien"}</button>
+        <a class="btn white" href={`#plateau=${room.code}`} target="_blank" rel="noopener">Écran plateau ↗</a>
       </div>
     </div>
 
@@ -119,7 +119,7 @@
     </section>
 
     {#if isHost}
-      <button class="btn accent go" onclick={() => live.send({ t: "start" })}>Lancer la partie</button>
+      <button class="btn go" onclick={() => live.send({ t: "start" })}>Lancer la partie</button>
     {:else}
       <p class="wait">En attente du lancement par l'hôte…</p>
     {/if}
@@ -132,14 +132,12 @@
   .back { align-self: flex-start; }
   h1 { font-size: clamp(40px, 7vw, 60px); text-transform: uppercase; }
   .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .door { text-align: left; border: 1.5px solid var(--ink); border-radius: var(--r); padding: 14px 16px; background: var(--card); cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: background .1s; }
-  .door:hover:not(:disabled) { background: var(--yellow); }
-  .door:disabled { opacity: .4; cursor: not-allowed; }
-  .door b { font-size: 19px; font-weight: 800; }
-  .door span { font-size: 14px; color: var(--ink-soft); }
+  .door { flex-direction: column; align-items: flex-start; text-align: left; gap: 4px; padding: 18px; }
+  .door b { font-size: 22px; font-weight: 900; }
+  .door span { font-size: 14px; font-weight: 600; opacity: .9; }
   .join { display: flex; flex-direction: column; gap: 6px; }
   .row { display: flex; gap: 10px; }
-  .code { max-width: 140px; text-transform: uppercase; letter-spacing: .2em; font-family: var(--f-num); font-weight: 600; }
+  .code { max-width: 140px; text-transform: uppercase; letter-spacing: .2em; font-family: var(--f-ui); font-weight: 600; }
   .err { color: #b0005f; font-weight: 600; margin: 0; }
   
   .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
@@ -150,7 +148,7 @@
   .players ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .players li { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); border-radius: 999px; padding: 3px 12px 3px 3px; font-weight: 600; background: var(--card); }
   .players li.me { background: var(--yellow); }
-  .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: var(--ink); color: var(--paper); }
+  .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: var(--ink); color: var(--bg); }
   .opts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .opts .chip:disabled { cursor: default; }
   .sep { width: 8px; }
@@ -159,6 +157,6 @@
   .go { align-self: flex-start; font-size: 22px; }
   .wait { font-weight: 600; }
   @media (max-width: 600px) { .choices { grid-template-columns: 1fr; } }
-  .hint { margin: -6px 0 0; font-size: 14px; color: var(--ink-soft); }
+  .hint { margin: -6px 0 0; font-size: 14px; color: var(--soft); }
   @media (min-width: 701px) { .lobby { min-height: 100dvh; justify-content: center; } }
 </style>

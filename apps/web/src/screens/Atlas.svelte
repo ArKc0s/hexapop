@@ -18,7 +18,7 @@
 <main class="atlas">
   <section class="side">
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-    <h1 class="display">ATLAS</h1>
+    <h1 class="title">ATLAS</h1>
     <p>Clique un département pour voir sa fiche. Révise région par région avant de jouer.</p>
     <div class="regs">
       <button class="chip" class:on={!region} onclick={() => (region = null)}>Toutes</button>

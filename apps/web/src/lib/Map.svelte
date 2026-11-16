@@ -65,23 +65,24 @@
 <style>
   .map { display: block; width: 100%; height: auto; max-height: 100%; user-select: none; -webkit-tap-highlight-color: transparent; }
   .shadow use { fill: var(--pink); }
-  .frame { fill: none; stroke: var(--line); stroke-width: 1.5; }
-  .cap { font: 600 13px var(--f-body); fill: var(--ink-soft); }
-  .src { fill: none; stroke: var(--ink-soft); stroke-width: 1; stroke-dasharray: 2 2; }
-  .deps use { fill: var(--f, var(--card)); stroke: #8d8799; stroke-width: .6; stroke-linejoin: round; transition: fill .12s; outline: none; }
-  .regions path { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; pointer-events: none; }
+  .frame { fill: #fffdf8; stroke: var(--line); stroke-width: 1.5; }
+  .cap { font: 700 13px var(--f-ui); fill: var(--soft); }
+  .src { fill: none; stroke: var(--soft); stroke-width: 1; stroke-dasharray: 2 2; }
+  .deps use { fill: var(--f, #fffdf8); stroke: #cbc2b0; stroke-width: .6; stroke-linejoin: round; transition: fill .15s; outline: none; transform-box: fill-box; transform-origin: center; }
+  .regions path { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; pointer-events: none; }
   .zoom use { stroke-width: .18; }
   .interactive .deps use { cursor: pointer; }
-  .interactive .deps use:hover, .interactive .deps use:focus-visible { fill: var(--paper-2); stroke: var(--ink); stroke-width: 1.2; }
-  .deps use.hint { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse 1.1s ease-in-out infinite alternate; }
+  .interactive .deps use:hover, .interactive .deps use:focus-visible { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.2; }
+  .deps use.hint { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse 1s ease-in-out infinite alternate; }
   .deps use.sel { fill: var(--ink); stroke: var(--ink); }
   .deps use.near { fill: #9fd3f0; stroke: var(--ink); stroke-width: 1.2; }
-  .deps use.ok { fill: var(--ok); stroke: var(--ink); stroke-width: 1.2; }
-  .deps use.ko { fill: var(--ko); stroke: var(--ink); stroke-width: 1.2; }
+  .deps use.ok { fill: var(--ok); stroke: var(--ink); stroke-width: 1.2; animation: dep-pop .45s cubic-bezier(.2, 1.8, .4, 1); }
+  .deps use.ko { fill: var(--ko); stroke: var(--ink); stroke-width: 1.2; animation: shake .35s; }
   .deps use.miss { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse .5s ease-in-out 6 alternate; }
-  .deps use.done-ok { fill: #bcdcf0; }
-  .deps use.done-ko { fill: #ffd0e7; }
+  .deps use.done-ok { fill: var(--tint-ok); }
+  .deps use.done-ko { fill: var(--tint-ko); }
   .zoom use.hint, .zoom use.sel, .zoom use.ok, .zoom use.ko, .zoom use.miss, .zoom use.near { stroke-width: .45; }
   /* Clignotement opaque : l'ombre rose ne doit pas transparaître. */
   @keyframes pulse { from { fill: var(--yellow); } to { fill: #fff6c4; } }
+  @keyframes dep-pop { 0% { transform: scale(1); } 45% { transform: scale(1.28); } 100% { transform: scale(1); } }
 </style>

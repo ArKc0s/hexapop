@@ -1,7 +1,7 @@
 // Client WebSocket : connexion, synchro d'horloge, état du salon, reconnexion automatique.
 import {
   PROTOCOL_VERSION, type ClientMsg, type DailyOutcome, type Phase, type PlayerInfo, type QuestionPayload,
-  type RoomKind, type RoomSettings, type RoundSummary, type ServerMsg,
+  type RoomKind, type RoomSettings, type RoundSummary, type ServerMsg, type RoundResult, type Question, grade,
 } from "@hexa/game";
 
 const RESUME_KEY = "hexa.resume";
@@ -27,6 +27,11 @@ class Live {
   daily = $state<DailyOutcome | null>(null);
   error = $state<{ code: string; message: string } | null>(null);
   answered = $state<Set<string>>(new Set());
+  /** Mes résultats de la partie en cours (pour l'XP et l'album). */
+  myResults = $state<RoundResult[]>([]);
+  /** Réactions reçues récemment (affichées quelques secondes). */
+  reactions = $state<{ id: number; player: string; e: string }[]>([]);
+  private reactId = 0;
   /** Décalage horloge serveur - horloge locale (ms). */
   offset = 0;
   rtt = $state(0);
@@ -110,14 +115,26 @@ class Live {
         if (m.phase === "lobby") { this.ranking = null; this.summary = null; this.question = null; }
         break;
       case "question":
+        if (m.q.index === 0) this.myResults = [];
         this.question = m.q; this.summary = null; this.answered = new Set();
         break;
       case "answered":
         this.answered = new Set([...this.answered, m.player]);
         break;
-      case "round":
+      case "round": {
         this.summary = m.summary;
+        const q = this.question as Question | null;
+        if (q && q.index === m.summary.index && !this.room?.players.find((p) => p.id === this.you)?.eliminated) {
+          this.myResults = [...this.myResults, m.summary.results[this.you ?? ""] ?? grade(q, { elapsedMs: q.durationMs })];
+        }
         break;
+      }
+      case "react": {
+        const id = ++this.reactId;
+        this.reactions = [...this.reactions.slice(-6), { id, player: m.player, e: m.e }];
+        setTimeout(() => (this.reactions = this.reactions.filter((r) => r.id !== id)), 2500);
+        break;
+      }
       case "end":
         this.ranking = m.ranking; this.daily = m.daily ?? null;
         break;

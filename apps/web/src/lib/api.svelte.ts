@@ -1,5 +1,6 @@
-import type { Progress } from "@hexa/game";
+import type { Profile, Progress } from "@hexa/game";
 import { progress } from "./progress.svelte.ts";
+import { profile } from "./profile.svelte.ts";
 
 export interface Me { id: number; pseudo: string; email: string; emailVerified: boolean; home: string | null }
 
@@ -68,15 +69,21 @@ class Session {
   /** Fusionne la progression locale et celle du compte (le serveur garde le plus avancé). */
   async syncProgress() {
     if (!this.me) return;
-    const r = await api<{ progress: Progress }>("PUT", "/progress", { progress: progress.data });
+    const [r, p] = await Promise.all([
+      api<{ progress: Progress }>("PUT", "/progress", { progress: progress.data }),
+      api<{ profile: Profile }>("PUT", "/profile", { profile: profile.data }),
+    ]);
     progress.replace(r.progress);
+    profile.replace(p.profile);
   }
 }
 export const session = new Session();
 
 let pending: ReturnType<typeof setTimeout> | null = null;
-progress.onChange(() => {
+const scheduleSync = () => {
   if (!session.me) return;
   if (pending) clearTimeout(pending);
   pending = setTimeout(() => session.syncProgress().catch(() => {}), 1500);
-});
+};
+progress.onChange(scheduleSync);
+profile.onChange(scheduleSync);

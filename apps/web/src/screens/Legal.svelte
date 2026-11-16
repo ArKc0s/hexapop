@@ -14,7 +14,7 @@
       <button class="chip" class:on={doc === k} onclick={() => nav.go({ name: "legal", doc: k as Doc })}>{t}</button>
     {/each}
   </nav>
-  <h1 class="display">{TITLES[doc]}</h1>
+  <h1 class="title">{TITLES[doc]}</h1>
   <p class="maj">Dernière mise à jour : {MAJ}</p>
 
   {#if doc === "mentions"}
@@ -115,7 +115,7 @@
   .back { align-self: flex-start; }
   .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
   h1 { font-size: clamp(34px, 6vw, 48px); text-transform: uppercase; margin-top: 8px; }
-  .maj { margin: -4px 0 8px; color: var(--ink-soft); font-size: 14px; }
+  .maj { margin: -4px 0 8px; color: var(--soft); font-size: 14px; }
   h2 { font-size: 19px; font-weight: 800; margin: 18px 0 0; }
   p, li { max-width: 68ch; margin: 0; }
   ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
@@ -123,5 +123,5 @@
   .table { overflow-x: auto; }
   table { border-collapse: collapse; font-size: 14px; min-width: 620px; }
   th, td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); }
-  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
 </style>

@@ -12,15 +12,23 @@
   import Live from "./screens/Live.svelte";
   import Stage from "./screens/Stage.svelte";
   import Legal from "./screens/Legal.svelte";
+  import Tour from "./screens/Tour.svelte";
+  import Training from "./screens/Training.svelte";
+  import Album from "./screens/Album.svelte";
 
   nav.screen = screenFromHash();
+  // Lien modifié à la main ou bouton précédent : on suit le nouveau lien.
+  window.addEventListener("hashchange", () => (nav.screen = screenFromHash()));
   session.load();
 </script>
 
 {#if nav.screen.name === "home"}<Home />
 {:else if nav.screen.name === "setup"}<Setup mode={nav.screen.mode} />
-{:else if nav.screen.name === "play"}{#key nav.screen}<Play {...nav.screen} />{/key}
-{:else if nav.screen.name === "results"}<Results {...nav.screen} />
+{:else if nav.screen.name === "play"}{#key nav.screen}<Play config={nav.screen.config} title={nav.screen.title} learn={nav.screen.learn} mode={nav.screen.mode} region={nav.screen.region} />{/key}
+{:else if nav.screen.name === "results"}{#key nav.screen}<Results {...nav.screen} />{/key}
+{:else if nav.screen.name === "tour"}{#key nav.screen}<Tour region={nav.screen.region} />{/key}
+{:else if nav.screen.name === "training"}<Training />
+{:else if nav.screen.name === "album"}<Album tab={nav.screen.tab} />
 {:else if nav.screen.name === "atlas"}<Atlas />
 {:else if nav.screen.name === "account"}{#key nav.screen}<Account {...nav.screen} />{/key}
 {:else if nav.screen.name === "daily"}<Daily />

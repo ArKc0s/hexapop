@@ -42,7 +42,7 @@
 
 <main class="acc">
   <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
-  <h1 class="display">{current === "register" ? "Créer un compte" : current === "profile" ? "Ton compte" : current === "forgot" || current === "reset" ? "Mot de passe" : "Connexion"}</h1>
+  <h1 class="title">{current === "register" ? "Créer un compte" : current === "profile" ? "Ton compte" : current === "forgot" || current === "reset" ? "Mot de passe" : "Connexion"}</h1>
 
   {#if current === "login"}
     <form onsubmit={submitLogin}>
@@ -50,7 +50,7 @@
       <input id="a-login" class="field" autocomplete="username" bind:value={login} required />
       <label class="label" for="a-pw">Mot de passe</label>
       <input id="a-pw" class="field" type="password" autocomplete="current-password" bind:value={password} required />
-      <button class="btn accent" disabled={busy}>Se connecter</button>
+      <button class="btn" disabled={busy}>Se connecter</button>
     </form>
     <div class="links"><button onclick={() => (current = "register")}>Créer un compte</button><button onclick={() => (current = "forgot")}>Mot de passe oublié</button></div>
   {:else if current === "register"}
@@ -68,7 +68,7 @@
         {#each sorted as d (d.code)}<option value={d.code}>{d.nom} ({d.code})</option>{/each}
       </select>
       <p class="fine">En créant un compte, tu acceptes les <button type="button" class="link" onclick={() => nav.go({ name: "legal", doc: "cgu" })}>conditions d'utilisation</button>. Ton email ne sert qu'à ton compte : voir la <button type="button" class="link" onclick={() => nav.go({ name: "legal", doc: "confidentialite" })}>politique de confidentialité</button>.</p>
-      <button class="btn accent" disabled={busy}>Créer mon compte</button>
+      <button class="btn" disabled={busy}>Créer mon compte</button>
     </form>
     <div class="links"><button onclick={() => (current = "login")}>J'ai déjà un compte</button></div>
   {:else if current === "forgot"}
@@ -98,21 +98,21 @@
           <option value="">Aucun</option>
           {#each sorted as d (d.code)}<option value={d.code}>{d.nom} ({d.code})</option>{/each}
         </select>
-        <button class="btn ghost" onclick={saveHome} disabled={busy}>Enregistrer</button>
+        <button class="btn white" onclick={saveHome} disabled={busy}>Enregistrer</button>
       </div>
-      <button class="btn ghost" onclick={() => session.logout().then(() => nav.go({ name: "home" }))}>Se déconnecter</button>
+      <button class="btn white" onclick={() => session.logout().then(() => nav.go({ name: "home" }))}>Se déconnecter</button>
 
       <h2 class="label section">Tes données</h2>
       <p class="fine">Télécharge tout ce que Hexa sait de toi, en un fichier JSON.</p>
-      <a class="btn ghost" href="/api/me/export" download>Télécharger mes données</a>
+      <a class="btn white" href="/api/me/export" download>Télécharger mes données</a>
       {#if !confirmDelete}
-        <button class="btn ghost danger" onclick={() => (confirmDelete = true)}>Supprimer mon compte</button>
+        <button class="btn white danger" onclick={() => (confirmDelete = true)}>Supprimer mon compte</button>
       {:else}
         <form class="danger-box" onsubmit={deleteAccount}>
           <p>La suppression est <b>immédiate et définitive</b> : compte, progression et scores. Confirme avec ton mot de passe.</p>
           <label class="label" for="d-pw">Mot de passe</label>
           <input id="d-pw" class="field" type="password" autocomplete="current-password" bind:value={password} required />
-          <div class="row"><button class="btn" disabled={busy}>Supprimer définitivement</button><button type="button" class="btn ghost" onclick={() => (confirmDelete = false)}>Annuler</button></div>
+          <div class="row"><button class="btn" disabled={busy}>Supprimer définitivement</button><button type="button" class="btn white" onclick={() => (confirmDelete = false)}>Annuler</button></div>
         </form>
       {/if}
     </div>
@@ -136,11 +136,12 @@
   .err { color: #b0005f; font-weight: 600; }
   .info { color: var(--blue); font-weight: 600; }
   .warn { font-size: 14px; }
-  .fine { font-size: 14px; color: var(--ink-soft); }
+  .fine { font-size: 14px; color: var(--soft); }
   .fine .link { font-weight: 600; }
   .section { margin: 18px 0 0; }
   .profile .btn.ghost { align-self: flex-start; }
   .danger { color: #b0005f !important; }
   .danger-box { border: 1.5px solid #b0005f; border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
   @media (min-width: 701px) { .acc { min-height: 100dvh; justify-content: center; } }
+  form, .profile { background: #fff; border-radius: 24px; padding: 20px; }
 </style>

@@ -22,7 +22,7 @@ export function zoomTransform(src: Box, dst: Box): string {
 }
 
 /** Teintes de région : coloration gloutonne pour que deux régions voisines diffèrent. */
-const TINTS = ["var(--tint-a)", "var(--tint-b)", "var(--tint-c)", "var(--paper)"];
+const TINTS = ["var(--tint-a)", "var(--tint-b)", "var(--tint-c)", "var(--bg)"];
 function regionTints(): Record<string, string> {
   const adj = new Map<string, Set<string>>();
   for (const d of DEPARTEMENTS) {
