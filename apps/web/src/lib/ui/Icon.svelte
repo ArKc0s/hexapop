@@ -1,5 +1,5 @@
 <script lang="ts">
-  export type IconName = "flame" | "play" | "lock" | "star" | "check" | "sound" | "mute" | "trophy";
+  export type IconName = "flame" | "play" | "lock" | "star" | "check" | "cross" | "sound" | "mute" | "trophy";
   let { name, size = 18 }: { name: IconName; size?: number } = $props();
 </script>
 
@@ -9,6 +9,7 @@
   {:else if name === "lock"}<path d="M6 9V6.5a4 4 0 0 1 8 0V9" fill="none" stroke="currentColor" stroke-width="2" /><rect x="4" y="9" width="12" height="9" rx="2.5" fill="currentColor" />
   {:else if name === "star"}<path d="M10 1.5l2.4 5.3 5.8.6-4.4 3.9 1.3 5.7L10 14.1l-5.1 2.9 1.3-5.7L1.8 7.4l5.8-.6z" fill="var(--yellow)" stroke="var(--yellow-d)" stroke-width="1" />
   {:else if name === "check"}<path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+  {:else if name === "cross"}<path d="M5.5 5.5l9 9M14.5 5.5l-9 9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
   {:else if name === "sound"}<path d="M3 7.5h3l4-3.5v12l-4-3.5H3z" fill="currentColor" /><path d="M13 7a4 4 0 0 1 0 6M15 4.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
   {:else if name === "mute"}<path d="M3 7.5h3l4-3.5v12l-4-3.5H3z" fill="currentColor" /><path d="M13 7.5l5 5M18 7.5l-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
   {:else if name === "trophy"}<path d="M6 3h8v4a4 4 0 0 1-8 0zM6 4H3v1.5A3 3 0 0 0 6 8.5M14 4h3v1.5A3 3 0 0 1 14 8.5M10 11v3M7 17h6l-1-3H8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />

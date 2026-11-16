@@ -4,6 +4,7 @@
   import Fiche from "./Fiche.svelte";
   import { onDestroy, type Snippet } from "svelte";
   import Mascot from "./ui/Mascot.svelte";
+  import Icon from "./ui/Icon.svelte";
   import { sound } from "./sound.svelte.ts";
 
   interface Props {
@@ -283,13 +284,16 @@
         <!-- Mobile : verdict toujours visible dans la barre du bas, sans faire défiler -->
         <div class="verdict" aria-live="polite">
           <Mascot mood={feedback.mood} size={40} />
-          <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : "Raté"}</b>{#if result.accuracy < 0.999}<small>{d.nom} ({d.code})</small>{/if}</span>
+          <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : "Raté"}</b></span>
           <span class="vp tabnum">+{result.points}</span>
         </div>
         <ul class="recap" aria-label="Correction">
           {#each result.fields as f (f.field)}
-            <li class:good={f.score >= 0.999} class:bad={f.score < 0.999}>
-              <span>{f.score >= 0.999 ? "✓" : "✗"} {LABELS[f.field]}</span>{#if f.score < 0.999}<b>{expectedLabel(f.field, f.expected)}</b>{/if}
+            {@const good = f.score >= 0.999}
+            <li class:good class:bad={!good}>
+              <i class="dot"><Icon name={good ? "check" : "cross"} size={13} /></i>
+              <span class="rl">{LABELS[f.field]}</span>
+              <b class="ra">{expectedLabel(f.field, f.expected)}</b>
             </li>
           {/each}
         </ul>
@@ -388,15 +392,22 @@
     .vt b { font-weight: 900; font-size: 18px; }
     .vt small { font-weight: 700; font-size: 13px; opacity: .85; }
     .vp { font-family: var(--f-pop); font-size: 26px; }
-    .recap { display: flex; flex-wrap: wrap; gap: 5px; list-style: none; margin: 0; padding: 0; width: 100%; }
-    .recap li { display: inline-flex; gap: 6px; align-items: baseline; border-radius: 10px; padding: 4px 9px; font-size: 13.5px; font-weight: 700; }
-    .recap li.good { background: rgba(21, 114, 196, .12); color: var(--blue-d); }
-    .recap li.bad { background: #fff; color: var(--pink-d); box-shadow: inset 0 0 0 2px var(--pink); }
-    .recap li.bad b { color: var(--ink); font-weight: 900; }
-    .actions.v-ok { background: #e3f0fb; }
+    /* Correction : une petite fiche blanche, une ligne par question (pastille ✓/✗, intitulé, bonne réponse) */
+    .recap { list-style: none; margin: 0; padding: 4px 12px; width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 3px 0 rgba(28, 26, 55, .1); display: flex; flex-direction: column; }
+    .recap li { display: flex; align-items: center; gap: 8px; padding: 5px 0; min-width: 0; }
+    .recap li + li { border-top: 2px solid var(--bg); }
+    .dot { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; color: #fff; }
+    .good .dot { background: var(--blue); box-shadow: 0 2px 0 var(--blue-d); }
+    .bad .dot { background: var(--pink); box-shadow: 0 2px 0 var(--pink-d); }
+    .rl { flex: none; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
+    .ra { flex: 1; min-width: 0; text-align: right; font-size: 14.5px; font-weight: 800; line-height: 1.2; }
+    .good .ra { color: var(--blue-d); }
+    .bad .ra { color: var(--ink); }
+    /* Barre teintée aux couleurs du jeu selon le résultat */
+    .actions.v-ok { background: var(--tint-ok); }
     .actions.v-ok .vt b, .actions.v-ok .vp { color: var(--blue-d); }
-    .actions.v-mid { background: #fff6cc; }
-    .actions.v-ko { background: #ffe1ef; }
-    .actions.v-ko .vt b { color: var(--pink-d); }
+    .actions.v-mid { background: #fff1b8; }
+    .actions.v-ko { background: var(--tint-ko); }
+    .actions.v-ko .vt b, .actions.v-mid .vt b { color: var(--pink-d); }
   }
 </style>
