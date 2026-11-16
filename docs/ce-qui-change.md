@@ -27,12 +27,13 @@ Les premiers retours disent tous un peu la même chose :
 | Un réglage « normal / expert » à choisir avant de jouer. | **Le mode expert s'ouvre tout seul**, région par région, quand tu connais bien les bases. | Personne ne sait quoi choisir quand il débute. |
 | Tour de France, Révisions, Éclair, Région, Marathon : beaucoup de choix. | **Un gros bouton « Continuer »** : le jeu te prépare une séance de 2 minutes (révisions d'abord, puis la suite). Et un **Entraînement** où tu choisis précisément : la zone, ce qu'on te donne, ce qu'on te demande, la longueur. | Soit tu te laisses guider, soit tu choisis tout. Pas entre les deux. |
 | Un chrono à chaque question, même seul. | **Plus de chrono quand tu joues seul.** Il reste au défi du jour et entre amis. | Seul, on apprend ; on n'a pas besoin de stress. |
-| XP, niveaux, quêtes, étoiles de région, pourcentage, rangs… | **Un seul compteur : ta carte de France.** Chaque département a 3 étoiles (le placer, son numéro, sa préfecture), et ta carte se colore à mesure que tu les gagnes. | Tous ces compteurs disaient « tu progresses » sans être d'accord entre eux. Une étoile, c'est un vrai savoir. |
+| Niveaux, quêtes, étoiles de région, pourcentage, rangs… | **Un seul compteur de connaissance : ta carte de France.** Chaque département a 3 étoiles (le placer, son numéro, sa préfecture), et ta carte se colore à mesure que tu les gagnes. | Tous ces compteurs disaient « tu progresses » sans être d'accord entre eux. Une étoile, c'est un vrai savoir. |
 | Bronze avec les propositions, argent au clavier, or en expert. | **Une médaille par département selon ce que tu sais** : bronze quand tu as ses 3 étoiles, argent quand tu l'as retenu dans la durée, or quand tu maîtrises aussi le niveau expert. Ta carte prend les couleurs de tes médailles. | Avant, si tu préférais les propositions, tu restais en bronze même en connaissant tout. Maintenant la médaille dit vraiment ce que tu sais. |
+| L'XP et ses niveaux (1, 2, 3…). | **L'XP devient des kilomètres** : chaque bonne réponse fait avancer Hexa sur la route (« Tu as parcouru 12 430 km »). Plus de niveaux. | La carte montre ce que tu sais, les kilomètres montrent combien tu joues, même quand ta carte est finie. Ils serviront aussi aux ligues de la semaine. |
 | Les quêtes du jour (3 objectifs). | Pour garder ta série, **une partie par jour suffit, toujours**. Tu peux te fixer un objectif perso en plus, si tu veux : le rater ne coûte rien. | Plus simple, et jamais frustrant. |
 
 ## Ce qui part
-- **L'XP et les niveaux**, remplacés par ta carte de France et les 3 niveaux Découverte, Confirmé, Expert.
+- **Les niveaux d'XP** (1, 2, 3…), remplacés par ta carte de France et les 3 niveaux Découverte, Confirmé, Expert. Ton XP, elle, est convertie en kilomètres.
 - **Les quêtes du jour**.
 
 ## Bon à savoir

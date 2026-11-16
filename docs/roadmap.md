@@ -34,8 +34,8 @@ Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement co
 ## Prochaines versions
 
 ### Progression
-- **Récompenses cosmétiques** liées aux médailles et à « Ta France » (plus d'XP) : accessoires pour la mascotte, thèmes de carte. Visibles par les autres joueurs en multi.
-- **Ligues hebdomadaires** : groupes d'une trentaine de joueurs, montée et descente chaque semaine. À lancer quand il y aura assez de joueurs.
+- **Récompenses cosmétiques** liées aux médailles, à « Ta France » et aux kilomètres parcourus (ex-XP) : accessoires pour la mascotte, thèmes de carte. Visibles par les autres joueurs en multi.
+- **Ligues hebdomadaires** : groupes d'une trentaine de joueurs classés sur les **kilomètres de la semaine**, montée et descente chaque semaine. À lancer quand il y aura assez de joueurs.
 - **Hall of Fame** : défini dans [`conception.md`](conception.md) (défi par niveau, Marathon, Légendes).
 - **Page « Nouveautés »** (notes de version) accessible depuis l'accueil.
 

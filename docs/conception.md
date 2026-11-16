@@ -45,7 +45,7 @@ Cinq principes, qui servent d'arbitre pour toutes les décisions qui suivent :
 
 | Compteur | Ce qu'il mesure vraiment | Problème |
 |---|---|---|
-| XP et niveaux | le temps passé | monte même sans rien apprendre |
+| XP et niveaux | combien on joue | utile, mais les niveaux 1, 2, 3… font croire à un niveau de connaissance |
 | Quêtes du jour (3) | des objectifs variés | doublon avec le défi et la série |
 | Étoiles de région (Tour) | la réussite d'une manche | réussir une fois ≠ savoir |
 | Vignettes bronze / argent / or | le format de réponse utilisé | mesure le réglage, pas le savoir |
@@ -123,7 +123,7 @@ On garde la collection bronze / argent / or que les joueurs aiment, mais elle me
 - Une médaille ne se perd pas, mais si ses étoiles pâlissent, elle est **ternie** sur la carte jusqu'à la prochaine révision réussie.
 
 ### 4.3 Les niveaux du joueur
-Trois niveaux, qui découlent de « Ta France » (pas d'XP) et décident de la difficulté du défi du jour et des propositions :
+Trois niveaux, qui découlent de « Ta France » (pas des kilomètres) et décident de la difficulté du défi du jour et des propositions :
 
 | Niveau | Atteint à | Ce que ça change |
 |---|---|---|
@@ -150,13 +150,15 @@ Pour les comptes connectés, trois tableaux :
 - **Légendes** : les joueurs qui ont atteint 100 % de « Ta France », puis tout en argent, puis tout en or, avec la date.
 
 ### 4.7 Ce qui reste à côté
+- **Les kilomètres** (ex-XP) : ils montrent **combien tu joues**, quand la carte montre **ce que tu sais**. Chaque bonne réponse fait avancer Hexa sur la route, dans tous les modes et tous les atlas (défi et multi compris). Affichés en total (« Tu as parcouru 12 430 km ») et à la semaine (« 840 km cette semaine »), ils servent aux **ligues hebdomadaires** et à se comparer entre amis. **Pas de niveaux** (1, 2, 3…) et rien à débloquer : c'est un compteur d'activité, qui continue de monter quand la carte est finie.
 - **Les succès** (ex-badges) : des exploits rares, rangés dans le profil, jamais au premier plan.
 
 ### 4.8 Ce qu'on retire ou fusionne
 
 | Aujourd'hui | Demain |
 |---|---|
-| XP et niveaux 1, 2, 3… | **retirés** (remplacés par « Ta France » et les 3 niveaux de joueur) |
+| XP | **gardée et renommée kilomètres** : compteur d'activité (combien tu joues), sans niveaux |
+| Niveaux 1, 2, 3… | **retirés** (« Ta France » et les 3 niveaux de joueur disent où tu en es) |
 | 3 quêtes du jour | **retirées** ; objectif personnel facultatif, sans effet sur la série |
 | Étoiles de région du Tour | **remplacées** par les étoiles des départements de la région |
 | Vignettes bronze / argent / or et Album | **gardées sous forme de médailles**, qui mesurent le savoir et plus le format de réponse ; l'Album fusionne avec l'Atlas |
@@ -231,7 +233,7 @@ Personne ne doit perdre ce qu'il a gagné :
 - **Vignettes** : argent ou or → 3 étoiles, donc médaille de bronze (le joueur la refait monter en jouant) ; bronze → facettes « vues ».
 - **Étoiles de région** → la région en cours et les régions ouvertes sont conservées.
 - **Badges** → succès, à l'identique.
-- **XP et niveau** → affichés une dernière fois (« ancien niveau 12 »), puis retirés.
+- **XP** → convertie en kilomètres (1 XP = 1 km), rien n'est perdu. Le niveau d'XP n'est plus affiché.
 - **Série, défis joués** → conservés.
 
 ---
@@ -240,7 +242,7 @@ Personne ne doit perdre ce qu'il a gagné :
 
 1. **Entraînement** avec les réglages « on te donne / on te demande », les deux formats (question simple, fiche complète), propositions ou clavier changeable en cours de partie, carte à 4 départements surlignés. À côté de l'existant : on teste en vrai sans rien casser. *(Répond directement au retour du testeur.)*
 2. **Les étoiles par facette, « Ta France » et les 3 niveaux**, avec la migration des profils.
-3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif personnel facultatif. On retire alors le Tour de France (remplacé par Continuer), les quêtes et l'XP ; les vignettes deviennent des médailles.
+3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif personnel facultatif. On retire alors le Tour de France (remplacé par Continuer), les quêtes et les niveaux d'XP ; l'XP devient des kilomètres et les vignettes des médailles.
 4. **Défi du jour par niveau** (classements séparés) et **Entre amis** à la nouvelle règle, handicap par niveau.
 5. **Facettes expert** et médailles d'or, puis **Hall of Fame**.
 
@@ -253,7 +255,7 @@ Chaque étape est jouable et déployable seule.
 | # | Question | Décision |
 |---|---|---|
 | 1 | Une seule chose par question ? | **Non : deux formats.** Questions simples pour découvrir, fiche complète (avec semi-bon) pour consolider, et au choix à l'Entraînement. |
-| 2 | Retirer l'XP, les niveaux, les quêtes ? | **Tout retiré.** « Ta France » et les 3 niveaux de joueur remplacent l'XP ; la série se garde avec une seule séance par jour, objectif personnel facultatif à côté. |
+| 2 | Retirer l'XP, les niveaux, les quêtes ? | **XP gardée, renommée kilomètres** (combien tu joues, sans niveaux) ; **niveaux 1, 2, 3 et quêtes retirés** ; la série se garde avec une seule séance par jour, objectif personnel facultatif à côté. |
 | 3 | Chrono en solo ? | **Retiré.** Reste au défi et entre amis. |
 | 4 | Le défi fait gagner des étoiles ? | **Non.** Ses erreurs reviennent quand même en séance. |
 | 5 | Entre amis ? | **On garde Duel, Soirée et Équipe.** |
@@ -288,3 +290,5 @@ Les réponses décident des ajustements avant de retirer l'ancien système.
   → Une séance par jour suffit toujours pour la série ; l'objectif devient personnel, facultatif et sans effet sur la série (4.5).
 - **2026-11-16, Léo** : « On perd le bronze, argent, or, c'est dommage. »
   → Gardés, en médailles par département qui mesurent le savoir et plus le format de réponse (4.2).
+- **2026-11-16, testeur** : « J'aurais pas complètement supprimé l'XP : la carte montre ton niveau de connaissance, l'XP montre à quel point tu joues. Une fois les 3 étoiles partout, il n'y a plus aucun indicateur qui montre qu'on joue encore. »
+  → XP gardée et renommée **kilomètres**, sans niveaux, base des ligues hebdomadaires (4.7).
