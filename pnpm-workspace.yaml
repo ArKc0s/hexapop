@@ -1,3 +1,9 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# Seul esbuild (utilisé par Vite) a besoin de son script d'installation.
+allowBuilds:
+  esbuild: true
+  better-sqlite3: false
+  msgpackr-extract: false
