@@ -1,5 +1,6 @@
 <script lang="ts">
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
+  import GameSheet from "../lib/ui/GameSheet.svelte";
   import { onDestroy } from "svelte";
   import LiveRound from "../lib/LiveRound.svelte";
   import { live } from "../lib/socket.svelte.ts";
@@ -70,10 +71,12 @@
     }
   });
   let offerTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Quitter en plein défi : l'essai du jour est déjà compté, on prévient. */
+  let asking = $state(false);
   onDestroy(() => { clearTimeout(offerTimer); if (live.room?.kind === "daily") live.leave(); });
 
   const total = $derived(live.room?.players[0]?.score ?? 0);
-  const EMOJI = ["🟪", "🟨", "🟦"];
+  const EMOJI = ["🟪", "🟨", "🟩"];
   const outcome = $derived(live.daily);
   const grid = $derived(outcome ? outcome.grid : info?.mine?.grid ? [...info.mine.grid].map(Number) : guestToday ? guestToday.grid : []);
   const shareText = $derived.by(() => {
@@ -93,7 +96,7 @@
 
 <main class="daily" class:shell={started && !live.daily && !!live.question} class:page={!(started && !live.daily && !!live.question)}>
   <header>
-    <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
+    <button class="back" onclick={() => (started && !outcome && live.question ? (asking = true) : nav.go({ name: "home" }))}>← Accueil</button>
     <span class="grow"></span>
     {#if info}<span class="chip">Défi n° {info.number}</span>{/if}
     <FullscreenButton />
@@ -176,6 +179,12 @@
   {/if}
 </main>
 
+{#if asking && started && !outcome}
+  <GameSheet title="Abandonner le défi ?" mood="think" seeThrough primary="Continuer le défi" onprimary={() => (asking = false)} secondary="Abandonner" onsecondary={() => { asking = false; nav.go({ name: "home" }); }}>
+    <p>Un seul essai par jour : il compte dès le départ. Si tu quittes, tu ne seras pas classé aujourd'hui et tu ne pourras pas le rejouer.</p>
+  </GameSheet>
+{/if}
+
 <style>
   .daily { --w: 640px; display: flex; flex-direction: column; gap: 18px; }
   /* En partie : le cadre de jeu (pleine largeur) ; hors partie : le cadre commun des pages (.page). */
@@ -213,7 +222,7 @@
   .card :global(.btn) { width: 100%; }
   .grid { display: flex; gap: 6px; }
   .grid i { width: 26px; height: 26px; border: 2px solid var(--ink); border-radius: 6px; }
-  .g2 { background: var(--blue); } .g1 { background: var(--yellow); } .g0 { background: var(--pink); }
+  .g2 { background: var(--ok); } .g1 { background: var(--yellow); } .g0 { background: var(--ko); }
   .boards { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; max-width: 900px; width: 100%; margin: 0 auto; }
   h2 { margin: 0 0 8px; }
   .lb { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }

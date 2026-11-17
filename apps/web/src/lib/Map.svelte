@@ -3,7 +3,7 @@
   import { tourRegionOf, OUTRE_MER } from "@hexa/game";
   import { MAP, IDF_SOURCE, IDF_TARGET, zoomTransform } from "./map.ts";
 
-  export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near" | "done-ok" | "done-ko" | "focus";
+  export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near" | "done-ok" | "done-ko" | "focus" | "subject";
   interface Props {
     marks?: Record<string, Mark>;
     fills?: Record<string, string>;
@@ -284,11 +284,15 @@
   .deps use.near { fill: #9fd3f0; stroke: var(--ink); stroke-width: 1.2; }
   .deps use.ok { fill: var(--ok); stroke: var(--ink); stroke-width: 1.2; animation: dep-pop .45s cubic-bezier(.2, 1.8, .4, 1); }
   .deps use.ko { fill: var(--ko); stroke: var(--ink); stroke-width: 1.2; animation: shake .35s; }
-  .deps use.miss { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; animation: pulse .5s ease-in-out 6 alternate; }
+  /* Correction : la bonne réponse qu'on n'a pas trouvée clignote en vert, puis reste vert clair cerclé de vert */
+  .deps use.miss { fill: var(--tint-ok); stroke: var(--ok-d); stroke-width: 2.4; animation: pulse-ok .5s ease-in-out 6 alternate; }
+  /* Le département de la question (quand il ne fallait pas le placer) : jaune, comme quand il clignotait */
+  .deps use.subject { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; }
   .deps use.done-ok { fill: var(--tint-ok); }
   .deps use.done-ko { fill: var(--tint-ko); }
-  .zoom use.hint, .zoom use.sel, .zoom use.ok, .zoom use.ko, .zoom use.miss, .zoom use.near { stroke-width: 1.4; }
+  .zoom use.hint, .zoom use.sel, .zoom use.ok, .zoom use.ko, .zoom use.miss, .zoom use.near, .zoom use.subject { stroke-width: 1.4; }
   /* Clignotement opaque : l'ombre rose ne doit pas transparaître. */
+  @keyframes pulse-ok { from { fill: var(--ok); } to { fill: var(--tint-ok); } }
   @keyframes pulse { from { fill: var(--yellow); } to { fill: #fff6c4; } }
   @keyframes dep-pop { 0% { transform: scale(1); } 45% { transform: scale(1.28); } 100% { transform: scale(1); } }
 </style>

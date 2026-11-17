@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dep, DEPARTEMENTS, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
+  import { dep, DEPARTEMENTS, matchSet, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
   import Map, { type Mark } from "./Map.svelte";
   import Fiche from "./Fiche.svelte";
   import { onDestroy, type Snippet } from "svelte";
@@ -25,8 +25,10 @@
     /** Façon de répondre, réglable en cours de partie (entraînement) : sinon déduite de la question. */
     answerMode?: InputMode;
     onmode?: (m: InputMode) => void;
+    /** Partie en pause : le chrono s'arrête (le parent décale startedAt à la reprise). */
+    paused?: boolean;
   }
-  let { q, result = null, startedAt, onsubmit, action, children, history = {}, combo = 0, answerMode, onmode }: Props = $props();
+  let { q, result = null, startedAt, onsubmit, action, children, history = {}, combo = 0, answerMode, onmode, paused = false }: Props = $props();
   /** Propositions affichées pour un champ (aucune en mode clavier). */
   /** Première rencontre (département nouveau, ou ses facettes expert) : se tromper ne coûte rien, la correction apprend. */
   const fresh = $derived(q.tag === "new" || q.tag === "expert");
@@ -94,11 +96,11 @@
   // ---- chrono ----
   let now = $state(performance.now());
   let raf = 0;
-  const tick = () => { now = performance.now(); if (!result) raf = requestAnimationFrame(tick); };
+  const tick = () => { if (!paused) now = performance.now(); if (!result) raf = requestAnimationFrame(tick); };
   raf = requestAnimationFrame(tick);
   onDestroy(() => cancelAnimationFrame(raf));
   const remaining = $derived(timed ? Math.max(0, Math.min(q.durationMs, q.durationMs - (now - startedAt))) : 1);
-  $effect(() => { if (timed && remaining <= 0 && !submitted && !result) submit(true); });
+  $effect(() => { if (timed && !paused && remaining <= 0 && !submitted && !result) submit(true); });
 
   function pick(code: string) {
     if (result || submitted) return;
@@ -144,12 +146,31 @@
       for (const c of d.limitrophes) m[c] = near.includes(c) ? "ok" : "miss";
       for (const c of near) if (!d.limitrophes.includes(c)) m[c] = "ko";
     }
+    // Vert = la bonne réponse (clignote si on l'a manquée), rose = ton erreur. Sans placement : le département de la question, en jaune.
     if (has("carte")) {
       if (sel === q.code) m[q.code] = "ok";
       else { if (sel) m[sel] = "ko"; m[q.code] = "miss"; }
-    } else m[q.code] = "ok";
+    } else m[q.code] = "subject";
     return m;
   });
+  /** Légende de la carte à la correction : seulement les couleurs présentes. */
+  const legend = $derived.by(() => {
+    if (!result) return [];
+    const v = new Set(Object.values(marks));
+    const out: { cls: string; text: string }[] = [];
+    if (v.has("subject")) out.push({ cls: "subject", text: d.nom });
+    if (v.has("ok")) out.push({ cls: "ok", text: has("limitrophes") ? "Trouvé" : "Bien placé" });
+    if (v.has("miss")) out.push({ cls: "miss", text: has("carte") && sel !== q.code ? "La bonne réponse" : "À trouver aussi" });
+    if (v.has("ko")) out.push({ cls: "ko", text: has("carte") && sel && sel !== q.code ? "Ton choix" : "Faux" });
+    return out;
+  });
+  /** Listes (sous-préfectures, voisins) à la correction : ce qui est juste, faux, et ce qui manquait. */
+  const spCheck = $derived.by(() => {
+    if (!result || !has("sousPrefectures")) return null;
+    const { found, wrong } = matchSet(sousPrefs, d.sousPrefectures);
+    return { wrong: new Set(wrong), missed: d.sousPrefectures.filter((x) => !found.includes(x)) };
+  });
+  const nearMissed = $derived(result && has("limitrophes") ? d.limitrophes.filter((c) => !near.includes(c)) : []);
 
   const fieldResult = (f: Field) => result?.fields.find((x) => x.field === f);
   const LABELS: Record<Field, string> = { carte: "Sur la carte", nom: "Nom", numero: "Numéro", prefecture: "Préfecture", sousPrefectures: "Sous-préfectures", limitrophes: "Voisins" };
@@ -213,6 +234,10 @@
           </div>
         {/key}
         <span class="help sub">{candidates ? "Choisis parmi les 4 départements surlignés" : coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
+      {:else if legend.length}
+        <ul class="legend" aria-label="Légende de la carte">
+          {#each legend as l (l.cls)}<li><i class="sw {l.cls}"></i>{l.text}</li>{/each}
+        </ul>
       {:else}
         <span class="help">{mapHelp}</span>
       {/if}
@@ -291,12 +316,13 @@
         <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
           <label class="label" for="in-sp">{LABELS.sousPrefectures} · {d.sousPrefectures.length} à trouver</label>
           {#if sousPrefs.length}
-            <div class="tags">{#each sousPrefs as s (s)}<button class="chip" disabled={!!result} onclick={() => (sousPrefs = sousPrefs.filter((x) => x !== s))}>{s} ×</button>{/each}</div>
+            <div class="tags">{#each sousPrefs as s (s)}<button class="chip" class:good={spCheck && !spCheck.wrong.has(s)} class:bad={spCheck?.wrong.has(s)} disabled={!!result} onclick={() => (sousPrefs = sousPrefs.filter((x) => x !== s))}>{s}{result ? "" : " ×"}</button>{/each}</div>
           {/if}
+          {#if spCheck?.missed.length}<div class="tags missed"><span class="ml">Il manquait</span>{#each spCheck.missed as s (s)}<span class="chip miss">{s}</span>{/each}</div>{/if}
           <input id="in-sp" class="field" autocomplete="off" spellcheck="false" placeholder="Une ville, puis Entrée"
             bind:value={spDraft} disabled={!!result || submitted}
             onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (spDraft.trim()) addSousPref(); else enter(e); } }} />
-          {#if r && r.score < 1}<span class="exp">{expectedLabel("sousPrefectures", r.expected)}</span>{/if}
+          {#if r && r.score < 1 && !sousPrefs.length}<span class="exp">{expectedLabel("sousPrefectures", r.expected)}</span>{/if}
         </div>
       {/if}
 
@@ -311,7 +337,8 @@
             bind:value={nearDraft} disabled={!!result || submitted} oninput={() => (nearError = "")}
             onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (nearDraft.trim()) addNear(); else enter(e); } }} />
           {#if nearError}<span class="nerr">{nearError}</span>{/if}
-          {#if r && r.score < 1}<span class="exp">{expectedLabel("limitrophes", r.expected)}</span>{/if}
+          {#if near.length && nearMissed.length}<div class="tags missed"><span class="ml">Il manquait</span>{#each nearMissed as c (c)}<span class="chip miss">{dep(c).nom} ({c})</span>{/each}</div>
+          {:else if r && r.score < 1 && !near.length}<span class="exp">{expectedLabel("limitrophes", r.expected)}</span>{/if}
         </div>
       {/if}
     </div>
@@ -340,7 +367,13 @@
             <li class:good class:bad={!good}>
               <i class="dot"><Icon name={good ? "check" : "cross"} size={13} /></i>
               <span class="rl">{LABELS[f.field]}</span>
-              <b class="ra">{expectedLabel(f.field, f.expected)}</b>
+              {#if f.field === "sousPrefectures" && spCheck && !good}
+                <b class="ra">{#each d.sousPrefectures as x, k (x)}{k ? ", " : ""}<span class:hit={!spCheck.missed.includes(x)}>{x}</span>{/each}{#each [...spCheck.wrong] as w (w)}, <s>{w}</s>{/each}</b>
+              {:else if f.field === "limitrophes" && result && !good}
+                <b class="ra">{#each d.limitrophes as c, k (c)}{k ? ", " : ""}<span class:hit={near.includes(c)}>{dep(c).nom}</span>{/each}{#each near.filter((c) => !d.limitrophes.includes(c)) as w (w)}, <s>{dep(w).nom}</s>{/each}</b>
+              {:else}
+                <b class="ra">{expectedLabel(f.field, f.expected)}</b>
+              {/if}
             </li>
           {/each}
         </ul>
@@ -395,7 +428,7 @@
   .fields { display: flex; flex-direction: column; gap: 14px; }
   .f { display: flex; flex-direction: column; gap: 6px; }
   .state { font-weight: 700; }
-  .f.ok .state, .f.ok .label { color: var(--blue); }
+  .f.ok .state, .f.ok .label { color: var(--ok-d); }
   .f.ko .label { color: var(--pink-d); }
   .exp { font-weight: 800; }
   .exp::before { content: "Réponse : "; color: var(--soft); font-weight: 600; }
@@ -404,12 +437,23 @@
   @media (hover: hover) { .opt:hover:not(:disabled):not(.on) { background: #fff4c2; } }
   .opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #e2dacb; }
   .opt.on { background: var(--ink); color: #fff; box-shadow: 0 3px 0 #000; }
-  .opt.right { background: var(--blue); color: #fff; box-shadow: 0 3px 0 var(--blue-d); }
+  .opt.right { background: var(--ok); color: #fff; box-shadow: 0 3px 0 var(--ok-d); }
   .opt.wrong { background: var(--pink); color: #fff; box-shadow: 0 3px 0 var(--pink-d); animation: shake .35s; }
   .opt:disabled { cursor: default; }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tags .chip.good { background: var(--blue); color: #fff; }
-  .tags .chip.bad { background: var(--pink); color: #fff; }
+  .tags .chip.good { background: var(--ok); color: #fff; opacity: 1; }
+  .tags .chip.bad { background: var(--ko); color: #fff; opacity: 1; text-decoration: line-through; text-decoration-thickness: 2px; }
+  .tags .chip.miss { background: var(--tint-ok); color: var(--ok-d); box-shadow: inset 0 0 0 2px var(--ok); }
+  .tags.missed { align-items: center; }
+  .ml { font-size: 13px; font-weight: 800; color: var(--soft); }
+  /* Légende de la carte à la correction */
+  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; font-weight: 800; color: var(--ink); }
+  .legend li { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .sw.ok { background: var(--ok); }
+  .sw.ko { background: var(--ko); }
+  .sw.miss { background: var(--tint-ok); box-shadow: inset 0 0 0 2.5px var(--ok-d); }
+  .sw.subject { background: var(--yellow); }
   .nerr { color: var(--pink-d); font-weight: 700; font-size: 14px; animation: shake .3s; }
   .react { display: flex; align-items: center; gap: 12px; }
   .react .bubble { flex: 1; }
@@ -440,6 +484,8 @@
     .mapwrap :global(.map) { width: 100%; height: 100%; max-height: none; }
     .maphead { min-height: 0; }
     .help { font-size: 13px; }
+    .legend { font-size: 12.5px; gap: 2px 10px; }
+    .sw { width: 13px; height: 13px; border-radius: 4px; }
     /* Le panneau prend la hauteur dont il a besoin ; la carte (zoomable) s'adapte au reste */
     .panel { flex: 0 1 auto; max-height: 74%; overflow-y: auto; overscroll-behavior: contain; margin: 0 -16px; padding: 12px 16px 0; border-radius: 22px 22px 0 0; gap: 10px; box-shadow: 0 -6px 18px -12px rgba(28, 26, 55, .3); }
     .mapwrap { min-height: 170px; }
@@ -472,15 +518,17 @@
     .recap li { display: flex; align-items: center; gap: 8px; padding: 5px 0; min-width: 0; }
     .recap li + li { border-top: 2px solid var(--bg); }
     .dot { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; color: #fff; }
-    .good .dot { background: var(--blue); box-shadow: 0 2px 0 var(--blue-d); }
-    .bad .dot { background: var(--pink); box-shadow: 0 2px 0 var(--pink-d); }
+    .good .dot { background: var(--ok); box-shadow: 0 2px 0 var(--ok-d); }
+    .bad .dot { background: var(--ko); box-shadow: 0 2px 0 var(--ko-d); }
     .rl { flex: none; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
     .ra { flex: 1; min-width: 0; text-align: right; font-size: 14.5px; font-weight: 800; line-height: 1.2; }
-    .good .ra { color: var(--blue-d); }
+    .good .ra { color: var(--ok-d); }
     .bad .ra { color: var(--ink); }
+    .ra .hit { color: var(--ok-d); }
+    .ra s { color: var(--ko-d); text-decoration-thickness: 2px; }
     /* Barre teintée aux couleurs du jeu selon le résultat */
     .actions.v-ok { background: var(--tint-ok); }
-    .actions.v-ok .vt b, .actions.v-ok .vp { color: var(--blue-d); }
+    .actions.v-ok .vt b, .actions.v-ok .vp { color: var(--ok-d); }
     .actions.v-mid { background: #fff1b8; }
     .actions.v-ko { background: var(--tint-ko); }
     .actions.v-ko .vt b, .actions.v-mid .vt b { color: var(--pink-d); }

@@ -3,6 +3,8 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.12** : pause en partie solo (la question est cachée, le temps ne compte pas, pause automatique si l'appli passe en arrière-plan) ; confirmation avant de quitter une partie, le défi du jour ou une partie entre amis ; couleurs de correction : vert = juste, rose = faux, jaune réservé à la question (le bleu reste la couleur d'Hexa) ; légende de la carte à la correction ; sous-préfectures et voisins corrigés un par un (justes, faux, ce qui manquait).
+- **v1.10 / v1.11** : statistiques anonymes lisibles dans Grafana ; invités au classement du défi sous un pseudo généré, repris par leur compte à l'inscription ; confirmation du pseudo après inscription via Google & co.
 - **v1.9** : référencement : 127 pages générées (101 départements, 18 régions, listes, carte, quiz) sous `/france` et `/quiz`, données structurées, plan du site par atlas, vraies 404, aperçus de partage. Voir [`seo.md`](seo.md).
 - **v1.8** : mise à jour sans coupure (deux versions en ligne, l'ancienne finit ses parties) ; jeu jouable hors ligne (séances, Entraînement) avec reprise automatique au retour du serveur ; copie de secours Cloudflare préparée.
 - **v1.7** (étape 5 de la [refonte](conception.md), refonte terminée) : séances expert région par région (sous-préfectures et voisins) et médailles d'or ; Hall of Fame (défi de la semaine et du mois par niveau, Marathon, Légendes).

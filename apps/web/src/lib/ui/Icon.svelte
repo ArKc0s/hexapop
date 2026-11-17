@@ -1,5 +1,5 @@
 <script lang="ts">
-  export type IconName = "flame" | "play" | "lock" | "star" | "check" | "cross" | "pin" | "sound" | "mute" | "trophy" | "gear";
+  export type IconName = "flame" | "play" | "lock" | "star" | "check" | "cross" | "pin" | "sound" | "mute" | "trophy" | "gear" | "pause";
   let { name, size = 18 }: { name: IconName; size?: number } = $props();
 </script>
 
@@ -8,6 +8,7 @@
   {:else if name === "play"}<path d="M6 3.5l10 6.5-10 6.5z" fill="currentColor" />
   {:else if name === "lock"}<path d="M6 9V6.5a4 4 0 0 1 8 0V9" fill="none" stroke="currentColor" stroke-width="2" /><rect x="4" y="9" width="12" height="9" rx="2.5" fill="currentColor" />
   {:else if name === "star"}<path d="M10 1.5l2.4 5.3 5.8.6-4.4 3.9 1.3 5.7L10 14.1l-5.1 2.9 1.3-5.7L1.8 7.4l5.8-.6z" fill="var(--yellow)" stroke="var(--yellow-d)" stroke-width="1" />
+  {:else if name === "pause"}<rect x="4.5" y="3.5" width="4" height="13" rx="1.4" fill="currentColor" /><rect x="11.5" y="3.5" width="4" height="13" rx="1.4" fill="currentColor" />
   {:else if name === "check"}<path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
   {:else if name === "cross"}<path d="M5.5 5.5l9 9M14.5 5.5l-9 9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
   {:else if name === "gear"}<path fill-rule="evenodd" fill="currentColor" d="M8.6 1.5h2.8l.5 2.3 1.6.7 2-1.3 2 2-1.3 2 .7 1.6 2.3.5v2.8l-2.3.5-.7 1.6 1.3 2-2 2-2-1.3-1.6.7-.5 2.3H8.6l-.5-2.3-1.6-.7-2 1.3-2-2 1.3-2-.7-1.6-2.3-.5V8.6l2.3-.5.7-1.6-1.3-2 2-2 2 1.3 1.6-.7zM10 6.9a3.1 3.1 0 1 0 0 6.2 3.1 3.1 0 1 0 0-6.2z" />

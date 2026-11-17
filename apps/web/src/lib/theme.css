@@ -12,9 +12,10 @@
   --blue: #1572c4;  --blue-d: #0d4f8c;
   --yellow: #ffd93d; --yellow-d: #d9a90b;
   --green: #22b07d; --green-d: #16825b;
-  --ok: var(--blue);
-  --ko: var(--pink);
-  --tint-ok: #bcdcf3;
+  /* Correction : vert = juste, rose = faux. Le bleu reste la couleur d'Hexa (boutons, points, progression). */
+  --ok: var(--green); --ok-d: var(--green-d);
+  --ko: var(--pink);  --ko-d: var(--pink-d);
+  --tint-ok: #c3ead8;
   --tint-ko: #ffd0e8;
   --f-ui: "Gabarito", system-ui, sans-serif;
   --f-pop: "Bowlby One", Impact, "Arial Black", sans-serif;

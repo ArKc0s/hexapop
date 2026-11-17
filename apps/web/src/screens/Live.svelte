@@ -7,6 +7,7 @@
   import StageView from "../lib/StageView.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
   import Icon from "../lib/ui/Icon.svelte";
+  import GameSheet from "../lib/ui/GameSheet.svelte";
   import Stars from "../lib/ui/Stars.svelte";
   import { live } from "../lib/socket.svelte.ts";
   import { nav } from "../lib/nav.svelte.ts";
@@ -54,12 +55,16 @@
   $effect(() => { if (room?.phase === "lobby") rewards = null; });
 
   const nameOf = (id: string) => room?.players.find((p) => p.id === id)?.name ?? "?";
-  function leave() { live.leave(); nav.go({ name: "home" }); }
+  function leave() { asking = false; live.leave(); nav.go({ name: "home" }); }
+  /** Partie en cours (et pas éliminé) : on demande confirmation avant de quitter. */
+  let asking = $state(false);
+  const inGame = $derived(!!room && (room.phase === "countdown" || room.phase === "question" || room.phase === "review") && !me?.eliminated);
+  function askLeave() { if (inGame) asking = true; else leave(); }
 </script>
 
 <main class="live" class:shell={!live.ranking && room?.phase !== "countdown" && !me?.eliminated && !!live.question}>
   <header>
-    <button class="back" onclick={leave}>← Quitter</button>
+    <button class="back" onclick={askLeave}>← Quitter</button>
     {#if duel}
       <div class="duo">
         {#each duo as p (p.id)}
@@ -167,6 +172,12 @@
   <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
 </main>
 
+{#if asking && inGame}
+  <GameSheet title="Quitter la partie ?" mood="think" seeThrough primary="Rester" onprimary={() => (asking = false)} secondary="Quitter" onsecondary={leave}>
+    <p>La partie continue sans toi{room?.kind === "coop" ? " et ton équipe perd un joueur" : ""} : tu ne pourras la suivre qu'en spectateur.</p>
+  </GameSheet>
+{/if}
+
 <style>
   .live { max-width: 1320px; margin: 0 auto; padding: 12px 16px 90px; display: flex; flex-direction: column; gap: 12px; position: relative; }
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-right: 48px; }
@@ -230,5 +241,5 @@
   .mates li.me { background: #fff4c2; }
   .flds { display: flex; flex-wrap: wrap; gap: 4px; }
   .flds span { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; color: #fff; }
-  .okf { background: var(--blue); } .kof { background: var(--pink); }
+  .okf { background: var(--ok); } .kof { background: var(--ko); }
 </style>

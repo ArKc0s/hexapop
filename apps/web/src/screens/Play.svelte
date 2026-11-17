@@ -4,6 +4,7 @@
   import Round from "../lib/Round.svelte";
   import type { Mark } from "../lib/Map.svelte";
   import Icon from "../lib/ui/Icon.svelte";
+  import GameSheet from "../lib/ui/GameSheet.svelte";
   import { nav, type PlayScreen } from "../lib/nav.svelte.ts";
   import { progress } from "../lib/progress.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
@@ -61,9 +62,25 @@
     result = null;
     startedAt = performance.now();
   }
+  // Pause et « Quitter ? » : le chrono s'arrête (la question est cachée), et repart d'où il en était.
+  let sheet = $state<null | "pause" | "quit">(null);
+  let pausedAt = 0;
+  function hold(kind: "pause" | "quit") {
+    if (!sheet) pausedAt = performance.now();
+    sheet = kind;
+  }
+  function resume() {
+    if (!sheet) return;
+    if (!result) startedAt += performance.now() - pausedAt;
+    sheet = null;
+  }
   function onkey(e: KeyboardEvent) {
+    if (sheet || e.defaultPrevented) return;
+    if (e.key === "Escape") { e.preventDefault(); hold("pause"); return; }
     if (result && e.key === "Enter" && !(e.target instanceof HTMLInputElement)) { e.preventDefault(); next(); }
   }
+  // Appli mise en arrière-plan (appel, notification…) : pause automatique plutôt qu'une question perdue.
+  function onvisibility() { if (document.hidden && !result) hold("pause"); }
   function quit() {
     if (results.length && play.learn) progress.record(results);
     nav.go({ name: "home" });
@@ -71,10 +88,11 @@
 </script>
 
 <svelte:window onkeydown={onkey} />
+<svelte:document onvisibilitychange={onvisibility} />
 
 <main class="play shell">
   <header>
-    <button class="back" onclick={quit}>← Quitter</button>
+    <button class="back" onclick={() => hold("quit")}>← Quitter</button>
     <div class="dots" aria-label="Tour {i + 1} sur {questions.length}">
       {#if questions.length <= 30}
         {#each questions as _, k (k)}
@@ -87,23 +105,38 @@
     </div>
     {#if comboNow >= 2}<span class="combo" aria-label="Combo">×{comboNow}</span>{/if}
     <FullscreenButton />
+    <button class="snd" onclick={() => hold("pause")} aria-label="Pause" title="Pause (Échap)"><Icon name="pause" /></button>
     <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
   </header>
   {#key i}
-    <Round {q} {result} {startedAt} {history} combo={comboNow} onsubmit={submit}
+    <Round {q} {result} {startedAt} {history} combo={comboNow} onsubmit={submit} paused={!!sheet}
       answerMode={play.config.switchable ? answerMode : undefined} onmode={play.config.switchable ? setMode : undefined}>
       {#snippet action()}<button class="btn blue big" onclick={next}>{i + 1 >= questions.length ? "Voir mes récompenses" : "Suivant"} <kbd>↵</kbd></button>{/snippet}
     </Round>
   {/key}
 </main>
 
+{#if sheet === "pause"}
+  <GameSheet title="Pause" mood="happy" primary="Reprendre" onprimary={resume} secondary="Quitter la partie" onsecondary={() => (sheet = "quit")}>
+    <p>Question {i + 1} sur {questions.length}. La question est cachée, elle t'attend.</p>
+  </GameSheet>
+{:else if sheet === "quit"}
+  <GameSheet title="Quitter la partie ?" mood="think" primary="Continuer à jouer" onprimary={resume} secondary="Quitter" onsecondary={quit}>
+    {#if results.length}
+      <p>Tu as répondu à {results.length} question{results.length > 1 ? "s" : ""} sur {questions.length}. {play.learn ? "Elles comptent pour tes révisions, mais" : "Si tu quittes,"} pas de kilomètres ni de récompenses pour cette partie.</p>
+    {:else}
+      <p>La partie vient de commencer : rien ne sera enregistré.</p>
+    {/if}
+  </GameSheet>
+{/if}
+
 <style>
   .play { max-width: 1320px; margin: 0 auto; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px; }
   header { display: flex; align-items: center; gap: 14px; }
   .dots { flex: 1; display: flex; gap: 4px; align-items: center; }
   .dots i { flex: 1; height: 9px; border-radius: 999px; background: #e3dccc; max-width: 48px; }
-  .dots i.ok { background: var(--blue); }
-  .dots i.ko { background: var(--pink); }
+  .dots i.ok { background: var(--ok); }
+  .dots i.ko { background: var(--ko); }
   .dots i.cur { background: var(--ink); }
   .long { flex: 1; height: 10px; background: #e3dccc; border-radius: 999px; overflow: hidden; }
   .long span { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
