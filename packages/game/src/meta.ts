@@ -269,6 +269,10 @@ export const BADGES: BadgeDef[] = [
   { id: "album-101", nom: "Album complet", desc: "Les 101 départements en bronze", test: (_c, p) => medalCount(p, 1) >= 101 },
   { id: "argent-101", nom: "Tout en argent", desc: "Les 101 départements au moins en argent", test: (_c, p) => medalCount(p, 2) >= 101 },
   { id: "or-101", nom: "Tout en or", desc: "Les 101 départements en or", test: (_c, p) => medalCount(p, 3) >= 101 },
+  // Atlas Régions : ses Légendes du Hall of Fame (docs/atlas.md).
+  { id: "regions-18", nom: "Les 18 régions", desc: "Toutes les régions en bronze", test: (_c, p) => medalCount(p, 1, "regions") >= 18 },
+  { id: "regions-argent", nom: "Régions en argent", desc: "Toutes les régions au moins en argent", test: (_c, p) => medalCount(p, 2, "regions") >= 18 },
+  { id: "regions-or", nom: "Régions en or", desc: "Toutes les régions en or", test: (_c, p) => medalCount(p, 3, "regions") >= 18 },
   { id: "region-3", nom: "Chez soi", desc: "Une région entière en bronze", test: (_c, p) => TOUR_REGIONS.some((r) => r.deps.every((c) => medal(p, c) >= 1)) },
   { id: "tour-complet", nom: "Tour de France", desc: "Au moins une étoile dans chaque région", test: (_c, p) => TOUR_REGIONS.every((r) => r.deps.some((c) => (p.know?.[c] ? Object.values(p.know[c]).some((x) => x?.s) : false))) },
   { id: "serie-7", nom: "Une semaine", desc: "Jouer 7 jours d'affilée", test: (_c, p) => p.streak.count >= 7 },

@@ -54,13 +54,16 @@ export function report(days: number) {
   const byDay = new Map<string, Record<string, number | string>>();
   for (let t = from.getTime(); t <= Date.now(); t += 86_400_000) {
     const d = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(new Date(t));
-    byDay.set(d, { day: d, time: `${d}T12:00:00Z`, visiteurs: 0, visiteurs_appli: 0, visites: 0, seance: 0, entrainement: 0, marathon: 0, revision: 0, defi_invite: 0, defi_decouverte: 0, defi_normal: 0, defi_expert: 0, salon_duel: 0, salon_plateau: 0, salon_coop: 0, joueurs_max: 0, nouveaux_comptes: 0 });
+    byDay.set(d, { day: d, time: `${d}T12:00:00Z`, visiteurs: 0, visiteurs_appli: 0, visites: 0, seance: 0, entrainement: 0, marathon: 0, revision: 0, defi_invite: 0, defi_decouverte: 0, defi_normal: 0, defi_expert: 0, defi_regions: 0, salon_duel: 0, salon_plateau: 0, salon_coop: 0, joueurs_max: 0, nouveaux_comptes: 0 });
   }
   const set = (day: string, k: string, v: number) => { const r = byDay.get(day); if (r) r[k] = v; };
   for (const r of rows) set(r.day, r.metric, r.value);
   for (const r of live) { set(r.day, "visiteurs", r.n); set(r.day, "visiteurs_appli", r.app); }
   for (const r of accounts) set(r.day, "nouveaux_comptes", r.n);
   for (const r of daily) set(r.day, `defi_${r.level}`, r.n);
+  // Défis des autres atlas (clé « regions:AAAA-MM-JJ ») : un total par atlas et par jour.
+  const others = db.prepare("SELECT substr(day, 1, instr(day, ':') - 1) AS atlas, substr(day, -10) AS d, COUNT(*) AS n FROM daily_results WHERE finished = 1 AND day LIKE '%:%' AND substr(day, -10) >= ? GROUP BY atlas, d").all(since) as { atlas: string; d: string; n: number }[];
+  for (const r of others) set(r.d, `defi_${r.atlas}`, r.n);
   const users = db.prepare(
     `SELECT u.pseudo, u.home_dep AS dep, u.email_verified AS verifie, datetime(u.created_at / 1000, 'unixepoch', 'localtime') AS inscrit,
        datetime(u.last_seen_at / 1000, 'unixepoch', 'localtime') AS vu, COALESCE((SELECT group_concat(provider) FROM oauth_identities o WHERE o.user_id = u.id), 'email') AS connexion,

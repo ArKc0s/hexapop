@@ -72,9 +72,10 @@ class Push {
   reportActivity() {
     if (!this.endpoint) return;
     const p = profile.data, now = Date.now();
-    const fading = fadingCodes(p.know ?? {}, now).length;
+    const atlas = p.atlas ?? "france";
+    const fading = fadingCodes(p.know ?? {}, now, atlas).length;
     if (!p.streak.last) return;
-    api("POST", "/push/activity", { endpoint: this.endpoint, day: p.streak.last, streak: liveStreak(p, now), fading }).catch(() => {});
+    api("POST", "/push/activity", { endpoint: this.endpoint, day: p.streak.last, streak: liveStreak(p, now), fading, atlas }).catch(() => {});
   }
 }
 export const push = new Push();

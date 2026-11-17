@@ -110,7 +110,7 @@
     const ms = outcome?.elapsedMs ?? info?.mine?.elapsedMs ?? guestToday?.elapsedMs ?? 0;
     const n = outcome?.number ?? info?.number ?? 0;
     const rank = outcome?.rank ? { rank: outcome.rank, players: outcome.players ?? outcome.rank } : info?.rank ?? (guestToday?.rank ? { rank: guestToday.rank, players: guestToday.players ?? guestToday.rank } : null);
-    const blob = await dailyCardBlob({ number: n, level: LEVEL_NAMES[playedLevel], points: pts, seconds: Math.round(ms / 1000), grid, rank });
+    const blob = await dailyCardBlob({ number: n, level: `${atlas !== "france" ? A.nom + " · " : ""}${LEVEL_NAMES[playedLevel]}`, points: pts, seconds: Math.round(ms / 1000), grid, rank });
     return blob ? new File([blob], `hexa-defi-${n}.png`, { type: "image/png" }) : null;
   }
   async function share() {

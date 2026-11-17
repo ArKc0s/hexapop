@@ -73,7 +73,7 @@ export interface RoundSummary {
 
 // ---------- client -> serveur ----------
 export type ClientMsg =
-  | { t: "hello"; v: number; token?: string; name?: string; room?: string; resume?: string; spectate?: boolean; /** Invité : identifiant tiré au hasard et gardé par le navigateur (classement du défi). */ guest?: string; /** Invité : département de cœur (pour son pseudo). */ home?: string; /** Niveau du joueur d'après sa carte (handicap par défaut en salon). */ level?: Level }
+  | { t: "hello"; v: number; token?: string; name?: string; room?: string; resume?: string; spectate?: boolean; /** Invité : identifiant tiré au hasard et gardé par le navigateur (classement du défi). */ guest?: string; /** Invité : département de cœur (pour son pseudo). */ home?: string; /** Niveau du joueur d'après sa carte (handicap par défaut en salon). */ level?: Level; /** Son niveau dans chaque atlas (salons sur un autre atlas). */ levels?: Partial<Record<AtlasId, Level>> }
   | { t: "ping"; c: number }
   | { t: "create"; kind: RoomKind; settings?: Partial<RoomSettings> }
   | { t: "join"; room: string; spectate?: boolean }

@@ -38,6 +38,9 @@ sa création (base, puis expert pour l'or), bronze / argent / or, rien de verrou
   code ; chaque atlas ne regarde que ses codes.
 - Un atlas décrit : ses éléments, ses facettes, ses indices, les intitulés (« Chef-lieu » au lieu de « Préfecture »),
   ses groupes pour les séances, et sa carte.
-- Étapes : (A) socle des atlas, accueil par atlas, premier lancement, Régions jouable en Continuer et Entraînement,
-  Album et carte par atlas ; (B) défi du jour par atlas et Hall of Fame ; (C) pages de référencement Régions,
-  tenue d'Hexa. Chaque étape est testée en préprod avant la prod.
+- Livré en préprod (v1.16, 2026-11-17) : socle des atlas ; accueil par atlas avec sélecteur ; premier lancement
+  « Qu'est-ce que tu veux apprendre ? » ; Régions jouable partout (Continuer, Entraînement, Album, carte) ; défi du jour
+  par atlas (clé « regions:AAAA-MM-JJ » en base, classement à part) ; Entre amis sur l'atlas choisi par l'hôte (chacun
+  à son niveau dans cet atlas) ; Hall of Fame par atlas (Légendes Régions, Marathon réservé aux départements) ;
+  pages de référencement (/france/regions, /quiz/regions, /quiz/chefs-lieux-des-regions) ; Hexa en bob d'explorateur
+  dans l'atlas Régions ; rappels (notifications) aux mots de l'atlas du joueur ; stats Grafana du défi Régions.

@@ -172,6 +172,7 @@ function layout(p: Page): string {
     <a href="/france/departements">Départements</a>
     <a href="/france/carte-des-departements">Carte</a>
     <a href="/france/prefectures">Préfectures</a>
+    <a href="/france/regions">Régions</a>
     <a href="/quiz">Quiz</a>
   </nav>
   <a class="play" href="/">Jouer</a>
@@ -280,12 +281,12 @@ for (const r of REGIONS) {
     description: `${ds.length > 1 ? `Les ${ds.length} départements ${deRegion(r)}` : `Le département ${deRegion(r)}`} : ${ds.map((d) => `${d.nom} (${d.code})`).join(", ")}. Préfectures, carte et quiz pour les apprendre en jouant.`,
     h1: ds.length > 1 ? `Les départements ${esc(deRegion(r))}` : `${esc(r.nom)} (${ds[0].code})`,
     lead: ds.length > 1 ? `La région <b>${esc(r.nom)}</b> compte <b>${ds.length} départements</b>. Son chef-lieu est <b>${esc(r.chefLieu)}</b>.` : `${esc(r.nom)} est à la fois une région et un département d'outre-mer, n<sup>o</sup>&nbsp;<b>${ds[0].code}</b>. Son chef-lieu est <b>${esc(r.chefLieu)}</b>.`,
-    crumbs: [{ name: "France", url: "/france" }, { name: "Régions", url: "/france/departements#regions" }, { name: r.nom, url: regionUrl(r) }],
+    crumbs: [{ name: "France", url: "/france" }, { name: "Régions", url: "/france/regions" }, { name: r.nom, url: regionUrl(r) }],
     jsonld: [{ "@context": "https://schema.org", "@type": "AdministrativeArea", name: r.nom, url: SITE + regionUrl(r), containsPlace: ds.map((d) => ({ "@type": "AdministrativeArea", name: d.nom, identifier: d.code, url: SITE + depUrl(d) })) }, fc.ld],
     body: `<div class="split">
 <figure>${svgMap(ds.map((d) => d.code), { outline: [r.code], labels: true, title: `Carte des départements ${deRegion(r)}`, tint: false })}<figcaption>Carte ${esc(deRegion(r))} avec les numéros. Touche un département pour sa fiche.</figcaption></figure>
 <section class="fiche"><h2>Liste</h2><table><thead><tr><th>N°</th><th>Département</th><th>Préfecture</th></tr></thead><tbody>${ds.map((d) => `<tr><td>${d.code}</td><td>${depLink(d)}</td><td>${esc(d.prefecture)}</td></tr>`).join("")}</tbody></table></section></div>
-${cta(ds.length > 1 ? `Apprendre les départements ${esc(deRegion(r))} en jouant` : `Apprendre ${esc(r.nom)} en jouant`, "Une séance de 2 minutes : on te demande de les placer, leur numéro, leur préfecture. Ce que tu rates revient plus tard.", `/#region=${om ? OUTRE_MER : r.code}`, "Jouer cette région")}
+${cta(ds.length > 1 ? `Apprendre les départements ${esc(deRegion(r))} en jouant` : `Apprendre ${esc(r.nom)} en jouant`, "Une séance de 2 minutes : on te demande de les placer, leur numéro, leur préfecture. Ce que tu rates revient plus tard.", `/#region=${om ? OUTRE_MER : r.code}`, "Jouer cette région", `<a class="link" href="/quiz/regions">ou apprendre les 18 régions</a>`)}
 ${fc.html}
 <section><h2>Les autres régions</h2><ul class="chips">${REGIONS.filter((x) => x.code !== r.code).map((x) => `<li><a href="${regionUrl(x)}">${esc(x.nom)}</a></li>`).join("")}</ul></section>`,
   });
@@ -362,6 +363,50 @@ ${f.html}`,
   });
 }
 
+// ---------- atlas Régions : la liste des 18 régions, avec leur carte (docs/atlas.md) ----------
+/** Carte des 13 régions de métropole, chacune cliquable vers sa page. */
+function regionsSvg(): string {
+  const outl = map.regions as Record<string, string>;
+  const codes = Object.keys(outl);
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const centers: Record<string, Pt> = {};
+  for (const c of codes) {
+    let a = Infinity, b = Infinity, e = -Infinity, f = -Infinity;
+    for (const [x, y] of pathPts(outl[c])) { a = Math.min(a, x); b = Math.min(b, y); e = Math.max(e, x); f = Math.max(f, y); }
+    centers[c] = [(a + e) / 2, (b + f) / 2];
+    x0 = Math.min(x0, a); y0 = Math.min(y0, b); x1 = Math.max(x1, e); y1 = Math.max(y1, f);
+  }
+  const k = Math.max(x1 - x0, y1 - y0), pad = k * 0.04;
+  const name = (c: string) => REGION.get(c)!;
+  return `<svg class="map big" viewBox="${(x0 - pad).toFixed(1)} ${(y0 - pad).toFixed(1)} ${(x1 - x0 + 2 * pad).toFixed(1)} ${(y1 - y0 + 2 * pad).toFixed(1)}" role="img" aria-label="Carte des 13 régions de France métropolitaine">
+<g class="shadow" transform="translate(${(k * 0.008).toFixed(2)} ${(k * 0.008).toFixed(2)})">${codes.map((c) => `<path d="${outl[c]}"/>`).join("")}</g>
+<g class="deps">${codes.map((c) => `<a href="${regionUrl(name(c))}" aria-label="${esc(name(c).nom)}"><path d="${outl[c]}" fill="${tintOf(c)}"/></a>`).join("")}</g>
+<g class="labels" font-size="${(k * 0.026).toFixed(1)}">${codes.map((c) => `<text x="${centers[c][0].toFixed(1)}" y="${centers[c][1].toFixed(1)}">${esc(name(c).chefLieu)}</text>`).join("")}</g></svg>`;
+}
+{
+  const f = faq([
+    ["Combien y a-t-il de régions en France ?", "La France compte <b>18 régions</b> : 13 en métropole (Corse comprise) et 5 en outre-mer (Guadeloupe, Martinique, Guyane, La Réunion, Mayotte), depuis la réforme de 2016."],
+    ["Quelle est la différence entre une région et un département ?", "Une région regroupe plusieurs départements (de 2 à 13 en métropole). En outre-mer, chaque région n'a qu'un seul département, du même nom."],
+    ["Quel est le chef-lieu d'une région ?", "La ville où siège le préfet de région et, le plus souvent, le conseil régional : Rennes pour la Bretagne, Lyon pour l'Auvergne-Rhône-Alpes, Marseille pour Provence-Alpes-Côte d'Azur…"],
+    ["Quelle est la plus grande région ?", `<a href="${regionUrl(REGION.get("75")!)}">La Nouvelle-Aquitaine</a> en métropole, avec 12 départements ; mais la plus vaste de France est <a href="${regionUrl(REGION.get("03")!)}">la Guyane</a>.`],
+  ]);
+  const rows = [...REGIONS].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+  pages.push({
+    path: "/france/regions", atlas: "regions", type: "article",
+    title: "Les 18 régions de France : liste, carte et chefs-lieux | Hexa",
+    description: "Les 18 régions françaises : la carte, leur chef-lieu et leurs départements, de l'Auvergne-Rhône-Alpes à Mayotte. Avec un quiz gratuit pour les apprendre.",
+    h1: "Les 18 régions de France",
+    lead: "La France compte <b>18 régions</b> : <b>13 en métropole</b> et <b>5 en outre-mer</b>. Voici leur carte, leur chef-lieu et les départements qu'elles regroupent.",
+    crumbs: [{ name: "France", url: "/france" }, { name: "Régions", url: "/france/regions" }],
+    jsonld: [{ "@context": "https://schema.org", "@type": "ItemList", name: "Régions de France", numberOfItems: 18, itemListElement: rows.map((r, i) => ({ "@type": "ListItem", position: i + 1, name: r.nom, url: SITE + regionUrl(r) })) }, f.ld],
+    body: `<div class="split">
+<figure>${regionsSvg()}<figcaption>Les 13 régions de métropole et leur chef-lieu. Touche une région pour sa page.</figcaption></figure>
+<section class="fiche"><h2>Liste</h2><table><thead><tr><th>Région</th><th>Chef-lieu</th><th>Dép.</th></tr></thead><tbody>${rows.map((r) => `<tr><td><a href="${regionUrl(r)}">${esc(r.nom)}</a></td><td>${esc(r.chefLieu)}</td><td>${depsOf(r).length}</td></tr>`).join("")}</tbody></table></section></div>
+${cta("Les connais-tu par cœur ?", "Place chaque région sur une carte vierge, puis trouve son chef-lieu. Deux minutes par jour suffisent.", "/#entrainement=regions-carte", "Lancer le quiz des régions", `<a class="link" href="/quiz/chefs-lieux-des-regions">ou celui des chefs-lieux</a>`)}
+${f.html}`,
+  });
+}
+
 // ---------- quiz (sommaire commun à tous les atlas, sous /quiz) ----------
 interface Quiz { path: string; name: string; title: string; description: string; h1: string; lead: string; how: string[]; preset: string; faq: [string, string][]; atlas: string }
 const QUIZZES: Quiz[] = [
@@ -403,6 +448,32 @@ const QUIZZES: Quiz[] = [
     ],
   },
 ];
+QUIZZES.push(
+  {
+    path: "/quiz/regions", name: "Placer les régions", atlas: "regions", preset: "regions-carte",
+    title: "Quiz des régions de France : place les 18 régions sur la carte (gratuit)",
+    description: "Quiz gratuit pour apprendre les 18 régions françaises : place-les sur une carte vierge, puis trouve leur chef-lieu. Sans pub, sur mobile et ordinateur.",
+    h1: "Quiz des régions de France",
+    lead: "Une carte vierge, un nom de région : à toi de la placer. Puis son chef-lieu, et en expert ses départements et ses voisines.",
+    how: ["On te donne une région, tu la touches sur la carte.", "Au début, 4 régions sont surlignées pour t'aider ; ensuite, toute la carte.", "Chaque bonne réponse sans aide te donne une étoile ; les 2 étoiles d'une région, sa médaille."],
+    faq: [
+      ["Combien de régions faut-il connaître ?", "18 : 13 en métropole et 5 en outre-mer. C'est un bon début avant les 101 départements."],
+      ["Ce quiz est-il gratuit ?", "Oui, entièrement, sans publicité ni traceur. Un compte (gratuit) sert seulement à garder ta progression et à entrer au classement."],
+    ],
+  },
+  {
+    path: "/quiz/chefs-lieux-des-regions", name: "Chefs-lieux des régions", atlas: "regions", preset: "regions-chefs-lieux",
+    title: "Quiz des chefs-lieux de région : Rennes, Lyon, Dijon… (gratuit)",
+    description: "Quiz gratuit sur les chefs-lieux des 18 régions françaises : retrouve la capitale de chaque région, de Rennes à Mamoudzou. Propositions ou clavier.",
+    h1: "Quiz des chefs-lieux de région",
+    lead: "Dijon ou Besançon ? Orléans ou Tours ? Retrouve le chef-lieu de chacune des 18 régions.",
+    how: ["On te donne une région (son nom ou sa forme sur la carte), tu trouves son chef-lieu.", "Réponds parmi 4 propositions ou au clavier.", "Les chefs-lieux ratés reviennent dans tes séances suivantes."],
+    faq: [
+      ["Quel est le chef-lieu de la Bourgogne-Franche-Comté ?", "Dijon. Besançon accueille le conseil régional, mais le chef-lieu (siège du préfet de région) est Dijon."],
+      ["Quel est le chef-lieu de la Normandie ?", "Rouen, même si le conseil régional siège à Caen."],
+    ],
+  },
+);
 for (const q of QUIZZES) {
   const f = faq(q.faq);
   pages.push({
@@ -412,21 +483,22 @@ for (const q of QUIZZES) {
     jsonld: [{ "@context": "https://schema.org", ...GAME, name: `${q.h1} · Hexa`, url: SITE + q.path, description: q.description }, f.ld],
     body: `${cta("C'est parti", "Gratuit, sans inscription, sur téléphone comme sur ordinateur.", `/#entrainement=${q.preset}`, "Lancer le quiz", `<a class="link" href="/#defi">ou le défi du jour</a>`)}
 <section><h2>Comment ça marche</h2><ol class="steps">${q.how.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></section>
-<section><h2>Trois niveaux</h2><ul class="levels"><li><b>Découverte</b> On te donne toujours le nom ou la carte, avec des propositions faciles.</li><li><b>Confirmé</b> Tous les indices, au clavier ou parmi des propositions qui se ressemblent.</li><li><b>Expert</b> En plus : les sous-préfectures et les départements voisins.</li></ul></section>
+<section><h2>Trois niveaux</h2><ul class="levels"><li><b>Découverte</b> On te donne toujours le nom ou la carte, avec des propositions faciles.</li><li><b>Confirmé</b> Tous les indices, au clavier ou parmi des propositions qui se ressemblent.</li><li><b>Expert</b> En plus : ${q.atlas === "regions" ? "les départements de chaque région et ses voisines" : "les sous-préfectures et les départements voisins"}.</li></ul></section>
 ${f.html}
-<section><h2>Pour réviser</h2><ul class="chips"><li><a href="/france/departements">Liste des départements</a></li><li><a href="/france/carte-des-departements">Carte des départements</a></li><li><a href="/france/prefectures">Liste des préfectures</a></li></ul></section>`,
+<section><h2>Pour réviser</h2><ul class="chips">${q.atlas === "regions" ? `<li><a href="/france/regions">Les 18 régions</a></li><li><a href="/france/departements">Liste des départements</a></li>` : `<li><a href="/france/departements">Liste des départements</a></li><li><a href="/france/carte-des-departements">Carte des départements</a></li><li><a href="/france/prefectures">Liste des préfectures</a></li><li><a href="/france/regions">Les 18 régions</a></li>`}</ul></section>`,
   });
 }
 
 // ---------- sommaires : /quiz (tous atlas) et /france (l'atlas) ----------
 pages.push({
   path: "/quiz", type: "website",
-  title: "Quiz de géographie gratuits : départements, préfectures, numéros | Hexa",
-  description: "Tous les quiz d'Hexa pour apprendre la géographie en jouant : départements sur la carte, numéros, préfectures. Gratuits, sans pub, avec un défi chaque jour.",
+  title: "Quiz de géographie gratuits : départements, régions, préfectures | Hexa",
+  description: "Tous les quiz d'Hexa pour apprendre la géographie en jouant : départements et régions sur la carte, numéros, préfectures, chefs-lieux. Gratuits, sans pub, avec un défi chaque jour.",
   h1: "Les quiz d'Hexa", lead: "Des quiz courts pour apprendre en jouant, sur mobile ou ordinateur. Ce que tu rates revient plus tard, jusqu'à ce que tu le saches.",
   crumbs: [{ name: "Quiz", url: "/quiz" }],
   jsonld: [{ "@context": "https://schema.org", "@type": "ItemList", itemListElement: QUIZZES.map((q, i) => ({ "@type": "ListItem", position: i + 1, name: q.h1, url: SITE + q.path })) }],
-  body: `<section><h2>France</h2><div class="tiles">${QUIZZES.filter((q) => q.atlas === "france").map((q) => `<a class="tile" href="${q.path}"><b>${esc(q.h1)}</b><span>${esc(q.lead)}</span></a>`).join("")}<a class="tile" href="/#defi"><b>Le défi du jour</b><span>Les mêmes 10 départements pour tout le monde, à ton niveau, et un classement.</span></a></div></section>`,
+  body: `<section><h2>Départements</h2><div class="tiles">${QUIZZES.filter((q) => q.atlas === "france").map((q) => `<a class="tile" href="${q.path}"><b>${esc(q.h1)}</b><span>${esc(q.lead)}</span></a>`).join("")}<a class="tile" href="/#defi"><b>Le défi du jour</b><span>Les mêmes 10 départements pour tout le monde, à ton niveau, et un classement.</span></a></div></section>
+<section><h2>Régions</h2><div class="tiles">${QUIZZES.filter((q) => q.atlas === "regions").map((q) => `<a class="tile" href="${q.path}"><b>${esc(q.h1)}</b><span>${esc(q.lead)}</span></a>`).join("")}</div></section>`,
 });
 pages.push({
   path: "/france", type: "website", atlas: "france",
@@ -434,7 +506,7 @@ pages.push({
   description: "Tout pour apprendre les 101 départements français : liste avec numéros, carte interactive, préfectures, fiches par département et quiz gratuits.",
   h1: "Les départements français", lead: "Les 101 départements : leur place sur la carte, leur numéro, leur préfecture. Pour réviser et pour jouer.",
   crumbs: [{ name: "France", url: "/france" }],
-  body: `<div class="tiles"><a class="tile" href="/france/departements"><b>Liste des départements</b><span>Les 101, par numéro, avec préfecture et région.</span></a><a class="tile" href="/france/carte-des-departements"><b>Carte des départements</b><span>Avec les numéros, cliquable.</span></a><a class="tile" href="/france/prefectures"><b>Liste des préfectures</b><span>Par ordre alphabétique.</span></a><a class="tile" href="/quiz/departements"><b>Quiz</b><span>Placer, numéros, préfectures.</span></a></div>
+  body: `<div class="tiles"><a class="tile" href="/france/departements"><b>Liste des départements</b><span>Les 101, par numéro, avec préfecture et région.</span></a><a class="tile" href="/france/carte-des-departements"><b>Carte des départements</b><span>Avec les numéros, cliquable.</span></a><a class="tile" href="/france/prefectures"><b>Liste des préfectures</b><span>Par ordre alphabétique.</span></a><a class="tile" href="/quiz/departements"><b>Quiz</b><span>Placer, numéros, préfectures.</span></a><a class="tile" href="/france/regions"><b>Les 18 régions</b><span>Carte, chefs-lieux, quiz.</span></a></div>
 <section><h2>Par région</h2><ul class="chips">${REGIONS.map((r) => `<li><a href="${regionUrl(r)}">${esc(r.nom)} <small>${depsOf(r).length}</small></a></li>`).join("")}</ul></section>`,
 });
 

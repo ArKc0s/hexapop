@@ -4,6 +4,7 @@
   import { api, session } from "../lib/api.svelte.ts";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
+  import { world } from "../lib/world.svelte.ts";
   import Mascot from "../lib/ui/Mascot.svelte";
 
   interface Row { name: string; home: string | null }
@@ -14,19 +15,26 @@
   }
   let hof = $state<Hof | null>(null);
   let failed = $state(false);
-  api<Hof>("GET", "/hof").then((h) => (hof = h)).catch(() => (failed = true));
+  // Hall of Fame de l'atlas affiché (un atlas = un monde).
+  const atlas = world.id;
+  const fr = atlas === "france";
+  api<Hof>("GET", fr ? "/hof" : `/hof?atlas=${atlas}`).then((h) => (hof = h)).catch(() => (failed = true));
 
   let tab = $state<"defi" | "marathon" | "legendes">("defi");
   let period = $state<"week" | "month">("week");
-  let level = $state<Level>(LEVEL_OF[playerLevel(profile.data.know ?? {})]);
+  let level = $state<Level>(LEVEL_OF[playerLevel(profile.data.know ?? {}, atlas)]);
   const me = $derived(session.me?.pseudo);
   const fmt = (t: number) => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
   const day = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
   const dur = (ms: number) => { const m = Math.floor(ms / 60_000), s = Math.round((ms % 60_000) / 1000); return `${m} min ${String(s).padStart(2, "0")}`; };
-  const LEGENDS = [
+  const LEGENDS = fr ? [
     { k: "france", nom: "Toute la France", desc: "Les 303 étoiles : 100 % de « Ta France »" },
     { k: "argent", nom: "Tout en argent", desc: "Les 101 départements retenus dans la durée" },
     { k: "or", nom: "Tout en or", desc: "Avec toutes les sous-préfectures et tous les voisins" },
+  ] as const : [
+    { k: "france", nom: "Les 18 régions", desc: "Les 36 étoiles : toutes les régions en bronze" },
+    { k: "argent", nom: "Régions en argent", desc: "Les 18 régions retenues dans la durée" },
+    { k: "or", nom: "Régions en or", desc: "Avec leurs départements et leurs voisines" },
   ] as const;
 
   /** Lance un Marathon : les 101 en fiche complète, au clavier (réglages de l'Entraînement). */
@@ -41,11 +49,11 @@
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
     <div class="seg">
       <button class:on={tab === "defi"} onclick={() => (tab = "defi")}>Défi du jour</button>
-      <button class:on={tab === "marathon"} onclick={() => (tab = "marathon")}>Marathon</button>
+      {#if fr}<button class:on={tab === "marathon"} onclick={() => (tab = "marathon")}>Marathon</button>{/if}
       <button class:on={tab === "legendes"} onclick={() => (tab = "legendes")}>Légendes</button>
     </div>
   </header>
-  <div class="head"><Mascot mood="wow" size={58} /><div><h1 class="title">Hall of Fame</h1><p>Les meilleurs joueurs d'Hexa. {session.me ? "" : "Il faut un compte pour y figurer."}</p></div></div>
+  <div class="head"><Mascot mood="wow" size={58} /><div><h1 class="title">Hall of Fame{fr ? "" : ` · ${world.atlas.nom}`}</h1><p>Les meilleurs joueurs d'Hexa. {session.me ? "" : "Il faut un compte pour y figurer."}</p></div></div>
 
   {#if failed}<p class="hint">Le Hall of Fame n'est pas joignable pour le moment.</p>
   {:else if !hof}<p class="hint">Chargement…</p>

@@ -8,7 +8,8 @@ export const NEWS: News[] = [
     items: [
       "Un deuxième atlas : les 18 régions, leur chef-lieu, puis en expert leurs départements et leurs voisines.",
       "Choisis ce que tu apprends en haut de l'accueil : tout suit (Continuer, la carte, l'Album, l'Entraînement, le défi du jour).",
-      "Chaque atlas a son défi du jour et son classement. Ta série et les kilomètres d'Hexa restent communs.",
+      "Chaque atlas a son défi du jour, son classement et son Hall of Fame. Entre amis, l'hôte choisit l'atlas, et chacun joue à son niveau.",
+      "Ta série et les kilomètres d'Hexa restent communs. Et dans les régions, Hexa sort son bob d'explorateur.",
     ],
   },
   {

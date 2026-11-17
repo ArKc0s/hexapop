@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { createReadStream, statSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
-import { DEP, PROTOCOL_VERSION, isLevel, type ClientMsg } from "@hexa/game";
+import { DEP, PROTOCOL_VERSION, isAtlas, isLevel, type ClientMsg } from "@hexa/game";
 import { config } from "./config.ts";
 import { handleApi, sessionToken, clientIp } from "./api.ts";
 import { userFromSession, rateLimit } from "./auth.ts";
@@ -141,7 +141,8 @@ function onConnection(ws: WebSocket, cookieToken: string | undefined, ip: string
       const level = user ? higherLevel(own, accountLevel(user.id)) : own;
       conns.add(ws);
       const guestHome = typeof msg.home === "string" && DEP.has(msg.home) ? msg.home : null;
-      conn = { ws, playerId, name: user?.pseudo ?? guestName(msg.name), userId: user?.id ?? null, home: user?.home_dep ?? guestHome, level, guestId: !user && isGuestId(msg.guest) ? msg.guest : null, ip, rttMs: 0, room: null, spectating: false };
+      const levels = msg.levels && typeof msg.levels === "object" ? Object.fromEntries(Object.entries(msg.levels).filter(([a, l]) => isAtlas(a) && isLevel(l))) : undefined;
+      conn = { ws, playerId, name: user?.pseudo ?? guestName(msg.name), userId: user?.id ?? null, home: user?.home_dep ?? guestHome, level, levels, guestId: !user && isGuestId(msg.guest) ? msg.guest : null, ip, rttMs: 0, room: null, spectating: false };
       const me = conn;
       connRoom.set(ws, () => !!me.room);
       send(conn, { t: "welcome", you: playerId, name: conn.name, resume, serverNow: Date.now(), account: !!user });

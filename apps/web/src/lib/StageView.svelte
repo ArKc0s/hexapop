@@ -35,7 +35,7 @@
 </script>
 
 <div class="stage">
-  <div class="mapside"><Map atlas="france" {marks} interactive={false} label="Carte du plateau" /></div>
+  <div class="mapside"><Map atlas={live.room?.settings.atlas ?? "france"} {marks} interactive={false} label="Carte du plateau" /></div>
   <aside>
     {#if room}
       <div class="joinbox"><span>Rejoins sur <b>{location.host}</b></span><span class="riso code" data-t={room.code}>{room.code}</span></div>
@@ -48,7 +48,8 @@
       <div class="clue">
         {#if q.hint === "numero"}<span class="riso num" data-t={q.code}>{q.code}</span>
         {:else if q.hint === "nom"}<span class="qname">{dep(q.code).nom}</span>
-        {:else}<span class="qname">Ce département ?</span>{/if}
+        {:else if q.hint === "prefecture"}<span class="qname">{dep(q.code).prefecture}</span>
+        {:else}<span class="qname">{q.code.startsWith("R") ? "Cette région ?" : "Ce département ?"}</span>{/if}
         {#if !s}<span class="timer tabnum">{remaining}</span>{/if}
       </div>
       {#if !s}

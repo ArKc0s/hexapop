@@ -1,5 +1,5 @@
 // Client WebSocket : connexion, synchro d'horloge, état du salon, reconnexion automatique.
-import { LEVEL_OF, playerLevel } from "@hexa/game";
+import { ATLAS_IDS, LEVEL_OF, playerLevel } from "@hexa/game";
 import { profile } from "./profile.svelte.ts";
 import { guestId } from "./guest.ts";
 import {
@@ -71,7 +71,8 @@ class Live {
       try { resume = sessionStorage.getItem(RESUME_KEY) ?? ""; } catch { /* rien */ }
       // Niveau d'après « Ta France » : handicap par défaut en salon, plafond du défi du jour.
       const level = LEVEL_OF[playerLevel(profile.data.know ?? {})];
-      ws.send(JSON.stringify({ t: "hello", v: PROTOCOL_VERSION, name: this.guestName, resume, room: this.room?.code ?? this.wantRoom ?? undefined, spectate: this.wantSpectate || undefined, level, guest: guestId() ?? undefined, home: profile.data.home ?? undefined }));
+      const levels = Object.fromEntries(ATLAS_IDS.map((a) => [a, LEVEL_OF[playerLevel(profile.data.know ?? {}, a)]]));
+      ws.send(JSON.stringify({ t: "hello", v: PROTOCOL_VERSION, name: this.guestName, resume, room: this.room?.code ?? this.wantRoom ?? undefined, spectate: this.wantSpectate || undefined, level, levels, guest: guestId() ?? undefined, home: profile.data.home ?? undefined }));
     };
     ws.onmessage = (e) => this.receive(JSON.parse(e.data) as ServerMsg);
     ws.onclose = () => {

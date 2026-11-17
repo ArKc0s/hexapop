@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { LEVELS, LEVEL_NAMES } from "@hexa/game";
+  import { ATLASES, ATLAS_IDS, LEVELS, LEVEL_NAMES } from "@hexa/game";
+  import { world } from "../lib/world.svelte.ts";
   import { REGIONS, type RoomSettings } from "@hexa/game";
   import { live } from "../lib/socket.svelte.ts";
   import { session } from "../lib/api.svelte.ts";
@@ -22,7 +23,10 @@
     if (!session.me) { try { localStorage.setItem(NAME_KEY, name); } catch { /* rien */ } }
     live.connect(session.me?.pseudo ?? name, fn);
   }
-  const create = (kind: "duel" | "plateau" | "coop") => connectThen(() => live.create(kind));
+  // Le salon part sur l'atlas affiché (un atlas = un monde) ; l'hôte peut en changer.
+  const create = (kind: "duel" | "plateau" | "coop") => connectThen(() => live.create(kind, world.id === "france" ? undefined : { atlas: world.id }));
+  const roomAtlas = $derived(ATLASES[room?.settings.atlas ?? "france"]);
+  const fr = $derived(roomAtlas.id === "france");
   const doJoin = (spectate = false) => connectThen(() => live.join(code.trim(), spectate));
 
   // Lien d'invitation ouvert par un joueur connecté ou ayant déjà un pseudo : on rejoint directement.
@@ -47,7 +51,7 @@
   <button class="back" onclick={leave}>← Accueil</button>
 
   {#if !room}
-    <h1 class="title">Entre amis</h1>
+    <h1 class="title">Entre amis{world.id !== "france" ? ` · ${world.atlas.nom}` : ""}</h1>
     {#if !session.me}
       <label class="label" for="l-name">Ton pseudo</label>
       <input id="l-name" class="field" maxlength="20" placeholder="ex. Inès" bind:value={name} />
@@ -79,7 +83,7 @@
   {:else}
     <div class="room">
       <section class="card codecard">
-        <span class="k">{room.settings.elimination ? "Battle royale" : room.kind === "plateau" ? "Soirée plateau" : room.kind === "coop" ? "En équipe" : "Duel"} · code du salon</span>
+        <span class="k">{room.settings.elimination ? "Battle royale" : room.kind === "plateau" ? "Soirée plateau" : room.kind === "coop" ? "En équipe" : "Duel"} · {roomAtlas.nom} · code du salon</span>
         <div class="riso bigcode" data-t={room.code}>{room.code}</div>
         <p class="hint">Tes amis tapent ce code dans « Entre amis », ou ouvrent le lien.</p>
         <div class="share">
@@ -102,28 +106,30 @@
           {/each}
         </ul>
         {#if room.players.length < 2}<p class="hint" style="margin-top:8px">En attente d'au moins un autre joueur…</p>{/if}
-        <p class="hint" style="margin-top:8px">Chacun joue à son niveau, réglé d'après sa carte (modifiable). <b>Découverte</b> : on donne le nom ou la carte, avec des propositions faciles. <b>Confirmé</b> : tous les indices. <b>Expert</b> : en plus les sous-préfectures et les voisins. Les points comptent le pourcentage de bonnes réponses : un Découverte peut battre un Expert.</p>
+        <p class="hint" style="margin-top:8px">Chacun joue à son niveau, réglé d'après sa carte (modifiable). <b>Découverte</b> : on donne le nom ou la carte, avec des propositions faciles. <b>Confirmé</b> : tous les indices. <b>Expert</b> : en plus {fr ? "les sous-préfectures et les voisins" : "leurs départements et leurs voisines"}. Les points comptent le pourcentage de bonnes réponses : un Découverte peut battre un Expert.</p>
       </section>
 
       <section class="card rules">
         <h2 class="k">Règles{isHost ? "" : " · choisies par l'hôte"}</h2>
+        <div class="rule"><span>Atlas</span><div class="seg">
+          {#each ATLAS_IDS as a (a)}<button class:on={roomAtlas.id === a} disabled={!isHost} onclick={() => set({ atlas: a, rounds: a === "france" ? 10 : Math.min(room.settings.rounds, ATLASES[a].items.length) })}>{ATLASES[a].nom}</button>{/each}</div></div>
         <div class="rule"><span>Réponses</span><div class="seg">
           <button class:on={room.settings.input === "libre"} disabled={!isHost} onclick={() => set({ input: "libre" })}>Au clavier</button>
           <button class:on={room.settings.input === "choix"} disabled={!isHost} onclick={() => set({ input: "choix" })}>4 choix</button></div></div>
         <div class="rule"><span>Tours</span><div class="seg">
-          {#each [10, 20, 50, 101] as n (n)}<button class:on={room.settings.rounds === n} disabled={!isHost} onclick={() => set({ rounds: n })}>{n}</button>{/each}</div></div>
+          {#each (fr ? [10, 20, 50, 101] : [5, 10, roomAtlas.items.length]) as n (n)}<button class:on={room.settings.rounds === n} disabled={!isHost} onclick={() => set({ rounds: n })}>{n}</button>{/each}</div></div>
         <div class="rule"><span>Battle royale (élimination)</span><div class="seg">
           <button class:on={room.settings.elimination} disabled={!isHost} onclick={() => set({ elimination: true })}>Oui</button>
           <button class:on={!room.settings.elimination} disabled={!isHost} onclick={() => set({ elimination: false })}>Non</button></div></div>
         {#if room.settings.elimination}<p class="hint">Battle royale : à partir du 3e tour, le dernier quart du classement est éliminé à chaque tour, jusqu'au dernier survivant. Les éliminés suivent la fin en spectateurs.</p>{/if}
-        <details>
+        {#if fr}<details>
           <summary class="k">Régions · {room.settings.regions.length ? room.settings.regions.length : "toute la France"}</summary>
           <div class="opts">
             {#each REGIONS as r (r.code)}
               <button class="chip" class:on={room.settings.regions.includes(r.code)} disabled={!isHost} onclick={() => toggleRegion(r.code)}>{r.nom}</button>
             {/each}
           </div>
-        </details>
+        </details>{/if}
       </section>
 
       {#if isHost}

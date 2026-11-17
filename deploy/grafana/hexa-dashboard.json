@@ -1200,6 +1200,11 @@
               "selector": "defi_invite",
               "text": "Invités (non classés)",
               "type": "number"
+            },
+            {
+              "selector": "defi_regions",
+              "text": "Défi Régions (comptes)",
+              "type": "number"
             }
           ]
         }

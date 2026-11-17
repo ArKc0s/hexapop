@@ -310,8 +310,8 @@ const routes: Record<string, Handler> = {
   "POST /api/push/activity": async (req, res) => {
     const b = await body(req);
     if (validEndpoint(b.endpoint) && /^\d{4}-\d{2}-\d{2}$/.test(String(b.day))) {
-      db.prepare("UPDATE push_subs SET last_played_day = ?, streak = ?, fading = ?, comeback_stage = 0 WHERE endpoint = ?")
-        .run(String(b.day), Math.min(10_000, Math.max(0, Number(b.streak) | 0)), Math.min(101, Math.max(0, Number(b.fading) | 0)), b.endpoint as string);
+      db.prepare("UPDATE push_subs SET last_played_day = ?, streak = ?, fading = ?, atlas = ?, comeback_stage = 0 WHERE endpoint = ?")
+        .run(String(b.day), Math.min(10_000, Math.max(0, Number(b.streak) | 0)), Math.min(101, Math.max(0, Number(b.fading) | 0)), isAtlas(b.atlas) ? b.atlas : null, b.endpoint as string);
     }
     json(res, 200, { ok: true });
   },
@@ -343,7 +343,7 @@ const routes: Record<string, Handler> = {
     json(res, 200, { ok: true, rank: r });
   },
 
-  "GET /api/hof": (_req, res) => json(res, 200, hallOfFame()),
+  "GET /api/hof": (req, res) => { const a = new URL(req.url ?? "/", "http://x").searchParams.get("atlas"); json(res, 200, hallOfFame(isAtlas(a) ? a : "france")); },
 
   /** Statistiques anonymes : une visite, ou une partie solo terminée (voir stats.ts). */
   "POST /api/stats/event": async (req, res) => {

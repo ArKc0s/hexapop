@@ -7,9 +7,10 @@
   import { previewSeance, startSeance } from "../lib/seance.svelte.ts";
 
   let { preset: linkPreset }: { preset?: string } = $props();
-  // Les pages de quiz (hexapop.app/quiz/…) parlent des départements : on y revient si besoin.
+  // Les pages de quiz (hexapop.app/quiz/…) ouvrent l'atlas dont elles parlent (« regions-… » : les régions).
   // svelte-ignore state_referenced_locally
-  if (linkPreset && world.id !== "france") profile.setAtlas("france");
+  const linkAtlas = linkPreset ? (linkPreset.startsWith("regions-") ? "regions" : "france") : null;
+  if (linkAtlas && world.id !== linkAtlas) profile.setAtlas(linkAtlas);
   /** Atlas Régions : ses propres indices, questions et zones (un atlas = un monde). */
   const R = world.id === "regions";
   /** Révisions dues : la même séance que celle proposée sur l'accueil. */
@@ -76,7 +77,7 @@
   const init = load();
   // Arrivée depuis une page de quiz (hexapop.app/quiz/…) : le raccourci correspondant, sur toute la France.
   // svelte-ignore state_referenced_locally
-  const fromLink = { carte: 0, numeros: 1, prefectures: 2, fiche: 3, expert: 4 }[linkPreset ?? ""];
+  const fromLink = (R ? { "regions-carte": 0, "regions-chefs-lieux": 1, "regions-fiche": 2, "regions-expert": 3 } : { carte: 0, numeros: 1, prefectures: 2, fiche: 3, expert: 4 } as Record<string, number>)[linkPreset ?? ""];
   if (fromLink !== undefined) { init.give = [...PRESETS[fromLink].give]; init.ask = [...PRESETS[fromLink].ask]; init.zone = "france"; history.replaceState(null, "", location.pathname + "#entrainement"); }
   let zone = $state<Zone>(init.zone);
   let region = $state(init.region);

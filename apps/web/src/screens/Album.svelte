@@ -1,6 +1,6 @@
 <script lang="ts">
   // L'Album : ta collection (médailles), la carte avec la fiche de chaque département (ex-Atlas), et tes succès.
-  import { BADGES, DEPARTEMENTS, groupsOf, medalCounts, medalOf, shortCode, starsOf, tarnished, type Facet } from "@hexa/game";
+  import { BADGES, DEPARTEMENTS, ITEM, groupsOf, medalCounts, medalOf, shortCode, starsOf, tarnished, type Facet } from "@hexa/game";
   import { world } from "../lib/world.svelte.ts";
   import Map, { type Mark } from "../lib/Map.svelte";
   import Fiche from "../lib/Fiche.svelte";
@@ -37,8 +37,10 @@
   const fmt = (t: number) => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   const starred = (c: string, f: Facet) => !!know[c]?.[f]?.s;
   /** Page de référence du département (générée par scripts/seo.ts, même adresse). */
+  const slug = (n: string) => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const depPage = (c: string) => { const d = DEPARTEMENTS.find((x) => x.code === c);
-    if (!d) return null; return `/france/departements/${c.toLowerCase()}-${d.nom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`; };
+    // Région : sa page (/france/regions/…).
+    if (!d) { const r = ITEM.get(c); return r ? `/france/regions/${slug(r.nom)}` : null; } return `/france/departements/${c.toLowerCase()}-${d.nom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`; };
 
   // Onglet Carte
   const fills = $derived(knowFills(know, now, A.id));

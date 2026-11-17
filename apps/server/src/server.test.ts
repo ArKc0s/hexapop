@@ -449,6 +449,23 @@ test("défi du jour par atlas : Régions à part, 5 régions, son classement", {
   c.send({ t: "leave" }); c.ws.close();
 });
 
+test("entre amis sur l'atlas Régions : questions de régions, niveaux par atlas", { timeout: 30_000 }, async () => {
+  const a = new Client(), b = new Client();
+  await Promise.all([a.open(), b.open()]);
+  a.send({ t: "hello", v: PROTOCOL_VERSION, name: "Ana", level: "expert", levels: { france: "expert", regions: "decouverte" } }); await a.wait("welcome");
+  b.send({ t: "hello", v: PROTOCOL_VERSION, name: "Bob", level: "normal", levels: { france: "normal", regions: "normal" } }); await b.wait("welcome");
+  a.send({ t: "create", kind: "duel", settings: { atlas: "regions", rounds: 5 } });
+  const code = (await a.wait("room")).room;
+  b.send({ t: "join", room: code });
+  const r = await a.wait("room", (m) => m.players.length === 2);
+  assert.equal(r.settings.atlas, "regions");
+  assert.equal(r.players.find((p) => p.name === "Ana")?.level, "decouverte", "son niveau dans les régions, pas dans les départements");
+  a.send({ t: "start" });
+  const q = (await a.wait("question", (m) => m.q.index === 0, 10_000)).q;
+  assert.ok(q.code.startsWith("R"), "une région");
+  a.send({ t: "leave" }); b.send({ t: "leave" }); a.ws.close(); b.ws.close();
+});
+
 test("stats en direct : présents par écran et salons en cours", async () => {
   const live = (id: string, sc: string) => fetch(BASE + "/api/stats/live", { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": "10.0.9.1" }, body: JSON.stringify({ id, s: sc }) });
   await live("onglet-aaaaaaaa", "seance"); await live("onglet-bbbbbbbb", "accueil"); await live("onglet-aaaaaaaa", "marathon"); await live("onglet-cccccccc", "pirate");

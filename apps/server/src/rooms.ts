@@ -30,6 +30,8 @@ export interface Conn {
   home: string | null;
   /** Niveau du joueur (d'après sa carte) : niveau par défaut en salon, plafond au défi du jour. */
   level: Level;
+  /** Niveau dans chaque atlas (salons sur un autre atlas que les départements). */
+  levels?: Partial<Record<AtlasId, Level>>;
   /** Invité : identifiant gardé par son navigateur (classement du défi), et son adresse (limite d'abus, jamais gardée). */
   guestId: string | null;
   ip: string;
@@ -69,6 +71,13 @@ export function fail(c: Conn, code: ErrorCode, message: string) {
   send(c, { t: "error", code, message });
 }
 
+/** Niveau d'un joueur dans un atlas (départements : son niveau habituel). */
+function levelIn(c: Conn, atlas: AtlasId | undefined): Level {
+  if (!atlas || atlas === "france") return c.level;
+  const l = c.levels?.[atlas];
+  return isLevel(l) ? l : "decouverte";
+}
+
 function clampSettings(s: Partial<RoomSettings>, base: RoomSettings): RoomSettings {
   const regions = Array.isArray(s.regions) ? s.regions.filter((r) => typeof r === "string" && DEPARTEMENTS.some((d) => d.region === r)).slice(0, 18) : base.regions;
   return {
@@ -77,6 +86,7 @@ function clampSettings(s: Partial<RoomSettings>, base: RoomSettings): RoomSettin
     rounds: Number.isInteger(s.rounds) ? Math.min(101, Math.max(5, s.rounds as number)) : base.rounds,
     regions,
     elimination: typeof s.elimination === "boolean" ? s.elimination : base.elimination,
+    ...(isAtlas(s.atlas) ? (s.atlas === "france" ? {} : { atlas: s.atlas }) : base.atlas ? { atlas: base.atlas } : {}),
     levels: s.levels && typeof s.levels === "object"
       ? Object.fromEntries(Object.entries(s.levels).filter(([k, v]) => typeof k === "string" && k.length < 40 && isLevel(v)).slice(0, 100)) as Record<string, Level>
       : base.levels,
@@ -152,7 +162,7 @@ export class Room {
     if (this.seats.size >= (this.kind === "daily" ? 1 : MAX_PLAYERS)) return "room_full";
     const host = this.seats.size === 0;
     // Handicap par défaut : chacun joue à son niveau (réglable ensuite par lui-même ou l'hôte).
-    if (this.kind !== "daily" && !this.settings.levels[c.playerId]) this.settings = { ...this.settings, levels: { ...this.settings.levels, [c.playerId]: c.level } };
+    if (this.kind !== "daily" && !this.settings.levels[c.playerId]) this.settings = { ...this.settings, levels: { ...this.settings.levels, [c.playerId]: levelIn(c, this.settings.atlas) } };
     this.seats.set(c.playerId, {
       info: { id: c.playerId, name: c.name, home: c.home ?? undefined, score: 0, connected: true, eliminated: false, answered: false, host, level: this.levelOf(c.playerId) },
       conn: c, userId: c.userId, guestId: c.guestId, results: [],
@@ -238,7 +248,14 @@ export class Room {
   updateSettings(c: Conn, s: Partial<RoomSettings>) {
     if (!this.isHost(c)) return fail(c, "not_host", "Seul l'hôte peut changer les règles.");
     if (this.phase !== "lobby") return fail(c, "already_started", "La partie a déjà commencé.");
+    const before = this.settings.atlas ?? "france";
     this.settings = clampSettings(s, this.settings);
+    // Changement d'atlas : chacun repart de son niveau dans ce nouvel atlas.
+    if ((this.settings.atlas ?? "france") !== before) {
+      const levels: Record<string, Level> = {};
+      for (const [id, seat] of this.seats) levels[id] = seat.conn ? levelIn(seat.conn, this.settings.atlas) : this.settings.level;
+      this.settings = { ...this.settings, levels, regions: [] };
+    }
     this.syncLevels();
     this.broadcastRoom();
   }
@@ -246,10 +263,11 @@ export class Room {
   start(c: Conn | null) {
     if (c && !this.isHost(c)) return fail(c, "not_host", "Seul l'hôte peut lancer la partie.");
     if (this.phase !== "lobby") return;
-    const codes = this.settings.regions.length ? DEPARTEMENTS.filter((d) => this.settings.regions.includes(d.region)).map((d) => d.code) : undefined;
+    const atlas = this.settings.atlas ?? "france";
+    const codes = atlas === "france" && this.settings.regions.length ? DEPARTEMENTS.filter((d) => this.settings.regions.includes(d.region)).map((d) => d.code) : undefined;
     const cfg = this.kind === "daily" && this.day
-      ? dailyConfig(this.day, this.settings.level, this.settings.atlas ?? "france")
-      : { seed: randomSeed(), level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes };
+      ? dailyConfig(this.day, this.settings.level, atlas)
+      : { seed: randomSeed(), atlas, level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes };
     if (this.kind === "daily") {
       this.questions = makeGame(cfg);
       this.byLevel = {};

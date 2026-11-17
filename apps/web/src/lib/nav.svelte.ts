@@ -46,7 +46,7 @@ export function screenFromHash(): Screen {
   for (const [doc, v] of Object.entries(LEGAL)) if (h === v) return { name: "legal", doc: doc as keyof typeof LEGAL };
   for (const [name, v] of Object.entries(SIMPLE)) if (h === v) return { name } as Screen;
   // Liens des pages de quiz et de région (hexapop.app/france/…) : un quiz réglé, ou la région à jouer.
-  const ent = /^#entrainement=(\w+)$/.exec(h);
+  const ent = /^#entrainement=([\w-]+)$/.exec(h);
   if (ent) return { name: "training", preset: ent[1] };
   const reg = /^#region=(\w+)$/.exec(h);
   if (reg) { pendingRegion = reg[1].toUpperCase(); return { name: "home" }; }

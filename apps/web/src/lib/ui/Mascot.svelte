@@ -1,11 +1,15 @@
 <script lang="ts">
   // Hexa, la mascotte : un hexagone (l'Hexagone !) rose à ombre bleue, trois humeurs.
+  // Hexa qui voyage (docs/atlas.md) : une tenue par atlas, portée d'office dans ce monde. Régions : un bob d'explorateur.
+  import { world } from "../world.svelte.ts";
   export type Mood = "happy" | "think" | "sad" | "wow";
-  let { mood = "happy", size = 64 }: { mood?: Mood; size?: number } = $props();
+  export type Outfit = "none" | "bob";
+  let { mood = "happy", size = 64, outfit }: { mood?: Mood; size?: number; outfit?: Outfit } = $props();
+  const wear = $derived<Outfit>(outfit ?? (world.id === "regions" ? "bob" : "none"));
   const HEX = "M36 6 L60 19 Q64 21 64 26 L64 50 Q64 55 60 57 L36 70 Q32 72 28 70 L4 57 Q0 55 0 50 L0 26 Q0 21 4 19 L28 6 Q32 4 36 6Z";
 </script>
 
-<svg class="mascot {mood}" width={size} height={size} viewBox="-4 -2 76 80" aria-hidden="true">
+<svg class="mascot {mood}" width={size} height={size} viewBox={wear === "none" ? "-4 -2 76 80" : "-9 -12 86 90"} aria-hidden="true">
   <path d={HEX} transform="translate(4 4)" fill="var(--blue)" />
   <path d={HEX} fill="var(--pink)" />
   <ellipse cx="22" cy="34" rx="7" ry="8" fill="#fff" /><ellipse cx="42" cy="34" rx="7" ry="8" fill="#fff" />
@@ -24,6 +28,15 @@
   {:else if mood === "sad"}
     <path d="M25 51 Q32 44 39 51" fill="none" stroke="var(--ink)" stroke-width="3.2" stroke-linecap="round" />
     <path d="M16 23 L27 27 M48 23 L37 27" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round" />
+  {/if}
+  {#if wear === "bob"}
+    <!-- Bob d'explorateur, un peu de travers -->
+    <g transform="rotate(-8 32 6)">
+      <ellipse cx="32" cy="9" rx="27" ry="5.5" fill="var(--yellow-d)" />
+      <path d="M13 9 Q14 -8 32 -8 Q50 -8 51 9 Z" fill="var(--yellow)" />
+      <path d="M13.6 3.5 Q32 7 50.4 3.5 L51 9 Q32 12 13 9 Z" fill="var(--blue)" />
+      <ellipse cx="32" cy="7.5" rx="27" ry="4" fill="none" stroke="var(--yellow-d)" stroke-width="1.6" />
+    </g>
   {/if}
 </svg>
 

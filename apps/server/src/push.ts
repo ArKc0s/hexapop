@@ -1,3 +1,4 @@
+import { ATLASES } from "@hexa/game";
 // Notifications (Web Push) : rappel du défi, série en danger, retour en douceur.
 // Opt-in par appareil, réglable par type, une notification par jour au maximum.
 import { life } from "./life.ts";
@@ -41,7 +42,13 @@ export function cleanPrefs(p: unknown): PushPrefs {
   return { daily: o.daily !== false, hour, streak: o.streak !== false, comeback: o.comeback !== false };
 }
 
-interface Sub { endpoint: string; p256dh: string; auth: string; prefs: string; last_played_day: string | null; streak: number; fading: number; comeback_stage: number; last_sent_day: string | null }
+// Atlas que le joueur a ouvert en dernier (les rappels parlent de ses régions, ou de ses départements).
+{
+  const cols = (db.prepare("PRAGMA table_info(push_subs)").all() as { name: string }[]).map((c) => c.name);
+  if (!cols.includes("atlas")) db.exec("ALTER TABLE push_subs ADD COLUMN atlas TEXT");
+}
+
+interface Sub { atlas?: string | null; endpoint: string; p256dh: string; auth: string; prefs: string; last_played_day: string | null; streak: number; fading: number; comeback_stage: number; last_sent_day: string | null }
 
 /** Heure et jour à Paris. */
 function parisNow(t = now()) {
@@ -53,7 +60,10 @@ const daysBetween = (a: string, b: string) => Math.round((Date.parse(b) - Date.p
 export interface Message { title: string; body: string; url: string; tag: string }
 
 /** Quelle notification envoyer maintenant à cet appareil (ou aucune). Pure : testable. */
-export function decide(s: Pick<Sub, "last_played_day" | "streak" | "fading" | "comeback_stage" | "last_sent_day">, prefs: PushPrefs, day: string, hour: number): { msg: Message; stage?: number } | null {
+export function decide(s: Pick<Sub, "last_played_day" | "streak" | "fading" | "comeback_stage" | "last_sent_day"> & { atlas?: string | null }, prefs: PushPrefs, day: string, hour: number): { msg: Message; stage?: number } | null {
+  // Les mots de l'atlas du joueur (un atlas = un monde).
+  const A = s.atlas === "regions" ? ATLASES.regions : ATLASES.france;
+  const what = `${A.dailyRounds} ${A.des}`;
   if (s.last_sent_day === day) return null; // une par jour au maximum
   const played = s.last_played_day;
   if (played === day) return null; // déjà joué aujourd'hui : on laisse tranquille
@@ -61,18 +71,18 @@ export function decide(s: Pick<Sub, "last_played_day" | "streak" | "fading" | "c
   const n = dailyNumber(day);
   // Série en danger : à partir de 20 h, si joué hier et série d'au moins 3 jours
   if (prefs.streak && idle === 1 && s.streak >= 3) {
-    if (hour >= 20) return { msg: { title: `Ta série de ${s.streak} jours s'arrête à minuit 🔥`, body: `Le défi n° ${n} t'attend : 10 départements, un seul essai.`, url: "/#defi", tag: "serie" } };
+    if (hour >= 20) return { msg: { title: `Ta série de ${s.streak} jours s'arrête à minuit 🔥`, body: `Le défi n° ${n} t'attend : ${what}, un seul essai.`, url: "/#defi", tag: "serie" } };
     return null; // on attend 20 h plutôt que d'envoyer le rappel du défi
   }
   // Rappel du défi : à l'heure choisie, pour les joueurs actifs (venus dans les 3 derniers jours)
   if (prefs.daily && idle <= 3 && hour >= prefs.hour) {
-    return { msg: { title: `Le défi n° ${n} est arrivé 🎯`, body: "10 départements, les mêmes pour tout le monde, un seul essai.", url: "/#defi", tag: "defi" } };
+    return { msg: { title: `Le défi n° ${n} est arrivé 🎯`, body: `${what}, les mêmes pour tout le monde, un seul essai.`, url: "/#defi", tag: "defi" } };
   }
   // Retour en douceur : après 4 jours, puis 10 jours, puis plus rien
   if (prefs.comeback && hour >= prefs.hour && played) {
     const stage = idle >= 10 ? 2 : idle >= 4 ? 1 : 0;
     if (stage > s.comeback_stage) {
-      const body = s.fading >= 3 ? `${s.fading} départements commencent à s'effacer de ta carte. Une révision de 2 minutes ?` : "Ta carte de France t'attend. Une petite partie ?";
+      const body = s.fading >= 3 ? `${s.fading} ${A.des} commencent à s'effacer de ta carte. Une révision de 2 minutes ?` : "Ta carte de France t'attend. Une petite partie ?";
       return { msg: { title: stage === 1 ? "Ça fait un moment ! 👋" : "Hexa s'ennuie sans toi 🗺️", body, url: "/", tag: "retour" }, stage };
     }
   }
