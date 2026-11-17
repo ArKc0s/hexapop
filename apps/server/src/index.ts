@@ -30,7 +30,7 @@ const SECURITY_HEADERS = {
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml",
   ".json": "application/json", ".png": "image/png", ".webmanifest": "application/manifest+json", ".woff2": "font/woff2",
-  ".xml": "application/xml; charset=utf-8", ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".ico": "image/x-icon",
 };
 function serveStatic(url: string, res: import("node:http").ServerResponse) {
   const path = decodeURIComponent(url.split("?")[0]);

@@ -96,6 +96,7 @@ function layout(p: Page): string {
 <meta name="description" content="${esc(p.description)}">
 <link rel="canonical" href="${url}">
 <meta name="theme-color" content="#f3eee4">
+<link rel="icon" href="/favicon.ico" sizes="32x32 48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/seo/fonts/gabarito-800.woff2" as="font" type="font/woff2" crossorigin>
