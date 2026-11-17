@@ -1,6 +1,6 @@
 // API HTTP JSON sous /api. Authentification : cookie HttpOnly (web) ou en-tête Bearer (mobile).
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { DEP, mergeProfiles, sanitizeProfile, type Progress } from "@hexa/game";
+import { DEP, isLevel, mergeProfiles, sanitizeProfile, type Progress } from "@hexa/game";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
 import {
@@ -304,7 +304,7 @@ const routes: Record<string, Handler> = {
 
   "GET /api/daily": (_req, res, user) => {
     const day = today();
-    const mine = user ? db.prepare("SELECT points, accuracy, elapsed_ms AS elapsedMs, grid, finished FROM daily_results WHERE day = ? AND user_id = ?").get(day, user.id) : null;
+    const mine = user ? db.prepare("SELECT level, points, accuracy, elapsed_ms AS elapsedMs, grid, finished FROM daily_results WHERE day = ? AND user_id = ?").get(day, user.id) : null;
     json(res, 200, { day, number: dailyNumber(day), played: !!mine, mine: mine ?? null, rank: user ? rankOf(day, user.id) : null });
   },
 
@@ -321,7 +321,8 @@ const routes: Record<string, Handler> = {
   "GET /api/daily/leaderboard": (req, res) => {
     const url = new URL(req.url ?? "/", "http://x");
     const day = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("day") ?? "") ? url.searchParams.get("day")! : today();
-    json(res, 200, leaderboard(day));
+    const level = url.searchParams.get("level");
+    json(res, 200, leaderboard(day, isLevel(level) ? level : "normal"));
   },
 };
 

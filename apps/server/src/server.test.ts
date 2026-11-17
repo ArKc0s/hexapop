@@ -334,3 +334,54 @@ test("défi joué en invité, rattaché au compte après inscription (une seule 
   const me = await (await fetch(BASE + "/api/daily", { headers: { authorization: `Bearer ${token}` } })).json();
   assert.equal(me.played, true);
 });
+
+test("défi du jour par niveau : mêmes départements, questions et classement propres au niveau", { timeout: 60_000 }, async () => {
+  const r = await post("/api/auth/register", { email: "decouverte@example.com", pseudo: "Novice", password: "motdepasse", home: "29" });
+  const { token } = await r.json();
+  const c = new Client(token);
+  await c.open();
+  // Profil vide : niveau Découverte ; demander Expert est ramené à son niveau (jamais au-dessus).
+  c.send({ t: "hello", v: PROTOCOL_VERSION, level: "decouverte" });
+  await c.wait("welcome");
+  c.send({ t: "create", kind: "daily", settings: { level: "expert" } });
+  for (let i = 0; i < 10; i++) {
+    const q = (await c.wait("question", (m) => m.q.index === i)).q;
+    assert.ok(q.hint === "nom" || q.hint === "carte", "Découverte : jamais deux inconnues");
+    assert.ok(q.choices, "propositions faciles");
+    if (q.fields.includes("carte")) assert.equal(q.mapChoices?.length, 4, "4 départements surlignés");
+    c.send({ t: "answer", index: i, answer: perfect(q) });
+    await c.wait("round", (m) => m.summary.index === i);
+    c.send({ t: "next" });
+  }
+  const end = await c.wait("end");
+  assert.equal(end.daily?.level, "decouverte");
+  assert.equal(end.daily?.rank, 1, "premier de son niveau");
+  const lbD = await (await fetch(BASE + "/api/daily/leaderboard?level=decouverte")).json();
+  assert.ok(lbD.top.some((p: { name: string }) => p.name === "Novice"));
+  assert.equal(lbD.counts.decouverte, 1);
+  const lbC = await (await fetch(BASE + "/api/daily/leaderboard?level=normal")).json();
+  assert.ok(!lbC.top.some((p: { name: string }) => p.name === "Novice"), "pas dans le classement Confirmé");
+  const me = await (await fetch(BASE + "/api/daily", { headers: { authorization: `Bearer ${token}` } })).json();
+  assert.equal(me.mine.level, "decouverte");
+  c.ws.close();
+});
+
+test("salon : chacun joue à son niveau par défaut (handicap), modifiable", { timeout: 30_000 }, async () => {
+  const a = new Client(), b = new Client();
+  await a.open(); await b.open();
+  a.send({ t: "hello", v: PROTOCOL_VERSION, name: "Debutant", level: "decouverte" });
+  b.send({ t: "hello", v: PROTOCOL_VERSION, name: "Pro", level: "expert" });
+  await a.wait("welcome"); await b.wait("welcome");
+  a.send({ t: "create", kind: "duel" });
+  const code = (await a.wait("room")).room;
+  b.send({ t: "join", room: code });
+  const room = await a.wait("room", (m) => m.players.length === 2);
+  const lv = Object.fromEntries(room.players.map((p: { name: string; level: string }) => [p.name, p.level]));
+  assert.deepEqual(lv, { Debutant: "decouverte", Pro: "expert" });
+  a.send({ t: "start" });
+  const qa = (await a.wait("question")).q, qb = (await b.wait("question")).q;
+  assert.equal(qa.code, qb.code, "même département pour tous");
+  assert.ok(qa.hint === "nom" || qa.hint === "carte");
+  assert.ok(qb.fields.length >= qa.fields.length);
+  a.ws.close(); b.ws.close();
+});

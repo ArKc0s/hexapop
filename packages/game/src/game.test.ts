@@ -120,3 +120,19 @@ test("le défi et les salons ne changent pas (tirages identiques sans switchable
   assert.ok(a.every((q) => !q.mapChoices));
   assert.deepEqual(a.map((q) => q.code), makeGame({ seed: 42, level: "normal", input: "choix", rounds: 10 }).map((q) => q.code));
 });
+
+test("Découverte : mêmes départements, jamais deux inconnues, propositions faciles", () => {
+  const base = { seed: 4242, input: "libre" as const, rounds: 10 };
+  const normal = makeGame({ ...base, level: "normal" });
+  const decouverte = makeGame({ ...base, level: "decouverte" });
+  const expert = makeGame({ ...base, level: "expert" });
+  assert.deepEqual(decouverte.map((q) => q.code), normal.map((q) => q.code), "les mêmes 10 départements pour tout le monde");
+  assert.deepEqual(expert.map((q) => q.code), normal.map((q) => q.code));
+  for (const q of decouverte) {
+    assert.ok(q.hint === "nom" || q.hint === "carte", "indice connaissable");
+    assert.ok(q.easy && q.choices && Object.keys(q.choices).length > 0);
+    if (q.fields.includes("carte")) assert.equal(q.mapChoices?.length, 4);
+    assert.ok(!q.fields.includes("sousPrefectures"));
+  }
+  assert.equal(decouverte[0].durationMs, 20_000);
+});

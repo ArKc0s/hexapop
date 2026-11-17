@@ -63,6 +63,10 @@ CREATE INDEX IF NOT EXISTS daily_rank ON daily_results(day, points DESC, elapsed
 // Migrations légères
 const userCols = (db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name);
 if (!userCols.includes("last_seen_at")) db.exec("ALTER TABLE users ADD COLUMN last_seen_at INTEGER");
+// Défi du jour par niveau (étape 4) : les anciens résultats étaient tous en Confirmé (« normal »).
+const dailyCols = (db.prepare("PRAGMA table_info(daily_results)").all() as { name: string }[]).map((c) => c.name);
+if (!dailyCols.includes("level")) db.exec("ALTER TABLE daily_results ADD COLUMN level TEXT NOT NULL DEFAULT 'normal'");
+db.exec("CREATE INDEX IF NOT EXISTS daily_rank_level ON daily_results(day, level, points DESC, elapsed_ms ASC)");
 
 export const now = () => Date.now();
 

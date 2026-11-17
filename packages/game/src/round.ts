@@ -2,7 +2,11 @@ import { DEPARTEMENTS, DEP, dep, type Departement } from "./data.ts";
 import { matchSet, sameCode, sameName } from "./answer.ts";
 import { rng, shuffle, type Rng } from "./random.ts";
 
-export type Level = "normal" | "expert";
+/**
+ * Difficulté d'une partie. « decouverte » : indices nom ou carte seulement (jamais deux inconnues), propositions
+ * faciles et carte à 4 départements surlignés. « normal » (Confirmé) : tous les indices. « expert » : + sous-préfectures et voisins.
+ */
+export type Level = "decouverte" | "normal" | "expert";
 export type InputMode = "choix" | "libre";
 /** Ce qu'on montre au joueur pour lancer le tour. */
 export type Hint = "nom" | "numero" | "carte" | "prefecture";
@@ -78,7 +82,7 @@ export interface GameConfig {
 }
 
 export const POINTS_PER_FIELD = 100;
-export const DEFAULT_DURATION: Record<Level, number> = { normal: 20_000, expert: 60_000 };
+export const DEFAULT_DURATION: Record<Level, number> = { decouverte: 20_000, normal: 20_000, expert: 60_000 };
 
 /** Champs demandés pour un indice donné ; avec `ask`, seulement ceux-là (jamais l'indice lui-même). */
 export function fieldsFor(d: Departement, hint: Hint, level: Level, ask?: Field[]): Field[] {
@@ -143,7 +147,10 @@ export function makeGame(cfg: GameConfig): Question[] {
   }
   const pool = cfg.codes ?? DEPARTEMENTS.map((d) => d.code);
   const codes = shuffle(pool, r).slice(0, cfg.rounds ?? pool.length);
-  const hints = cfg.hints ?? ["nom", "numero", "carte"];
+  // Découverte : on donne toujours quelque chose qu'on peut connaître (le nom, ou le département qui clignote).
+  const easy = cfg.level === "decouverte";
+  const known = (cfg.hints ?? ["nom", "carte"]).filter((h) => h === "nom" || h === "carte");
+  const hints = easy ? (known.length ? known : ["nom", "carte"] as Hint[]) : cfg.hints ?? ["nom", "numero", "carte"];
   const duration = cfg.durationMs ?? DEFAULT_DURATION[cfg.level];
   return codes.map((code, index) => {
     const d = dep(code);
@@ -154,7 +161,13 @@ export function makeGame(cfg: GameConfig): Question[] {
     let fields = fieldsFor(d, hint, cfg.level, cfg.ask);
     if (!fields.length) fields = fieldsFor(d, hint, cfg.level);
     const q: Question = { index, code, hint, fields, durationMs: duration };
-    if (cfg.input === "choix" || cfg.switchable) {
+    if (easy) {
+      // Propositions faciles (leurres lointains), y compris sur la carte : 4 départements surlignés.
+      const others = easyDistractors(d, r);
+      q.choices = makeChoices(d, fields, others, r);
+      if (fields.includes("carte")) q.mapChoices = shuffle([d.code, ...others.map((x) => x.code)], r);
+      q.easy = true;
+    } else if (cfg.input === "choix" || cfg.switchable) {
       const others = distractors(d, r);
       q.choices = makeChoices(d, fields, others, r);
       // Réservé à l'entraînement : ne change pas les tirages du défi du jour ni des salons.

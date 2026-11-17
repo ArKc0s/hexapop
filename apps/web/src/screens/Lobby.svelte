@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { LEVELS, LEVEL_NAMES } from "@hexa/game";
   import { REGIONS, type RoomSettings } from "@hexa/game";
   import { live } from "../lib/socket.svelte.ts";
   import { session } from "../lib/api.svelte.ts";
@@ -95,21 +96,17 @@
             <li class:me={p.id === live.you}>
               <span class="av">{p.name.slice(0, 1).toUpperCase()}</span><span class="pn">{p.name}{#if p.home}<small> · {p.home}</small>{/if}</span>{#if p.host}<span class="host">hôte</span>{/if}
               <span class="lv seg" role="group" aria-label="Niveau de {p.name}">
-                <button class:on={p.level === "normal"} disabled={!canSet} onclick={() => live.send({ t: "level", player: p.id, level: "normal" })}>Normal</button>
-                <button class:on={p.level === "expert"} disabled={!canSet} onclick={() => live.send({ t: "level", player: p.id, level: "expert" })}>Expert</button>
+                {#each LEVELS as l (l)}<button class:on={p.level === l} disabled={!canSet} onclick={() => live.send({ t: "level", player: p.id, level: l })}>{LEVEL_NAMES[l]}</button>{/each}
               </span>
             </li>
           {/each}
         </ul>
         {#if room.players.length < 2}<p class="hint" style="margin-top:8px">En attente d'au moins un autre joueur…</p>{/if}
-        <p class="hint" style="margin-top:8px">Handicap : chacun peut jouer à son niveau. En expert, on donne en plus les sous-préfectures et les voisins, dans le même temps. Les points comptent le pourcentage de bonnes réponses, donc personne n'est avantagé.</p>
+        <p class="hint" style="margin-top:8px">Chacun joue à son niveau, réglé d'après sa carte (modifiable). <b>Découverte</b> : on donne le nom ou la carte, avec des propositions faciles. <b>Confirmé</b> : tous les indices. <b>Expert</b> : en plus les sous-préfectures et les voisins. Les points comptent le pourcentage de bonnes réponses : un Découverte peut battre un Expert.</p>
       </section>
 
       <section class="card rules">
         <h2 class="k">Règles{isHost ? "" : " · choisies par l'hôte"}</h2>
-        <div class="rule"><span>Niveau par défaut</span><div class="seg">
-          <button class:on={room.settings.level === "normal"} disabled={!isHost} onclick={() => set({ level: "normal" })}>Normal</button>
-          <button class:on={room.settings.level === "expert"} disabled={!isHost} onclick={() => set({ level: "expert" })}>Expert</button></div></div>
         <div class="rule"><span>Réponses</span><div class="seg">
           <button class:on={room.settings.input === "libre"} disabled={!isHost} onclick={() => set({ input: "libre" })}>Au clavier</button>
           <button class:on={room.settings.input === "choix"} disabled={!isHost} onclick={() => set({ input: "choix" })}>4 choix</button></div></div>
@@ -165,6 +162,10 @@
   .players li { display: flex; align-items: center; gap: 8px; border-radius: 16px; padding: 6px 6px 6px 6px; font-weight: 800; background: var(--bg); }
   .players .pn { flex: 1; }
   .lv button { padding: 6px 10px; font-size: 13px; }
+  .av { flex: none; }
+  .players li { flex-wrap: wrap; }
+  /* Écran étroit : le choix du niveau passe sous le nom, sur toute la largeur */
+  @media (max-width: 600px) { .players .lv { width: 100%; } .players .lv button { flex: 1; } }
   .players li.me { background: #fff4c2; }
   .players small { color: var(--soft); font-weight: 700; }
   .host { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; background: var(--ink); color: #fff; border-radius: 999px; padding: 2px 7px; }

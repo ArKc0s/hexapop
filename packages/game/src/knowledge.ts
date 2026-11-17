@@ -2,7 +2,7 @@
 // (carte, numéro, préfecture, puis en expert sous-préfectures et voisins).
 // Voir docs/conception.md, sections 2 et 4.
 import { DEPARTEMENTS, DEP } from "./data.ts";
-import type { Field, Hint, RoundResult } from "./round.ts";
+import type { Field, Hint, Level, RoundResult } from "./round.ts";
 import { INTERVALS, type Progress } from "./srs.ts";
 
 export type Facet = "carte" | "numero" | "prefecture" | "sousPrefectures" | "limitrophes";
@@ -129,6 +129,14 @@ export const PLAYER_LEVELS: Record<PlayerLevel, { nom: string; min: number }> = 
   confirme: { nom: "Confirmé", min: 50 },
   expert: { nom: "Expert", min: 90 },
 };
+/** Difficulté de jeu (défi, salons) correspondant à un niveau de joueur. */
+export const LEVEL_OF: Record<PlayerLevel, Level> = { decouverte: "decouverte", confirme: "normal", expert: "expert" };
+/** Nom affiché d'une difficulté de jeu. */
+export const LEVEL_NAMES: Record<Level, string> = { decouverte: "Découverte", normal: "Confirmé", expert: "Expert" };
+export const LEVELS: readonly Level[] = ["decouverte", "normal", "expert"];
+/** Le joueur peut jouer à son niveau ou en dessous, jamais au-dessus (conception 4.3). */
+export const levelAllowed = (wanted: Level, max: Level) => LEVELS.indexOf(wanted) <= LEVELS.indexOf(max);
+export const isLevel = (v: unknown): v is Level => v === "decouverte" || v === "normal" || v === "expert";
 export function playerLevel(k: Knowledge): PlayerLevel {
   const pct = taFrance(k);
   return pct >= 90 ? "expert" : pct >= 50 ? "confirme" : "decouverte";

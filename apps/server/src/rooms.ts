@@ -6,7 +6,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import {
   COUNTDOWN_MS, DEFAULT_SETTINGS, DUEL_HP, REACTIONS, duelDamage, DEFAULT_DURATION, TEAM_LIVES, TEAM_LIFE_THRESHOLD, roomPoints, teamStars,
-  type Level, type TeamState, DEPARTEMENTS, MAX_PLAYERS, REVIEW_MS, grade, makeGame, randomSeed,
+  type Level, type TeamState, isLevel, levelAllowed, DEPARTEMENTS, MAX_PLAYERS, REVIEW_MS, grade, makeGame, randomSeed,
   type Answer, type ClientMsg, type DailyOutcome, type ErrorCode, type Phase, type PlayerInfo, type Question,
   type QuestionPayload, type RoomKind, type RoomSettings, type RoundResult, type ServerMsg,
 } from "@hexa/game";
@@ -25,6 +25,8 @@ export interface Conn {
   name: string;
   userId: number | null;
   home: string | null;
+  /** Niveau du joueur (d'après sa carte) : niveau par défaut en salon, plafond au défi du jour. */
+  level: Level;
   rttMs: number;
   lastReact?: number;
   room: Room | null;
@@ -58,13 +60,13 @@ export function fail(c: Conn, code: ErrorCode, message: string) {
 function clampSettings(s: Partial<RoomSettings>, base: RoomSettings): RoomSettings {
   const regions = Array.isArray(s.regions) ? s.regions.filter((r) => typeof r === "string" && DEPARTEMENTS.some((d) => d.region === r)).slice(0, 18) : base.regions;
   return {
-    level: s.level === "expert" || s.level === "normal" ? s.level : base.level,
+    level: isLevel(s.level) ? s.level : base.level,
     input: s.input === "choix" || s.input === "libre" ? s.input : base.input,
     rounds: Number.isInteger(s.rounds) ? Math.min(101, Math.max(5, s.rounds as number)) : base.rounds,
     regions,
     elimination: typeof s.elimination === "boolean" ? s.elimination : base.elimination,
     levels: s.levels && typeof s.levels === "object"
-      ? Object.fromEntries(Object.entries(s.levels).filter(([k, v]) => typeof k === "string" && k.length < 40 && (v === "normal" || v === "expert")).slice(0, 100)) as Record<string, Level>
+      ? Object.fromEntries(Object.entries(s.levels).filter(([k, v]) => typeof k === "string" && k.length < 40 && isLevel(v)).slice(0, 100)) as Record<string, Level>
       : base.levels,
   };
 }
@@ -106,7 +108,7 @@ export class Room {
   syncLevels() { for (const s of this.seats.values()) s.info.level = this.levelOf(s.info.id); }
 
   setLevel(c: Conn, player: string, level: unknown) {
-    if (this.phase !== "lobby" || (level !== "normal" && level !== "expert") || !this.seats.has(player)) return;
+    if (this.phase !== "lobby" || !isLevel(level) || !this.seats.has(player)) return;
     if (player !== c.playerId && !this.isHost(c)) return fail(c, "not_host", "Seul l'hôte peut changer le niveau d'un autre joueur.");
     this.settings = { ...this.settings, levels: { ...this.settings.levels, [player]: level } };
     this.syncLevels();
@@ -137,6 +139,8 @@ export class Room {
     if (this.phase !== "lobby") return "already_started";
     if (this.seats.size >= (this.kind === "daily" ? 1 : MAX_PLAYERS)) return "room_full";
     const host = this.seats.size === 0;
+    // Handicap par défaut : chacun joue à son niveau (réglable ensuite par lui-même ou l'hôte).
+    if (this.kind !== "daily" && !this.settings.levels[c.playerId]) this.settings = { ...this.settings, levels: { ...this.settings.levels, [c.playerId]: c.level } };
     this.seats.set(c.playerId, {
       info: { id: c.playerId, name: c.name, home: c.home ?? undefined, score: 0, connected: true, eliminated: false, answered: false, host, level: this.levelOf(c.playerId) },
       conn: c, userId: c.userId, results: [],
@@ -223,7 +227,7 @@ export class Room {
     if (this.phase !== "lobby") return;
     const codes = this.settings.regions.length ? DEPARTEMENTS.filter((d) => this.settings.regions.includes(d.region)).map((d) => d.code) : undefined;
     const cfg = this.kind === "daily" && this.day
-      ? dailyConfig(this.day)
+      ? dailyConfig(this.day, this.settings.level)
       : { seed: randomSeed(), level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes };
     if (this.kind === "daily") {
       this.questions = makeGame(cfg);
@@ -251,7 +255,7 @@ export class Room {
   }
 
   private payload(q: Question): QuestionPayload {
-    return { index: q.index, total: this.questions.length, code: q.code, hint: q.hint, fields: q.fields, choices: q.choices, durationMs: q.durationMs, startsAt: this.startsAt, endsAt: this.endsAt };
+    return { index: q.index, total: this.questions.length, code: q.code, hint: q.hint, fields: q.fields, choices: q.choices, mapChoices: q.mapChoices, durationMs: q.durationMs, startsAt: this.startsAt, endsAt: this.endsAt };
   }
 
   private ask(i: number) {
@@ -385,8 +389,8 @@ export class Room {
         saved = !!rank;
         rank ??= rankOf(this.day, seat.userId);
       }
-      const daily: DailyOutcome = { day: this.day, number: dailyNumber(this.day), points, accuracy, elapsedMs, grid, saved, rank: rank?.rank, players: rank?.players };
-      if (!seat?.userId) daily.claim = newClaim({ day: this.day, points, accuracy, elapsedMs, grid });
+      const daily: DailyOutcome = { day: this.day, number: dailyNumber(this.day), level: this.settings.level, points, accuracy, elapsedMs, grid, saved, rank: rank?.rank, players: rank?.players };
+      if (!seat?.userId) daily.claim = newClaim({ day: this.day, level: this.settings.level, points, accuracy, elapsedMs, grid });
       this.broadcast({ t: "end", ranking, daily });
     } else if (this.kind === "coop") {
       this.broadcast({ t: "end", ranking, team: { ...this.team, stars: teamStars(this.team.accuracy, this.team.lives) } });
@@ -412,8 +416,11 @@ export function handle(c: Conn, msg: ClientMsg) {
       c.room?.leave(c);
       if (msg.kind === "daily") {
         const day = today();
-        if (c.userId && !startDaily(day, c.userId)) return fail(c, "daily_done", "Tu as déjà joué le défi du jour. Rendez-vous demain !");
-        const room = new Room("daily", { ...DEFAULT_SETTINGS, rounds: 10 });
+        // Son niveau ou en dessous, jamais au-dessus (conception 4.3).
+        const wanted = msg.settings?.level;
+        const level: Level = isLevel(wanted) && levelAllowed(wanted, c.level) ? wanted : c.level;
+        if (c.userId && !startDaily(day, c.userId, level)) return fail(c, "daily_done", "Tu as déjà joué le défi du jour. Rendez-vous demain !");
+        const room = new Room("daily", { ...DEFAULT_SETTINGS, level, rounds: 10 });
         room.day = day;
         room.add(c);
         return room.start(null);

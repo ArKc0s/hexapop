@@ -2,12 +2,13 @@ import { createServer } from "node:http";
 import { createReadStream, statSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
-import { PROTOCOL_VERSION, type ClientMsg } from "@hexa/game";
+import { PROTOCOL_VERSION, isLevel, type ClientMsg } from "@hexa/game";
 import { config } from "./config.ts";
 import { handleApi, sessionToken, clientIp } from "./api.ts";
 import { userFromSession, rateLimit } from "./auth.ts";
 import { handle, newPlayerId, send, fail, type Conn } from "./rooms.ts";
 import { purge } from "./db.ts";
+import { accountLevel, higherLevel } from "./daily.ts";
 import { startPushScheduler } from "./push.ts";
 startPushScheduler();
 
@@ -106,7 +107,10 @@ function onConnection(ws: WebSocket, cookieToken: string | undefined) {
         resume = newPlayerId() + newPlayerId();
         resumeIds.set(resume, playerId);
       }
-      conn = { ws, playerId, name: user?.pseudo ?? guestName(msg.name), userId: user?.id ?? null, home: user?.home_dep ?? null, rttMs: 0, room: null, spectating: false };
+      // Sans niveau (ancien client) : Confirmé, comme avant la v1.6.
+      const own = isLevel(msg.level) ? msg.level : "normal";
+      const level = user ? higherLevel(own, accountLevel(user.id)) : own;
+      conn = { ws, playerId, name: user?.pseudo ?? guestName(msg.name), userId: user?.id ?? null, home: user?.home_dep ?? null, level, rttMs: 0, room: null, spectating: false };
       send(conn, { t: "welcome", you: playerId, name: conn.name, resume, serverNow: Date.now(), account: !!user });
       if (msg.room) handle(conn, { t: "join", room: msg.room });
       return;

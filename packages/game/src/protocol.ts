@@ -47,6 +47,8 @@ export interface QuestionPayload {
   hint: Hint;
   fields: Field[];
   choices?: Partial<Record<ChoiceField, string[]>>;
+  /** Découverte : 4 départements surlignés pour placer sur la carte. */
+  mapChoices?: string[];
   durationMs: number;
   /** Début et fin du tour, horloge serveur. */
   startsAt: number;
@@ -68,7 +70,7 @@ export interface RoundSummary {
 
 // ---------- client -> serveur ----------
 export type ClientMsg =
-  | { t: "hello"; v: number; token?: string; name?: string; room?: string; resume?: string }
+  | { t: "hello"; v: number; token?: string; name?: string; room?: string; resume?: string; /** Niveau du joueur d'après sa carte (handicap par défaut en salon). */ level?: Level }
   | { t: "ping"; c: number }
   | { t: "create"; kind: RoomKind; settings?: Partial<RoomSettings> }
   | { t: "join"; room: string; spectate?: boolean }
@@ -127,6 +129,8 @@ export const duelDamage = (diff: number, roundIndex: number) => Math.round(Math.
 export interface DailyOutcome {
   day: string;
   number: number;
+  /** Niveau joué (un classement par niveau). */
+  level: Level;
   points: number;
   accuracy: number;
   elapsedMs: number;

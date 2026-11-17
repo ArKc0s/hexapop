@@ -11,42 +11,58 @@
   import { profile } from "../lib/profile.svelte.ts";
   import { progress } from "../lib/progress.svelte.ts";
   import Mascot from "../lib/ui/Mascot.svelte";
-  import type { Rewards } from "@hexa/game";
+  import { LEVELS, LEVEL_NAMES, LEVEL_OF, PLAYER_LEVELS, levelAllowed, playerLevel, type Level, type Rewards } from "@hexa/game";
 
-  interface Board { day: string; number: number; top: { name: string; home: string | null; points: number; elapsedMs: number; grid: string }[]; departements: { code: string; nom: string; players: number; avg: number }[] }
-  interface DailyInfo { day: string; number: number; played: boolean; mine: { points: number; elapsedMs: number; grid: string; finished: number } | null; rank: { rank: number; players: number } | null }
+  interface Board { day: string; number: number; level: Level; counts: Partial<Record<Level, number>>; top: { name: string; home: string | null; points: number; elapsedMs: number; grid: string }[]; departements: { code: string; nom: string; players: number; avg: number }[] }
+  interface DailyInfo { day: string; number: number; played: boolean; mine: { level: Level; points: number; elapsedMs: number; grid: string; finished: number } | null; rank: { rank: number; players: number } | null }
 
   let info = $state<DailyInfo | null>(null);
   // Invité : un seul essai par jour sur cet appareil ; le résultat est gardé pour l'afficher et le rattacher.
-  interface GuestDaily { day: string; points: number; elapsedMs: number; grid: number[]; claim?: string }
+  interface GuestDaily { day: string; level?: Level; points: number; elapsedMs: number; grid: number[]; claim?: string }
   let guest = $state<GuestDaily | null>((() => { try { return JSON.parse(localStorage.getItem(GUEST_DAILY) ?? "null"); } catch { return null; } })());
   let board = $state<Board | null>(null);
   let started = $state(false);
   let copied = $state(false);
 
-  api<DailyInfo>("GET", "/daily").then((d) => (info = d)).catch(() => {});
-  const loadBoard = () => api<Board>("GET", "/daily/leaderboard").then((b) => (board = b)).catch(() => {});
-  loadBoard();
+  // Niveau : le sien par défaut (d'après « Ta France »), ou en dessous, jamais au-dessus.
+  const maxLevel = LEVEL_OF[playerLevel(profile.data.know ?? {})];
+  let level = $state<Level>(maxLevel);
+  const LEVEL_DESC: Record<Level, string> = {
+    decouverte: "On te donne le nom ou la carte, avec 4 propositions faciles.",
+    normal: "Tous les indices, réponses au clavier.",
+    expert: "Au clavier, avec en plus les sous-préfectures et les voisins.",
+  };
+  const unlockAt: Record<Level, number> = { decouverte: 0, normal: PLAYER_LEVELS.confirme.min, expert: PLAYER_LEVELS.expert.min };
+
+  /** Onglet du classement affiché : par défaut, le niveau auquel on a joué. */
+  let boardLevel = $state<Level>(maxLevel);
+  api<DailyInfo>("GET", "/daily").then((d) => { info = d; if (d.mine?.level) boardLevel = d.mine.level; }).catch(() => {});
+  const loadBoard = (l: Level = boardLevel) => api<Board>("GET", `/daily/leaderboard?level=${l}`).then((b) => (board = b)).catch(() => {});
+  $effect(() => { loadBoard(boardLevel); });
 
   function start() {
     started = true;
-    live.connect(session.me?.pseudo ?? "", () => live.create("daily"));
+    boardLevel = level;
+    live.connect(session.me?.pseudo ?? "", () => live.create("daily", { level }));
   }
-  $effect(() => { if (live.daily) loadBoard(); });
+  $effect(() => { if (live.daily) { boardLevel = live.daily.level ?? level; loadBoard(boardLevel); } });
   $effect(() => {
     const o = live.daily;
     if (!o || session.me || (guest && guest.day === o.day)) return;
-    guest = { day: o.day, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim };
+    guest = { day: o.day, level: o.level, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim };
     offerTimer = setTimeout(() => signup.offer({ kind: "daily" }), 1000);
     try { localStorage.setItem(GUEST_DAILY, JSON.stringify(guest)); } catch { /* rien */ }
   });
   const guestToday = $derived(!session.me && !!guest && guest.day === info?.day ? guest : null);
+  $effect(() => { if (guestToday?.level) boardLevel = guestToday.level; });
+  /** Niveau auquel on a joué aujourd'hui. */
+  const playedLevel = $derived<Level>(live.daily?.level ?? info?.mine?.level ?? guestToday?.level ?? level);
   // XP, plaques et badges du défi : une seule fois.
   let rewards = $state<Rewards | null>(null);
   $effect(() => {
     if (live.daily && !rewards && live.myResults.length) {
       progress.record(live.myResults);
-      rewards = profile.record({ mode: "daily", level: "normal", input: "libre", results: live.myResults, now: Date.now() });
+      rewards = profile.record({ mode: "daily", level: playedLevel, input: playedLevel === "decouverte" ? "choix" : "libre", results: live.myResults, now: Date.now() });
     }
   });
   let offerTimer: ReturnType<typeof setTimeout> | undefined;
@@ -60,7 +76,7 @@
     const pts = outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0;
     const ms = outcome?.elapsedMs ?? info?.mine?.elapsedMs ?? guestToday?.elapsedMs ?? 0;
     const n = outcome?.number ?? info?.number;
-    return `HEXA #${n} · défi du jour\n${grid.map((g) => EMOJI[g]).join("")}\n${pts.toLocaleString("fr-FR")} pts · ${Math.round(ms / 1000)} s\n${location.origin}`;
+    return `HEXA #${n} · défi du jour · ${LEVEL_NAMES[playedLevel]}\n${grid.map((g) => EMOJI[g]).join("")}\n${pts.toLocaleString("fr-FR")} pts · ${Math.round(ms / 1000)} s\n${location.origin}`;
   });
 
   async function share() {
@@ -88,9 +104,18 @@
     <section class="intro">
       <Mascot mood="happy" size={70} />
       <h1 class="title">Défi du jour</h1>
-      <p>10 départements tirés pour tout le monde. Carte, numéro, préfecture : plus tu vas vite, plus tu marques. Un seul essai, nouveau défi à minuit.</p>
+      <p>Les mêmes 10 départements pour tout le monde, des questions à ton niveau, et un classement par niveau. Plus tu vas vite, plus tu marques. Un seul essai, nouveau défi à minuit.</p>
+      <div class="levels" role="radiogroup" aria-label="Niveau du défi">
+        {#each LEVELS as l (l)}
+          {@const ok = levelAllowed(l, maxLevel)}
+          <button class="lvl" class:on={level === l} disabled={!ok} role="radio" aria-checked={level === l} onclick={() => (level = l)}>
+            <b>{LEVEL_NAMES[l]}{l === maxLevel ? " · ton niveau" : ""}</b>
+            <small>{ok ? LEVEL_DESC[l] : `S'ouvre à ${unlockAt[l]} % de « Ta France ».`}</small>
+          </button>
+        {/each}
+      </div>
       {#if !session.me}<p class="hint">Tu joues en invité : <button class="link" onclick={() => nav.go({ name: "account", view: "register", then: { name: "daily" } })}>crée un compte</button> pour entrer au classement.</p>{/if}
-      <button class="btn pink big go" onclick={start}>Jouer le défi</button>
+      <button class="btn pink big go" onclick={start}>Jouer le défi · {LEVEL_NAMES[level]}</button>
     </section>
   {:else if started && !outcome && live.question}
     <LiveRound>
@@ -103,11 +128,12 @@
   {#if outcome || (!started && (info?.played || guestToday))}
     <section class="end">
       <div class="card">
+        <span class="chip lvchip">Défi n° {outcome?.number ?? info?.number} · {LEVEL_NAMES[playedLevel]}</span>
         <span class="riso scoreline" data-t={String(outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0)}>{outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0}</span>
         <div class="grid" aria-label="Résultat case par case">{#each grid as g, i (i)}<i class="g{g}"></i>{/each}</div>
         {#if outcome?.rank || info?.rank}
           {@const r = outcome?.rank ? { rank: outcome.rank, players: outcome.players } : info?.rank}
-          <p><b>{r?.rank}{r?.rank === 1 ? "er" : "e"}</b> sur {r?.players} joueur{(r?.players ?? 0) > 1 ? "s" : ""} aujourd'hui</p>
+          <p><b>{r?.rank}{r?.rank === 1 ? "er" : "e"}</b> sur {r?.players} joueur{(r?.players ?? 0) > 1 ? "s" : ""} en {LEVEL_NAMES[playedLevel]} aujourd'hui</p>
         {:else if !session.me}
           <p>Score pas encore classé.</p>
         {/if}
@@ -124,6 +150,9 @@
     <section class="boards">
       <div>
         <h2 class="label">Classement du jour</h2>
+        <div class="seg lvtabs" role="tablist" aria-label="Classement par niveau">
+          {#each LEVELS as l (l)}<button role="tab" aria-selected={boardLevel === l} class:on={boardLevel === l} onclick={() => (boardLevel = l)}>{LEVEL_NAMES[l]}{board.counts?.[l] ? ` · ${board.counts[l]}` : ""}</button>{/each}
+        </div>
         <ol class="lb">
           {#each board.top.slice(0, 20) as p, i (i)}
             <li class:me={p.name === session.me?.pseudo}><span class="tabnum">{i + 1}</span><span>{p.name}{p.home ? ` · ${p.home}` : ""}</span><b class="tabnum">{p.points}</b></li>
@@ -160,6 +189,16 @@
   
   .go { align-self: flex-start; font-size: 22px; }
   .wait { font-weight: 600; }
+  .levels { display: flex; flex-direction: column; gap: 8px; }
+  .lvl { border: 0; font: inherit; color: inherit; text-align: left; background: #fff; border-radius: 16px; padding: 12px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 3px 0 var(--line); }
+  .lvl b { font-weight: 900; font-size: 16.5px; }
+  .lvl small { font-size: 14px; font-weight: 600; color: var(--soft); }
+  .lvl.on { background: var(--ink); color: #fff; box-shadow: 0 3px 0 #000; }
+  .lvl.on small { color: #d9d6ea; }
+  .lvl:disabled { background: transparent; box-shadow: none; border: 2px dashed var(--line); cursor: default; opacity: .8; }
+  .lvchip { align-self: center; height: 32px; }
+  .lvtabs { margin-bottom: 10px; }
+  .lvtabs button { padding: 6px 10px; font-size: 13px; }
   .err { color: #b0005f; font-weight: 600; }
   .end { display: flex; justify-content: center; align-items: center; padding: 20px 0; }
   .card { border: 1.5px solid var(--ink); border-radius: var(--r); background: var(--card); padding: 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 6px 6px 0 var(--pink); }

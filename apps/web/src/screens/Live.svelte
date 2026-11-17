@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { LEVEL_NAMES } from "@hexa/game";
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
   import { onDestroy } from "svelte";
   import { DUEL_HP, REACTIONS, TEAM_LIVES, type Rewards } from "@hexa/game";
@@ -92,7 +93,7 @@
       <p class="hint">1 étoile à 50 % de moyenne, 2 à 75 %, 3 à 90 %, s'il vous reste au moins une vie.</p>
       <ol class="rank">
         {#each live.ranking as p (p.id)}
-          <li class:me={p.id === live.you}><span class="tabnum pos">{p.level === "expert" ? "E" : "N"}</span><span>{p.name}</span><b class="tabnum">{p.score} pts</b></li>
+          <li class:me={p.id === live.you}><span class="tabnum pos" title={LEVEL_NAMES[p.level]}>{LEVEL_NAMES[p.level]?.[0] ?? "C"}</span><span>{p.name}</span><b class="tabnum">{p.score} pts</b></li>
         {/each}
       </ol>
       {#if rewards}<p class="xp">+{rewards.xp} km</p>{/if}
@@ -131,7 +132,7 @@
           <ul class="mates">
             {#each room.players as p (p.id)}
               {@const r = s.results[p.id]}
-              <li class:me={p.id === live.you}><b>{p.name}{p.level === "expert" ? " · expert" : ""}</b>
+              <li class:me={p.id === live.you}><b>{p.name} · {LEVEL_NAMES[p.level] ?? ""}</b>
                 {#if r}<span class="flds">{#each r.fields as f (f.field)}<span class:okf={f.score >= 0.999} class:kof={f.score < 0.999}>{FIELD[f.field]}</span>{/each}</span>{:else}<span class="hint">pas de réponse</span>{/if}
               </li>
             {/each}

@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.6** (étape 4 de la [refonte](conception.md)) : défi du jour par niveau (Découverte, Confirmé, Expert) avec les mêmes 10 départements, classement et partage par niveau ; Entre amis : chacun joue à son niveau par défaut (3 niveaux), jamais deux inconnues en Découverte.
 - **v1.5.1** (retours de Léo sur la v1.5) : séances adaptatives (une question par nouveau département, rappel seulement si raté), une séance = un thème annoncé (région ou révisions), plus de carte surlignée en séance, route d'Hexa en deux échelles (tronçons et grands voyages, communs à tous les atlas), objectif du jour en hexagones chiffrés, accueil et pages secondaires sur un même cadre (ordinateur plein écran, colonnes alignées), page À propos à la place du pied de page, Album et Atlas fusionnés (Médailles, Carte, Succès), anciens écrans Révisions / Éclair / Région retirés.
 - **v1.0** : solo (révisions, éclair, région, marathon), défi du jour, multi temps réel (duel, soirée plateau), comptes, RGPD.
 - **v1.1** : refonte gamifiée (mascotte, boutons tactiles), XP et niveaux, série, quêtes du jour, Tour de France à étoiles, album, badges, duel à points de vie, réactions.
