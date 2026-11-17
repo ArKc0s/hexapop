@@ -199,12 +199,17 @@ test("kilomètres de la semaine, parties du jour, quêtes retirées", () => {
   assert.equal(M(srv, sanitizeProfile({ focus: "11", focusAt: 50 })).focus, "53");
 });
 
-test("route d'Hexa : tronçons de ville en ville, en boucle", async () => {
+test("route d'Hexa : tronçons courts, grands voyages, en boucle", async () => {
   const R = await import("./road.ts");
-  assert.deepEqual(R.roadTrip(0), { from: "Paris", to: "Lille", ratio: 0, left: 225, lap: 1 });
+  const t0 = R.roadTrip(0);
+  assert.equal(t0.from, "Paris"); assert.equal(t0.to, "Lille"); assert.equal(t0.voyage, "Le tour de France"); assert.equal(t0.cycle, 1);
   const t = R.roadTrip(1386);
-  assert.equal(t.from, "Lyon"); assert.equal(t.to, "Marseille"); assert.equal(t.left, 225 + 520 + 490 + 315 - 1386);
-  assert.equal(R.roadTrip(R.LAP_KM + 10).lap, 2);
-  assert.deepEqual(R.citiesReached(200, 800), ["Lille", "Strasbourg"]);
-  assert.deepEqual(R.citiesReached(R.LAP_KM - 10, R.LAP_KM + 230), ["Paris", "Lille"]);
+  assert.equal(t.from, "Lyon"); assert.equal(t.to, "Marseille"); assert.equal(t.left, 225 + 520 + 490 + 315 - 1386); assert.equal(t.leg, 4); assert.equal(t.legs, 11);
+  assert.equal(R.roadTrip(3795 + 100).voyage, "Les Antilles et la Guyane");
+  assert.equal(R.roadTrip(R.CYCLE_KM + 10).cycle, 2);
+  // Aucun tronçon trop long : la barre doit bouger en quelques séances.
+  for (const v of R.VOYAGES) for (const s of v.stops.slice(1)) assert.ok(s.km > 0 && s.km <= 3200, s.city);
+  assert.deepEqual(R.tripEvents(200, 800).cities, ["Lille", "Strasbourg"]);
+  assert.deepEqual(R.tripEvents(3700, 3900), { cities: ["Paris"], voyages: ["Le tour de France"] });
+  assert.deepEqual(R.tripEvents(R.CYCLE_KM - 10, R.CYCLE_KM + 230).cities, ["Paris", "Lille"]);
 });

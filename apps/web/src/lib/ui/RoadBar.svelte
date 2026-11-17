@@ -1,6 +1,7 @@
 <script lang="ts">
-  // Les kilomètres comme une barre d'expérience : Hexa roule d'une ville à la suivante, en faisant le tour de France.
-  import { roadTrip } from "@hexa/game";
+  // Les kilomètres comme une barre d'expérience, sur deux échelles : le grand voyage (en haut), et le tronçon
+  // où Hexa roule d'une escale à la suivante (la route). Communs à tous les atlas.
+  import { roadTrip, VOYAGES } from "@hexa/game";
   import { onMount } from "svelte";
   import Mascot from "./Mascot.svelte";
 
@@ -12,12 +13,21 @@
   $effect(() => { if (!gain) shown = km; });
   const trip = $derived(roadTrip(shown));
   const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
+  /** Tronçons du grand voyage en cours, proportionnels à leur longueur. */
+  const legs = $derived(VOYAGES.find((v) => v.name === trip.voyage)!.stops.slice(1).map((s) => s.km));
 </script>
 
 <div class="road" title="Chaque bonne réponse fait avancer Hexa sur la route">
   <div class="top">
-    <span class="k">Route d'Hexa{trip.lap > 1 ? ` · tour de France n° ${trip.lap}` : ""}</span>
+    <span class="k">Grand voyage{trip.cycle > 1 ? ` n° ${trip.cycle}` : ""}</span>
     <b class="tabnum">{fmt(km)} km</b>
+  </div>
+  <div class="voyage">
+    <b>{trip.voyage}</b>
+    <span class="tabnum">étape {trip.leg}/{trip.legs} · {Math.floor(trip.voyageRatio * 100)} %</span>
+  </div>
+  <div class="legs" aria-hidden="true">
+    {#each legs as l, i (i)}<i style="flex:{l}" class:done={i < trip.leg - 1} class:cur={i === trip.leg - 1}><span style="width:{i === trip.leg - 1 ? trip.ratio * 100 : 0}%"></span></i>{/each}
   </div>
   <div class="track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(trip.ratio * 100)} aria-label="De {trip.from} à {trip.to}">
     <div class="asphalt"><span class="done" style="width:{trip.ratio * 100}%"></span></div>
@@ -37,6 +47,14 @@
   .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .k { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
   .top > b { font-weight: 900; font-size: 17px; }
+  .voyage { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: -2px; }
+  .voyage b { font-weight: 900; font-size: 15.5px; }
+  .voyage span { font-size: 13px; font-weight: 700; color: var(--soft); white-space: nowrap; }
+  /* Le grand voyage : un segment par tronçon, proportionnel à sa longueur */
+  .legs { display: flex; gap: 3px; height: 6px; margin: 2px 0 0; }
+  .legs i { position: relative; border-radius: 3px; background: var(--line); overflow: hidden; min-width: 3px; }
+  .legs i.done { background: var(--ink); }
+  .legs i span { position: absolute; inset: 0 auto 0 0; background: var(--ink); transition: width 1.2s cubic-bezier(.3,.8,.3,1); }
   .track { position: relative; height: 38px; }
   /* La route va du centre d'une ville au centre de l'autre ; les villes sont posées dessus, comme des épingles. */
   .asphalt { position: absolute; left: 11px; right: 11px; top: 50%; height: 14px; margin-top: -7px; background: var(--ink); overflow: hidden; }
@@ -47,8 +65,9 @@
   .city.from { left: 0; background: var(--yellow); }
   .city.to { right: 0; }
   .hexa { position: absolute; top: 50%; transform: translate(-50%, -62%); transition: left 1.2s cubic-bezier(.3,.8,.3,1); z-index: 2; filter: drop-shadow(0 2px 0 #0002); }
-  .cities { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--soft); }
+  .cities { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--soft); line-height: 1.2; }
   .cities > b { color: var(--ink); font-weight: 900; }
-  .cities span { text-align: center; }
+  .cities > b:last-child { text-align: right; }
+  .cities span { text-align: center; white-space: nowrap; }
   .cities span b { color: var(--ink); }
 </style>
