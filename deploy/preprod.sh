@@ -26,7 +26,7 @@ if [ -n "${PREPROD_PW:-}" ]; then grep -v '^PREPROD_PASSWORD=' .env > .env.tmp |
 docker compose -p hexapop-preprod build --pull
 docker compose -p hexapop-preprod up -d --force-recreate
 for i in $(seq 1 40); do curl -fsS -m 2 http://127.0.0.1:8790/api/health >/dev/null 2>&1 && break; sleep 1; done
-curl -fsS http://127.0.0.1:8790/version.json; echo
+curl -fsS http://127.0.0.1:8790/api/health; echo
 docker image prune -f >/dev/null
 REMOTE
 echo "Préprod : https://preprod.hexapop.app ($(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD))"
