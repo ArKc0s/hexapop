@@ -188,16 +188,23 @@
 
 <style>
   .home { max-width: 1560px; margin: 0 auto; padding: 22px 24px 28px; display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 10px 48px; }
-  /* Ordinateur : on occupe l'écran. La carte grandit jusqu'à la hauteur de la fenêtre, le tout centré verticalement. */
+  /* Ordinateur : la colonne de gauche donne la hauteur, la carte remplit exactement la même hauteur à droite
+     (pas de vide dans la colonne, deux colonnes de même longueur), le tout centré dans la fenêtre. */
   @media (min-width: 861px) {
     .home { min-height: 100dvh; align-content: center; }
-    .right :global(.map) { max-height: calc(100dvh - 230px); }
+    .left { gap: 18px; }
+    .right { height: 0; min-height: 100%; }
+    .right :global(.wrap) { flex: 1 1 0; min-height: 0; }
+    .right :global(.map) { height: 100%; }
   }
   /* Grands écrans : la colonne de gauche et les textes autour de la carte grossissent avec (la carte, elle, s'étire seule). */
   @media (min-width: 1800px) and (min-height: 1000px) {
     .home { gap: 10px 56px; }
     .left, .rhead, .tip, .legend { zoom: 1.1; }
-    .right :global(.map) { max-height: calc(100dvh - 260px); }
+  }
+  @media (min-width: 2200px) and (min-height: 1200px) {
+    .home { max-width: 1800px; gap: 10px 72px; }
+    .left, .rhead, .tip, .legend { zoom: 1.25; }
   }
   .left { display: flex; flex-direction: column; gap: 16px; }
   .top { display: flex; align-items: center; gap: 8px; }
@@ -210,9 +217,7 @@
   .train small { font-size: 13.5px; font-weight: 700; color: var(--soft); }
   .train .arrow { font-size: 22px; font-weight: 900; }
   .foot { display: flex; flex-direction: column; gap: 14px; }
-  /* Ordinateur : trois blocs répartis sur la hauteur de la carte (en-tête et voyage en haut, la mascotte et
-     les actions au milieu, objectif et liens en bas) ; le vide se partage au lieu de s'accumuler au milieu. */
-  @media (min-width: 861px) { .hello, .foot { margin-top: auto; } }
+
   .goal { display: flex; flex-direction: column; gap: 8px; }
   .gh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .gp { font-weight: 800; font-size: 13.5px; color: var(--soft); }
