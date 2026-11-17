@@ -84,17 +84,17 @@
     <div class="top">
       <h1 class="riso logo" data-t="HEXA">HEXA</h1>
       <span class="chip" class:gold={goalDone} title={goalDone ? "Objectif du jour atteint !" : "Série de jours joués"}><Icon name="flame" /> {streak}</span>
+      <!-- Sur mobile, compte et son sur la même ligne que le logo et la série -->
+      <div class="acc mob">
+        {#if session.me}
+          <button class="back" onclick={() => nav.go({ name: "account", view: "profile" })}>{session.me.pseudo}</button>
+        {:else if session.online}
+          <button class="back" onclick={() => nav.go({ name: "account", view: "login" })}>Se connecter</button>
+        {/if}
+        <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
+      </div>
     </div>
     <RoadBar {km} />
-    <!-- Sur mobile, compte et son restent en haut de l'écran -->
-    <div class="acc mob">
-      {#if session.me}
-        <button class="back" onclick={() => nav.go({ name: "account", view: "profile" })}>{session.me.pseudo}</button>
-      {:else if session.online}
-        <button class="back" onclick={() => nav.go({ name: "account", view: "login" })}>Se connecter</button>
-      {/if}
-      <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
-    </div>
 
     <div class="hello"><Mascot mood="happy" size={66} /><p class="bubble">{hello}</p></div>
 
@@ -215,10 +215,16 @@
   .install .share { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--bg); vertical-align: -5px; }
   .install .ia { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
   @media (max-width: 860px) {
-    .acc.mob { display: flex; justify-content: flex-end; margin-top: -8px; }
+    .acc.mob { display: flex; gap: 6px; }
+    .acc.mob .back { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 12px; }
     .acc.desk { display: none; }
     .home { grid-template-columns: 1fr; padding: 14px 16px 30px; }
     .logo { font-size: 36px; }
+  }
+  @media (max-width: 400px) {
+    .logo { font-size: 30px; }
+    .top { gap: 6px; }
+    .acc.mob .back { max-width: 96px; font-size: 14px; padding-inline: 10px; }
   }
   @media (min-width: 861px) { .home { min-height: 100dvh; align-content: center; } }
 </style>
