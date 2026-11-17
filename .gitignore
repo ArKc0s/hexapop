@@ -5,3 +5,4 @@ dist/
 .env
 deploy/.deploy.env
 BUILD_COMMIT
+deploy/.indexnow.json

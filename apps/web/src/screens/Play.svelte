@@ -1,6 +1,6 @@
 <script lang="ts">
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
-  import { combos, grade, makeGame, type Answer, type Field, type InputMode, type RoundPlay, type RoundResult } from "@hexa/game";
+  import { combos, grade, makeGame, roundXp, type Answer, type Field, type InputMode, type RoundPlay, type RoundResult } from "@hexa/game";
   import Round from "../lib/Round.svelte";
   import type { Mark } from "../lib/Map.svelte";
   import Icon from "../lib/ui/Icon.svelte";
@@ -109,7 +109,7 @@
     <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
   </header>
   {#key i}
-    <Round {q} {result} {startedAt} {history} combo={comboNow} onsubmit={submit} paused={!!sheet}
+    <Round {q} {result} {startedAt} {history} combo={comboNow} onsubmit={submit} paused={!!sheet} km={result ? roundXp(result, comboNow) : undefined}
       answerMode={play.config.switchable ? answerMode : undefined} onmode={play.config.switchable ? setMode : undefined}>
       {#snippet action()}<button class="btn blue big" onclick={next}>{i + 1 >= questions.length ? "Voir mes récompenses" : "Suivant"} <kbd>↵</kbd></button>{/snippet}
     </Round>

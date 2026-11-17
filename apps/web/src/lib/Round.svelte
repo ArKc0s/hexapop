@@ -27,8 +27,10 @@
     onmode?: (m: InputMode) => void;
     /** Partie en pause : le chrono s'arrête (le parent décale startedAt à la reprise). */
     paused?: boolean;
+    /** Solo : kilomètres gagnés avec cette réponse, affichés à la place des points (qui ne servent qu'à plusieurs). */
+    km?: number;
   }
-  let { q, result = null, startedAt, onsubmit, action, children, history = {}, combo = 0, answerMode, onmode, paused = false }: Props = $props();
+  let { q, result = null, startedAt, onsubmit, action, children, history = {}, combo = 0, answerMode, onmode, paused = false, km }: Props = $props();
   /** Propositions affichées pour un champ (aucune en mode clavier). */
   /** Première rencontre (département nouveau, ou ses facettes expert) : se tromper ne coûte rien, la correction apprend. */
   const fresh = $derived(q.tag === "new" || q.tag === "expert");
@@ -347,7 +349,8 @@
       <div class="react">
         <Mascot mood={feedback.mood} size={60} />
         <div class="bubble">{feedback.text}</div>
-        <span class="pts tabnum" class:zero={result.points === 0}>+{result.points}</span>
+        {#if km !== undefined}<span class="pts km tabnum" class:zero={km === 0}>+{km}<small>&nbsp;km</small></span>
+        {:else}<span class="pts tabnum" class:zero={result.points === 0}>+{result.points}</span>{/if}
       </div>
       <div class="fichebox"><Fiche code={q.code} expert={has("sousPrefectures") || has("limitrophes")} /></div>
       {@render children?.()}
@@ -359,7 +362,7 @@
         <div class="verdict" aria-live="polite">
           <Mascot mood={feedback.mood} size={40} />
           <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : fresh ? "Maintenant tu sais" : "Raté"}</b></span>
-          <span class="vp tabnum">+{result.points}</span>
+          <span class="vp tabnum">+{km ?? result.points}{#if km !== undefined}<small>&nbsp;km</small>{/if}</span>
         </div>
         <ul class="recap" aria-label="Correction">
           {#each result.fields as f (f.field)}
@@ -459,6 +462,8 @@
   .react .bubble { flex: 1; }
   .pts { font-family: var(--f-pop); font-size: 30px; color: var(--blue); animation: pop-in .4s cubic-bezier(.2, 1.6, .4, 1); }
   .pts.zero { color: var(--soft); }
+  .pts small, .vp small { font-size: .55em; }
+  .pts.km { color: var(--green-d); white-space: nowrap; }
   .actions { display: flex; gap: 12px; align-items: center; }
   .actions :global(.btn) { flex: 1; }
 

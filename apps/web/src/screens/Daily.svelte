@@ -1,6 +1,7 @@
 <script lang="ts">
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
   import GameSheet from "../lib/ui/GameSheet.svelte";
+  import { dailyCardBlob } from "../lib/shareCard.ts";
   import { onDestroy } from "svelte";
   import LiveRound from "../lib/LiveRound.svelte";
   import { live } from "../lib/socket.svelte.ts";
@@ -86,11 +87,32 @@
     return `HEXA #${n} · défi du jour · ${LEVEL_NAMES[playedLevel]}\n${grid.map((g) => EMOJI[g]).join("")}\n${pts.toLocaleString("fr-FR")} pts · ${Math.round(ms / 1000)} s\n${location.origin}`;
   });
 
+  const coarse = typeof window !== "undefined" && matchMedia("(pointer: coarse)").matches;
+  /** L'image du résultat (voir shareCard.ts). */
+  async function cardFile(): Promise<File | null> {
+    const pts = outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0;
+    const ms = outcome?.elapsedMs ?? info?.mine?.elapsedMs ?? guestToday?.elapsedMs ?? 0;
+    const n = outcome?.number ?? info?.number ?? 0;
+    const rank = outcome?.rank ? { rank: outcome.rank, players: outcome.players ?? outcome.rank } : info?.rank ?? (guestToday?.rank ? { rank: guestToday.rank, players: guestToday.players ?? guestToday.rank } : null);
+    const blob = await dailyCardBlob({ number: n, level: LEVEL_NAMES[playedLevel], points: pts, seconds: Math.round(ms / 1000), grid, rank });
+    return blob ? new File([blob], `hexa-defi-${n}.png`, { type: "image/png" }) : null;
+  }
   async function share() {
     try {
-      if (navigator.share && matchMedia("(pointer: coarse)").matches) await navigator.share({ text: shareText });
-      else { await navigator.clipboard.writeText(shareText); copied = true; setTimeout(() => (copied = false), 2000); }
+      if (navigator.share && coarse) {
+        // Téléphone : l'image et le texte ensemble quand l'appareil le permet, sinon le texte seul.
+        const f = await cardFile().catch(() => null);
+        if (f && navigator.canShare?.({ files: [f] })) await navigator.share({ files: [f], text: shareText });
+        else await navigator.share({ text: shareText });
+      } else { await navigator.clipboard.writeText(shareText); copied = true; setTimeout(() => (copied = false), 2000); }
     } catch { /* partage annulé */ }
+  }
+  /** Ordinateur : télécharger l'image à poster. */
+  async function download() {
+    const f = await cardFile();
+    if (!f) return;
+    const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
 </script>
 
@@ -146,7 +168,8 @@
           <p>Score pas encore classé.</p>
         {/if}
         {#if rewards}<p class="xp">+{rewards.xp} km</p>{/if}
-        <button class="btn pink big" onclick={share}>{copied ? "Copié !" : "Partager"}</button>
+        <button class="btn pink big" onclick={share}>{copied ? "Copié !" : coarse ? "Partager" : "Copier le résultat"}</button>
+        {#if !coarse}<button class="link" onclick={download}>Télécharger l'image à poster</button>{/if}
       </div>
     </section>
   {/if}

@@ -8,6 +8,7 @@ export type Screen =
   | PlayScreen
   | { name: "results"; play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards; /** Réponses utilisées (Marathon : le Hall of Fame se joue au clavier). */ input?: InputMode }
   | { name: "hof" }
+  | { name: "news" }
   | { name: "album"; tab?: AlbumTab }
   | { name: "account"; view?: "login" | "register" | "forgot" | "reset" | "verify" | "profile"; token?: string; then?: Screen; notice?: string; oauthError?: string }
   | { name: "daily" }
@@ -17,7 +18,7 @@ export type Screen =
   | { name: "legal"; doc: "apropos" | "mentions" | "confidentialite" | "cgu" }
   | { name: "rappels" };
 
-const SIMPLE: Partial<Record<Screen["name"], string>> = { training: "#entrainement", album: "#album", daily: "#defi", rappels: "#rappels", hof: "#hall-of-fame" };
+const SIMPLE: Partial<Record<Screen["name"], string>> = { training: "#entrainement", album: "#album", daily: "#defi", rappels: "#rappels", hof: "#hall-of-fame", news: "#nouveautes" };
 const LEGAL = { apropos: "#a-propos", mentions: "#mentions-legales", confidentialite: "#confidentialite", cgu: "#cgu" };
 
 class Nav {

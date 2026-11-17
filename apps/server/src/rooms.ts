@@ -138,7 +138,7 @@ export class Room {
 
   add(c: Conn, spectate = false): ErrorCode | null {
     this.lastActivity = now();
-    if (spectate) { this.spectators.add(c); c.room = this; c.spectating = true; this.broadcastRoom(); this.catchUp(c); return null; }
+    if (spectate) { this.spectators.add(c); c.room = this; c.spectating = true; this.roomSoon(); this.catchUp(c); return null; }
     const existing = this.seats.get(c.playerId);
     if (existing) {
       existing.conn = c; existing.info.connected = true; c.room = this;
@@ -155,12 +155,12 @@ export class Room {
       conn: c, userId: c.userId, guestId: c.guestId, results: [],
     });
     c.room = this;
-    this.broadcastRoom();
+    this.roomSoon();
     return null;
   }
 
   disconnect(c: Conn) {
-    if (this.spectators.delete(c)) { this.broadcastRoom(); return; }
+    if (this.spectators.delete(c)) { this.roomSoon(); return; }
     const seat = this.seats.get(c.playerId);
     if (!seat || seat.conn !== c) return;
     seat.conn = null;
@@ -168,7 +168,7 @@ export class Room {
     if (this.phase === "lobby") this.seats.delete(c.playerId);
     if (seat.info.host) this.passHost();
     this.lastActivity = now();
-    this.broadcastRoom();
+    this.roomSoon();
     this.maybeCloseRound();
   }
 
@@ -176,7 +176,7 @@ export class Room {
     this.disconnect(c);
     this.seats.delete(c.playerId);
     c.room = null;
-    this.broadcastRoom();
+    this.roomSoon();
   }
 
   private passHost() {
@@ -211,8 +211,17 @@ export class Room {
     c.lastReact = t;
     this.broadcast({ t: "react", player: c.playerId, e });
   }
+  /** État du salon tout de suite (changement de phase : il doit arriver avant la question ou le bilan). */
   broadcastRoom() {
+    if (this.roomTimer) { clearTimeout(this.roomTimer); this.roomTimer = null; }
     this.broadcast({ t: "room", room: this.code, kind: this.kind, settings: this.settings, players: this.players(), phase: this.phase, spectators: this.spectators.size });
+  }
+  /** Arrivées et départs en salle d'attente : regroupés sur 100 ms. Une soirée de 100 joueurs qui arrivent ensemble
+   *  enverrait sinon la liste complète à chacun, à chaque arrivée (100 × 100 envois). Pendant la partie : tout de suite. */
+  private roomTimer: ReturnType<typeof setTimeout> | null = null;
+  roomSoon() {
+    if (this.phase !== "lobby") return this.broadcastRoom();
+    this.roomTimer ??= setTimeout(() => { this.roomTimer = null; this.broadcastRoom(); }, 100);
   }
   /** Renvoie la question en cours à quelqu'un qui (re)arrive. */
   private catchUp(c: Conn) {

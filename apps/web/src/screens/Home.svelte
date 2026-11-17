@@ -13,6 +13,7 @@
   import { session } from "../lib/api.svelte.ts";
   import { signup } from "../lib/signup.svelte.ts";
   import { stakeOf } from "../lib/stake.ts";
+  import { latestNews, markNewsSeen, newsSeen } from "../lib/news.ts";
   import { sound } from "../lib/sound.svelte.ts";
   import { install } from "../lib/install.svelte.ts";
 
@@ -67,6 +68,8 @@
     return `Ta France est à ${pct} %. On consolide ?`;
   });
 
+  /** Point rose sur « Nouveautés » tant que la dernière n'a pas été lue (pas pour un tout nouveau joueur : tout est neuf). */
+  const newsDot = (() => { if (newsSeen() >= latestNews) return false; if (!profile.data.stats.games) { markNewsSeen(); return false; } return true; })();
   /** Invité qui a déjà joué : Hexa rappelle, sans bloquer, que sa progression n'est que sur cet appareil. */
   const guestStake = $derived(session.ready && session.online && !session.me && !signup.never && p.stats.games > 0 ? stakeOf(p).text : "");
 
@@ -169,6 +172,7 @@
       <nav class="menu" aria-label="Plus">
         <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
         <button onclick={() => nav.go({ name: "hof" })}>Hall of Fame</button>
+        <button onclick={() => nav.go({ name: "news" })}>Nouveautés{#if newsDot}<i class="dot" aria-label="(nouveau)"></i>{/if}</button>
         <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
       </nav>
     </div>
@@ -266,6 +270,7 @@
   .menu button { background: none; border: 0; padding: 4px 0; cursor: pointer; font-weight: 800; font-size: 15.5px; color: var(--ink); }
   .menu button:hover { color: var(--blue); }
   .menu span { color: var(--soft); font-weight: 700; margin-left: 2px; }
+  .menu .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pink); margin-left: 4px; vertical-align: 6px; box-shadow: 0 0 0 2px #fff; }
   .right { display: flex; flex-direction: column; gap: 6px; }
   .rhead { display: flex; justify-content: space-between; align-items: flex-start; }
   .pct { font-family: var(--f-pop); font-size: 44px; line-height: 1; }
@@ -293,6 +298,8 @@
     .logo { font-size: 30px; }
     .top { gap: 6px; }
     .acc.mob .back { max-width: 96px; font-size: 14px; padding-inline: 10px; }
+    .menu { gap: 4px 13px; }
+    .menu button { font-size: 14.5px; }
   }
   @media (min-width: 861px) { .home { min-height: 100dvh; align-content: center; } }
   .offline { margin: 0; padding: 10px 14px; border-radius: 14px; background: #fff4c2; box-shadow: inset 0 0 0 2px var(--yellow); font-weight: 700; font-size: 14px; }

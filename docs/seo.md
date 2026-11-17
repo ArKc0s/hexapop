@@ -41,3 +41,7 @@ Les adresses sont pensées pour grandir sans rien casser :
 - Image de partage propre à chaque page (silhouette du département).
 - « Le savais-tu ? » par département (origine du nom…) : contenu unique supplémentaire.
 - Pages par sous-préfecture si Search Console montre la demande.
+
+## Images d'aperçu et IndexNow (v1.14)
+- **Images d'aperçu par page** : chaque fiche de département et de région a sa propre image (1200 × 630 : nom, préfecture ou chef-lieu, carte avec le département ou la région en rose), dessinée en SVG puis convertie en PNG à la compilation (`@resvg/resvg-js`, polices TTF dans `apps/web/scripts/og-fonts/`, licence OFL). Servies sous `/og/<adresse de la page>.png`. Les autres pages gardent `/og.png`.
+- **IndexNow** : après chaque déploiement, `deploy/indexnow.mjs` relit le plan du site en ligne et signale à Bing (et aux autres moteurs IndexNow) les pages nouvelles ou modifiées. Clé publique : `apps/web/public/<clé>.txt`. Empreintes du dernier envoi : `deploy/.indexnow.json` (local, ignoré par git). Google n'utilise pas IndexNow : pour lui, le plan du site suffit.

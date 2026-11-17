@@ -57,3 +57,6 @@ docker update --restart=unless-stopped "hexapop-$NEW" >/dev/null
 docker image prune -f >/dev/null
 echo "En ligne : $NEW. $ACTIVE finit ses parties en cours puis s'arrête seule."
 REMOTE
+
+# Moteurs de recherche (IndexNow) : signale les pages du site qui ont changé, sans bloquer le déploiement.
+if command -v node >/dev/null 2>&1; then node "$(dirname "$0")/indexnow.mjs" || true; fi

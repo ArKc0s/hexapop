@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.14** : page Nouveautés (point rose sur l'accueil quand il y a du neuf) ; kilomètres affichés à chaque réponse en solo ; image de partage du défi du jour ; image d'aperçu propre à chaque fiche département et région ; IndexNow après chaque déploiement ; salons : arrivées et départs regroupés (moins de trafic en soirée nombreuse).
 - **v1.13** : création de compte repensée (aux bons moments : 1re partie, médaille, série, grand voyage, défi du jour ; sinon de plus en plus espacé ; jamais deux fois par jour ; « Ne plus me proposer » après deux refus ; ce qu'on risque de perdre affiché, rappel discret dans la bulle d'Hexa) ; stats en direct dans Grafana (présents par écran, salons en cours, courbe à la minute).
 - **v1.12** : pause en partie solo (la question est cachée, le temps ne compte pas, pause automatique si l'appli passe en arrière-plan) ; confirmation avant de quitter une partie, le défi du jour ou une partie entre amis ; couleurs de correction : vert = juste, rose = faux, jaune réservé à la question (le bleu reste la couleur d'Hexa) ; légende de la carte à la correction ; sous-préfectures et voisins corrigés un par un (justes, faux, ce qui manquait).
 - **v1.10 / v1.11** : statistiques anonymes lisibles dans Grafana ; invités au classement du défi sous un pseudo généré, repris par leur compte à l'inscription ; confirmation du pseudo après inscription via Google & co.
@@ -53,7 +54,6 @@ Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement co
 ### Progression
 - **Récompenses cosmétiques** liées aux médailles, à « Ta France » et aux kilomètres parcourus (ex-XP) : accessoires pour la mascotte, thèmes de carte. Visibles par les autres joueurs en multi.
 - **Ligues hebdomadaires** : groupes d'une trentaine de joueurs classés sur les **kilomètres de la semaine**, montée et descente chaque semaine. À lancer quand il y aura assez de joueurs.
-- **Page « Nouveautés »** (notes de version) accessible depuis l'accueil.
 
 ### Les atlas (décidé avec Léo le 2026-11-16)
 Hexa reste un jeu sur la France, mais d'autres cartes pourront s'ajouter sous forme d'**atlas**. Un atlas = **une carte + une liste de choses à apprendre + des facettes** (ce qu'on apprend sur chaque chose), et tout y fonctionne pareil : Continuer, Défi, Entre amis, Entraînement, étoiles, médailles bronze / argent / or.

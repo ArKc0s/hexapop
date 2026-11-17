@@ -7,6 +7,7 @@
 // préfixe (/france, plus tard /europe…), les quiz sont regroupés sous /quiz, et le plan du site est un index
 // de plans par atlas. Ajouter un atlas = ajouter un module, sans toucher aux adresses existantes.
 import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { Resvg } from "@resvg/resvg-js";
 import { DEPARTEMENTS, REGIONS, DEP, REGION, OUTRE_MER, TOUR, withArticle, type Departement, type Region } from "@hexa/game";
 import map from "../../../packages/data/src/map.json" with { type: "json" };
 
@@ -67,6 +68,55 @@ function svgMap(codes: string[], opts: { highlight?: string; outline?: string[];
 <g class="labels" font-size="${fs.toFixed(1)}">${labels}</g></svg>`;
 }
 
+// ---------- images d'aperçu (1200 × 630), dessinées en SVG puis converties en PNG à la compilation ----------
+interface OgCard { kicker: string; title: string; facts: string[]; highlight: string[]; /** Zone cadrée (outre-mer) ; sinon la métropole. */ zone?: string[]; /** Départements teintés autour (la région). */ tint?: string[] }
+const ogPath = (path: string) => `/og${path}.png`;
+const OG_FONTS = ["gabarito-800.ttf", "gabarito-600.ttf", "bowlby-one.ttf"].map((f) => new URL(`./og-fonts/${f}`, import.meta.url).pathname);
+const METRO = DEPARTEMENTS.filter((d) => !d.outreMer).map((d) => d.code);
+const METRO_BOX = bbox(METRO);
+/** Coupe un nom long sur deux lignes (aux espaces ou aux traits d'union). */
+function ogLines(t: string, max: number): string[] {
+  if (t.length <= max) return [t];
+  const cuts = [...t.matchAll(/[ -]/g)].map((m) => m.index!);
+  const at = cuts.reduce((best, i) => (Math.abs(i - t.length / 2) < Math.abs(best - t.length / 2) ? i : best), cuts[0] ?? -1);
+  if (at < 0) return [t];
+  return [t.slice(0, at + (t[at] === "-" ? 1 : 0)), t.slice(at + 1)];
+}
+function ogSvg(o: OgCard): string {
+  const paths = map.paths as Record<string, string>;
+  const codes = o.zone ?? METRO;
+  const b = o.zone ? bbox(o.zone) : METRO_BOX;
+  const pad = Math.max(b.w, b.h) * 0.04, k = Math.max(b.w, b.h);
+  const hi = new Set(o.highlight), tint = new Set(o.tint ?? []);
+  const shapes = codes.map((c) => `<path d="${paths[c]}" fill="${hi.has(c) ? "#ff4fae" : tint.has(c) ? "#ffd0e8" : "#fffdf8"}"/>`).join("");
+  const title = o.title.toUpperCase();
+  const lines = ogLines(title, 13);
+  const longest = Math.max(...lines.map((l) => l.length));
+  const fs = longest <= 9 ? 84 : longest <= 12 ? 70 : longest <= 15 ? 58 : 48;
+  const tY = 300;
+  const titleSvg = lines.map((l, i) => `<text x="70" y="${tY + i * fs * 1.02}" font-family="Gabarito" font-weight="800" font-size="${fs}" fill="#1c1a37">${esc(l)}</text>`).join("");
+  const fy = tY + (lines.length - 1) * fs * 1.02 + 62;
+  const facts = o.facts.map((f, i) => `<text x="70" y="${fy + i * 42}" font-family="Gabarito" font-weight="600" font-size="32" fill="#1c1a37">${esc(f)}</text>`).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" fill="#f3eee4"/>
+<text x="76" y="128" font-family="Bowlby One" font-size="64" fill="#ff4fae">HEXA</text>
+<text x="70" y="122" font-family="Bowlby One" font-size="64" fill="#1572c4">HEXA</text>
+<text x="70" y="${tY - fs - 6}" font-family="Gabarito" font-weight="600" font-size="30" fill="#6b6884">${esc(o.kicker)}</text>
+${titleSvg}${facts}
+<rect x="70" y="512" width="420" height="64" rx="32" fill="#d9a90b"/><rect x="70" y="506" width="420" height="64" rx="32" fill="#ffd93d"/>
+<text x="280" y="548" text-anchor="middle" font-family="Gabarito" font-weight="800" font-size="27" fill="#1c1a37">Quiz gratuit · hexapop.app</text>
+<svg x="610" y="30" width="560" height="570" viewBox="${(b.x - pad).toFixed(1)} ${(b.y - pad).toFixed(1)} ${(b.w + 2 * pad).toFixed(1)} ${(b.h + 2 * pad).toFixed(1)}">
+<g transform="translate(${(k * 0.008).toFixed(2)} ${(k * 0.008).toFixed(2)})" fill="#ff4fae">${codes.map((c) => `<path d="${paths[c]}"/>`).join("")}</g>
+<g stroke="#9a907c" stroke-width="${(k * 0.0012).toFixed(2)}" stroke-linejoin="round">${shapes}</g>
+</svg></svg>`;
+}
+function renderOg(path: string, o: OgCard) {
+  const png = new Resvg(ogSvg(o), { font: { fontFiles: OG_FONTS, loadSystemFonts: false, defaultFontFamily: "Gabarito" } }).render().asPng();
+  const file = new URL("." + ogPath(path), DIST);
+  mkdirSync(new URL(".", file), { recursive: true });
+  writeFileSync(file, png);
+}
+
 // ---------- adresses (l'atlas France vit sous /france) ----------
 export const depUrl = (d: Departement) => `/france/departements/${d.code.toLowerCase()}-${slug(d.nom)}`;
 export const regionUrl = (r: Region) => `/france/regions/${slug(r.nom)}`;
@@ -77,6 +127,8 @@ interface Crumb { name: string; url: string }
 interface Page {
   path: string; title: string; description: string; h1: string; lead: string; body: string;
   crumbs: Crumb[]; jsonld?: object[]; type?: "website" | "article"; atlas?: string;
+  /** Image d'aperçu propre à la page (partage Discord, WhatsApp…) : sinon l'image générale du jeu. */
+  og?: OgCard;
 }
 const pages: Page[] = [];
 
@@ -107,7 +159,7 @@ function layout(p: Page): string {
 <meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(p.title)}">
 <meta property="og:description" content="${esc(p.description)}">
-<meta property="og:image" content="${SITE}/og.png">
+<meta property="og:image" content="${SITE}${p.og ? ogPath(p.path) : "/og.png"}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -189,6 +241,7 @@ for (const [i, d] of byNum.entries()) {
   const titleBase = `${d.nom} (${d.code}) : préfecture, carte, sous-préfectures et voisins`;
   pages.push({
     path: depUrl(d), atlas: "france",
+    og: { kicker: `Département n° ${d.code} · ${d.outreMer ? "Outre-mer" : r.nom}`, title: d.nom, facts: [`Préfecture : ${d.prefecture}`, ...(sp.length ? [`${sp.length} sous-préfecture${sp.length > 1 ? "s" : ""}`] : [])], highlight: [d.code], zone: d.outreMer ? [d.code] : undefined, tint: d.outreMer ? [] : DEPARTEMENTS.filter((x) => x.region === d.region).map((x) => x.code) },
     title: titleBase.length <= 62 ? `${titleBase} | Hexa` : titleBase,
     description: `${sujet(d)} (${d.code}) ${est(d)} un département ${deRegion(r)}. Préfecture : ${d.prefecture}.${sp.length ? ` Sous-préfectures : ${sp.join(", ")}.` : ""} Fiche, carte et quiz gratuit sur Hexa.`,
     h1: `${esc(d.nom)} (${d.code})`,
@@ -222,6 +275,7 @@ for (const r of REGIONS) {
   ]);
   pages.push({
     path: regionUrl(r), atlas: "france",
+    og: { kicker: ds.length > 1 ? `Région · ${ds.length} départements` : `Région d'outre-mer · n° ${ds[0].code}`, title: r.nom, facts: [`Chef-lieu : ${r.chefLieu}`], highlight: ds.map((d) => d.code), zone: om ? ds.map((d) => d.code) : undefined },
     title: om ? `${r.nom} : département et région d'outre-mer (${ds[0].code}) | Hexa` : `Départements ${deRegion(r)} : liste, numéros, carte et préfectures`,
     description: `${ds.length > 1 ? `Les ${ds.length} départements ${deRegion(r)}` : `Le département ${deRegion(r)}`} : ${ds.map((d) => `${d.nom} (${d.code})`).join(", ")}. Préfectures, carte et quiz pour les apprendre en jouant.`,
     h1: ds.length > 1 ? `Les départements ${esc(deRegion(r))}` : `${esc(r.nom)} (${ds[0].code})`,
@@ -388,6 +442,8 @@ pages.push({
 // Écriture : pages, plan du site par atlas, robots, 404, styles et polices
 // =====================================================================================================
 for (const p of pages) write(p.path, layout(p));
+let ogCount = 0;
+for (const p of pages) if (p.og) { renderOg(p.path, p.og); ogCount++; }
 
 const atlases = [...new Set(pages.map((p) => p.atlas ?? "site"))];
 mkdirSync(new URL("sitemaps/", DIST), { recursive: true });
@@ -407,4 +463,4 @@ copyFileSync(new URL("gabarito/files/gabarito-latin-600-normal.woff2", FONTS), n
 copyFileSync(new URL("gabarito/files/gabarito-latin-800-normal.woff2", FONTS), new URL("seo/fonts/gabarito-800.woff2", DIST));
 copyFileSync(new URL("bowlby-one/files/bowlby-one-latin-400-normal.woff2", FONTS), new URL("seo/fonts/bowlby.woff2", DIST));
 copyFileSync(new URL("./seo.css", import.meta.url), new URL("seo/seo.css", DIST));
-console.log(`[seo] ${pages.length} pages, ${atlases.length} plans du site (${atlases.join(", ")})`);
+console.log(`[seo] ${pages.length} pages, ${ogCount} images d'aperçu, ${atlases.length} plans du site (${atlases.join(", ")})`);
