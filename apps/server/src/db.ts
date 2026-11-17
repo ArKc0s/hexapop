@@ -2,10 +2,11 @@ import { DatabaseSync } from "node:sqlite";
 import { config } from "./config.ts";
 
 export const db = new DatabaseSync(config.dbPath);
+// Deux versions peuvent partager la base pendant une mise à jour : on attend le verrou plutôt qu'échouer.
+db.exec("PRAGMA busy_timeout = 10000");
 db.exec(`
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
-PRAGMA busy_timeout = 2000;
 
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY,

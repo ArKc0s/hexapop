@@ -10,3 +10,8 @@ import "./lib/theme.css";
 import App from "./App.svelte";
 
 mount(App, { target: document.getElementById("app")! });
+
+// Jeu jouable hors ligne : le service worker garde une copie de l'appli (voir public/sw.js).
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
+}

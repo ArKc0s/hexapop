@@ -43,6 +43,8 @@ class Live {
   private ws: WebSocket | null = null;
   private guestName = "";
   private wantRoom: string | null = null;
+  private wantSpectate = false;
+  private movedFor: string | null = null;
   private retries = 0;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
   private queue: ClientMsg[] = [];
@@ -57,7 +59,9 @@ class Live {
     this.onWelcome = then ?? null;
     if (this.ws && this.status !== "closed") { if (this.status === "open") { then?.(); this.onWelcome = null; } return; }
     this.status = "connecting";
-    const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/ws`;
+    // Le salon visé dans l'adresse : pendant une mise à jour, l'aiguilleur envoie vers la version qui l'héberge.
+    const target = this.room?.code ?? this.wantRoom;
+    const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/ws${target ? `?room=${encodeURIComponent(target)}` : ""}`;
     const ws = new WebSocket(url);
     this.ws = ws;
     ws.onopen = () => {
@@ -66,10 +70,11 @@ class Live {
       try { resume = sessionStorage.getItem(RESUME_KEY) ?? ""; } catch { /* rien */ }
       // Niveau d'après « Ta France » : handicap par défaut en salon, plafond du défi du jour.
       const level = LEVEL_OF[playerLevel(profile.data.know ?? {})];
-      ws.send(JSON.stringify({ t: "hello", v: PROTOCOL_VERSION, name: this.guestName, resume, room: this.room?.code ?? this.wantRoom ?? undefined, level }));
+      ws.send(JSON.stringify({ t: "hello", v: PROTOCOL_VERSION, name: this.guestName, resume, room: this.room?.code ?? this.wantRoom ?? undefined, spectate: this.wantSpectate || undefined, level }));
     };
     ws.onmessage = (e) => this.receive(JSON.parse(e.data) as ServerMsg);
     ws.onclose = () => {
+      if (this.ws !== ws) return; // ancienne connexion remplacée volontairement (salon sur l'autre version)
       this.status = "closed";
       if (this.pingTimer) clearInterval(this.pingTimer);
       this.ws = null;
@@ -148,6 +153,14 @@ class Live {
       case "error":
         // Salon introuvable alors qu'on est déjà dans un autre : réponse périmée, on l'ignore.
         if (m.code === "room_not_found" && this.room) break;
+        // Mise à jour en cours : ce salon est sur l'autre version. On se reconnecte en le visant, l'aiguilleur y mène.
+        if (m.code === "room_moved" && this.wantRoom && this.movedFor !== this.wantRoom) {
+          this.movedFor = this.wantRoom; // une seule tentative : si l'autre version est déjà arrêtée, le salon n'existe plus
+          const old = this.ws; this.ws = null; this.status = "closed"; old?.close();
+          this.connect();
+          break;
+        }
+        if (m.code === "room_moved") m = { ...m, code: "room_not_found", message: "Aucun salon avec ce code." };
         if (m.code === "room_not_found") { this.wantRoom = null; if (location.hash.startsWith("#salon=")) history.replaceState(null, "", location.pathname); }
         this.error = { code: m.code, message: m.message };
         break;
@@ -155,8 +168,8 @@ class Live {
   }
 
   create(kind: RoomKind, settings?: Partial<RoomSettings>) { this.reset(); this.send({ t: "create", kind, settings }); }
-  join(code: string, spectate = false) { this.reset(); this.wantRoom = code.toUpperCase(); this.send({ t: "join", room: code, spectate }); }
-  leave() { this.send({ t: "leave" }); this.reset(); this.room = null; this.wantRoom = null; }
+  join(code: string, spectate = false) { this.reset(); this.wantRoom = code.toUpperCase(); this.wantSpectate = spectate; this.send({ t: "join", room: code, spectate }); }
+  leave() { this.send({ t: "leave" }); this.reset(); this.room = null; this.wantRoom = null; this.wantSpectate = false; }
   private reset() { this.question = null; this.summary = null; this.ranking = null; this.daily = null; this.teamEnd = null; this.error = null; this.answered = new Set(); }
 }
 

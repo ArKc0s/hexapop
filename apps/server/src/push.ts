@@ -1,5 +1,6 @@
 // Notifications (Web Push) : rappel du défi, série en danger, retour en douceur.
 // Opt-in par appareil, réglable par type, une notification par jour au maximum.
+import { life } from "./life.ts";
 import * as webpush from "web-push";
 import { db, now } from "./db.ts";
 import { dailyNumber, today } from "./daily.ts";
@@ -108,5 +109,6 @@ async function tick() {
 }
 export function startPushScheduler() {
   if (!pushEnabled) return;
-  setInterval(() => void tick().catch((e) => console.error("[push]", e)), 5 * 60_000).unref();
+  // Instance en vidange : c'est la nouvelle qui envoie les notifications.
+  setInterval(() => { if (!life.draining) void tick().catch((e) => console.error("[push]", e)); }, 5 * 60_000).unref();
 }

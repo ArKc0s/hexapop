@@ -9,6 +9,7 @@ import {
 import { resetMail, sendMail, verifyMail } from "./mail.ts";
 import { dailyNumber, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
 import { stats } from "./rooms.ts";
+import { life } from "./life.ts";
 import { hallOfFame, saveMarathon } from "./hof.ts";
 import { DEFAULT_PREFS, cleanPrefs, pushEnabled, validEndpoint, vapidPublicKey } from "./push.ts";
 import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
@@ -81,7 +82,7 @@ async function sendVerification(u: { id: number; pseudo: string; email: string }
 
 type Handler = (req: IncomingMessage, res: ServerResponse, user: User | null) => Promise<void> | void;
 const routes: Record<string, Handler> = {
-  "GET /api/health": (_req, res) => json(res, 200, { ok: true, ...stats() }),
+  "GET /api/health": (_req, res) => json(res, 200, { ok: true, ...stats(), ...(life.color ? { color: life.color } : {}) }),
 
   "POST /api/auth/register": async (req, res) => {
     need(rateLimit("reg:" + clientIp(req), 10, 3_600_000), 429, "rate_limited", "Trop d'inscriptions depuis cette connexion, réessaie plus tard.");

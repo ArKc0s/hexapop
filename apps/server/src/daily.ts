@@ -21,22 +21,23 @@ export function gridOf(results: (RoundResult | undefined)[]): number[] {
 }
 
 // Résultats joués en invité, rattachables à un compte après connexion (usage unique, jusqu'à minuit).
-interface Claim { day: string; level: Level; points: number; accuracy: number; elapsedMs: number; grid: number[]; at: number }
-const claims = new Map<string, Claim>();
-export function newClaim(c: Omit<Claim, "at">): string {
+// En base (et non en mémoire) : un invité qui finit son défi sur l'ancienne version peut le rattacher sur la nouvelle.
+interface Claim { day: string; level: Level; points: number; accuracy: number; elapsedMs: number; grid: number[] }
+db.exec("CREATE TABLE IF NOT EXISTS daily_claims (id TEXT PRIMARY KEY, day TEXT NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL)");
+export function newClaim(c: Claim): string {
   const id = randomBytes(18).toString("base64url");
-  claims.set(id, { ...c, at: now() });
+  db.prepare("INSERT INTO daily_claims (id, day, data, created_at) VALUES (?, ?, ?, ?)").run(id, c.day, JSON.stringify(c), now());
   return id;
 }
 /** Rattache un résultat d'invité : seulement le jour même et si le compte n'a pas déjà joué. */
 export function redeemClaim(id: string, userId: number): { rank: number; players: number } | "expired" | "already" {
-  const c = claims.get(id);
-  claims.delete(id);
+  const row = db.prepare("DELETE FROM daily_claims WHERE id = ? RETURNING data").get(id) as { data: string } | undefined;
+  const c = row ? (JSON.parse(row.data) as Claim) : null;
   if (!c || c.day !== today()) return "expired";
-  if (!startDaily(c.day, userId, c.level)) return "already";
+  if (!startDaily(c.day, userId, c.level ?? "normal")) return "already";
   return saveDaily(c.day, userId, c.points, c.accuracy, c.elapsedMs, c.grid) ?? "already";
 }
-setInterval(() => { const d = today(); for (const [k, v] of claims) if (v.day !== d) claims.delete(k); }, 3_600_000).unref();
+setInterval(() => { db.prepare("DELETE FROM daily_claims WHERE day < ?").run(today()); }, 3_600_000).unref();
 
 export function hasPlayed(day: string, userId: number): boolean {
   return !!db.prepare("SELECT 1 FROM daily_results WHERE day = ? AND user_id = ?").get(day, userId);

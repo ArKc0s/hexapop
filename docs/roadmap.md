@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.8** : mise à jour sans coupure (deux versions en ligne, l'ancienne finit ses parties) ; jeu jouable hors ligne (séances, Entraînement) avec reprise automatique au retour du serveur ; copie de secours Cloudflare préparée.
 - **v1.7** (étape 5 de la [refonte](conception.md), refonte terminée) : séances expert région par région (sous-préfectures et voisins) et médailles d'or ; Hall of Fame (défi de la semaine et du mois par niveau, Marathon, Légendes).
 - **v1.6** (étape 4 de la [refonte](conception.md)) : défi du jour par niveau (Découverte, Confirmé, Expert) avec les mêmes 10 départements, classement et partage par niveau ; Entre amis : chacun joue à son niveau par défaut (3 niveaux), jamais deux inconnues en Découverte.
 - **v1.5.1** (retours de Léo sur la v1.5) : séances adaptatives (une question par nouveau département, rappel seulement si raté), une séance = un thème annoncé (région ou révisions), plus de carte surlignée en séance, route d'Hexa en deux échelles (tronçons et grands voyages, communs à tous les atlas), objectif du jour en hexagones chiffrés, accueil et pages secondaires sur un même cadre (ordinateur plein écran, colonnes alignées), page À propos à la place du pied de page, Album et Atlas fusionnés (Médailles, Carte, Succès), anciens écrans Révisions / Éclair / Région retirés.
@@ -32,7 +33,9 @@ Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement co
 - **À définir** : le parcours du nouveau joueur (première minute, première séance, premier retour le lendemain), le nombre de modes vraiment utiles et leur promesse en une phrase, des règles communes (un tour se joue toujours de la même façon), ce qui relève du solo, du multi, du défi.
 - **Livrable** : une carte des modes, la règle d'un tour, le parcours du nouveau joueur ; tests avec des débutants (dont la copine de Léo !) avant de recoder.
 
-### 3. Déployer sans couper les parties
+### 3. Déployer sans couper les parties ✅ (2026-11-17)
+**Fait** : deux versions en ligne (bleue / verte) derrière un aiguilleur ; la nouvelle prend les nouveaux joueurs, l'ancienne finit ses parties puis s'arrête seule (voir `deploy/README.md`). Et le palier 0 de résilience : jeu jouable hors ligne (copie dans le navigateur) et copie de secours Cloudflare prête (`deploy/secours/`, à activer par Léo).
+
 - **Problème** : une mise à jour redémarre le serveur, ce qui coupe les salons en cours (duels, équipes, battle royale) ; aujourd'hui le script de déploiement refuse simplement de redémarrer s'il y a des joueurs, ce qui bloque les mises à jour pendant les soirées.
 - **Pistes** : un mode « vidange » (le serveur n'ouvre plus de nouveaux salons, prévient les joueurs, attend la fin des parties puis redémarre de lui-même) ; ou deux instances en relais derrière le proxy (la nouvelle prend les nouveaux salons pendant que l'ancienne finit les siens) ; ou la sauvegarde de l'état des salons pour reprendre la partie après redémarrage (les clients se reconnectent déjà automatiquement).
 - **Livrable** : une mise à jour possible à tout moment, sans partie coupée, avec un message clair aux joueurs (« nouvelle version dans 2 minutes »).

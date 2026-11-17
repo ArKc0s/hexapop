@@ -70,7 +70,7 @@ export interface RoundSummary {
 
 // ---------- client -> serveur ----------
 export type ClientMsg =
-  | { t: "hello"; v: number; token?: string; name?: string; room?: string; resume?: string; /** Niveau du joueur d'après sa carte (handicap par défaut en salon). */ level?: Level }
+  | { t: "hello"; v: number; token?: string; name?: string; room?: string; resume?: string; spectate?: boolean; /** Niveau du joueur d'après sa carte (handicap par défaut en salon). */ level?: Level }
   | { t: "ping"; c: number }
   | { t: "create"; kind: RoomKind; settings?: Partial<RoomSettings> }
   | { t: "join"; room: string; spectate?: boolean }
@@ -100,7 +100,7 @@ export type ServerMsg =
   | { t: "error"; code: ErrorCode; message: string };
 
 export type Phase = "lobby" | "countdown" | "question" | "review" | "ended";
-export type ErrorCode = "bad_request" | "room_not_found" | "room_full" | "already_started" | "not_host" | "auth_required" | "daily_done" | "version";
+export type ErrorCode = "bad_request" | "room_not_found" | "room_full" | "already_started" | "not_host" | "auth_required" | "daily_done" | "version" | "room_moved";
 
 export const DEFAULT_SETTINGS: RoomSettings = { level: "normal", input: "libre", rounds: 20, regions: [], elimination: false, levels: {} };
 

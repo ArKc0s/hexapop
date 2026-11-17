@@ -11,6 +11,7 @@ import {
   type QuestionPayload, type RoomKind, type RoomSettings, type RoundResult, type ServerMsg,
 } from "@hexa/game";
 import { now } from "./db.ts";
+import { life } from "./life.ts";
 import { dailyConfig, dailyNumber, gridOf, newClaim, rankOf, saveDaily, startDaily, today } from "./daily.ts";
 
 /** Délai entre l'annonce d'une question et le départ du chrono, pour que tout le monde la reçoive. */
@@ -42,10 +43,12 @@ interface Seat {
 
 const rooms = new Map<string, Room>();
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // sans I ni O
+/** Première lettre propre à chaque instance (bleue A-N, verte P-Z) : deux versions en ligne n'ont jamais le même code. */
+const FIRST = life.color === "blue" ? ALPHABET.slice(0, 12) : life.color === "green" ? ALPHABET.slice(12) : ALPHABET;
 function roomCode(): string {
   for (;;) {
-    let c = "";
-    for (let i = 0; i < 4; i++) c += ALPHABET[randomInt(ALPHABET.length)];
+    let c = FIRST[randomInt(FIRST.length)];
+    for (let i = 1; i < 4; i++) c += ALPHABET[randomInt(ALPHABET.length)];
     if (!rooms.has(c)) return c;
   }
 }
@@ -413,6 +416,8 @@ export function handle(c: Conn, msg: ClientMsg) {
     case "ping":
       return send(c, { t: "pong", c: msg.c, s: now() });
     case "create": {
+      // Ancienne version en vidange : les nouvelles parties vont sur la nouvelle (le client se reconnecte).
+      if (life.draining) { fail(c, "bad_request", "Hexa vient d'être mis à jour : réessaie dans un instant."); c.ws.close(4001, "nouvelle version"); return; }
       c.room?.leave(c);
       if (msg.kind === "daily") {
         const day = today();
@@ -432,7 +437,10 @@ export function handle(c: Conn, msg: ClientMsg) {
       return;
     }
     case "join": {
-      const room = rooms.get(String(msg.room ?? "").toUpperCase().trim());
+      const code = String(msg.room ?? "").toUpperCase().trim();
+      const room = rooms.get(code);
+      // Pendant une mise à jour, les codes de l'autre version (autre première lettre) sont chez elle.
+      if (!room && life.color && code && !FIRST.includes(code[0])) return fail(c, "room_moved", "Ce salon est sur l'autre version : reconnexion…");
       if (!room || room.kind === "daily") return fail(c, "room_not_found", "Aucun salon avec ce code.");
       if (c.room && c.room !== room) c.room.leave(c);
       const err = room.add(c, !!msg.spectate);
@@ -444,7 +452,9 @@ export function handle(c: Conn, msg: ClientMsg) {
     case "start": return c.room?.start(c);
     case "answer": return c.room?.answer(c, Number(msg.index), msg.answer);
     case "next": return c.room?.next(c);
-    case "rematch": return c.room?.rematch(c);
+    case "rematch":
+      if (life.draining) return fail(c, "bad_request", "Hexa vient d'être mis à jour : crée un nouveau salon pour rejouer.");
+      return c.room?.rematch(c);
     case "react": return c.room?.react(c, msg.e);
     case "level": return c.room?.setLevel(c, String(msg.player), msg.level);
     case "leave": return c.room?.leave(c);
@@ -462,5 +472,11 @@ setInterval(() => {
     if ((empty || r.phase === "ended") && t - r.lastActivity > (empty ? 60_000 : ROOM_TTL_MS)) r.dispose();
   }
 }, 30_000).unref();
+
+/** Salons où une partie (ou un salon d'attente) occupe encore des joueurs connectés. */
+export function busyRooms(): number {
+  return [...rooms.values()].filter((r) => r.phase !== "ended" && [...r.seats.values()].some((s) => s.conn)).length;
+}
+export const roomCodes = () => [...rooms.keys()];
 
 export function stats() { return { rooms: rooms.size, players: [...rooms.values()].reduce((n, r) => n + r.seats.size, 0) }; }

@@ -10,10 +10,12 @@ import { handle, newPlayerId, send, fail, type Conn } from "./rooms.ts";
 import { purge } from "./db.ts";
 import { accountLevel, higherLevel } from "./daily.ts";
 import { startPushScheduler } from "./push.ts";
+import { life } from "./life.ts";
+import { busyRooms, roomCodes, stats } from "./rooms.ts";
 startPushScheduler();
 
 // Purge quotidienne des données arrivées à échéance (et une fois au démarrage).
-const runPurge = () => { const r = purge(); if (Object.values(r).some((n) => n > 0)) console.log("[purge]", r); };
+const runPurge = () => { if (life.draining) return; const r = purge(); if (Object.values(r).some((n) => n > 0)) console.log("[purge]", r); };
 runPurge();
 setInterval(runPurge, 24 * 3_600_000).unref();
 
@@ -46,8 +48,18 @@ function serveStatic(url: string, res: import("node:http").ServerResponse) {
   createReadStream(file).pipe(res);
 }
 
+// ---------- routes internes (aiguilleur) : salons de cette instance, mise en vidange ----------
+function internal(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) {
+  if (!life.internalToken || req.headers["x-hexa-internal"] !== life.internalToken) { res.writeHead(404).end(); return; }
+  const out = (data: unknown) => { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify(data)); };
+  if (req.url === "/api/internal/rooms") return out({ ...stats(), color: life.color, draining: life.draining, codes: roomCodes(), busy: busyRooms() });
+  if (req.url === "/api/internal/drain" && req.method === "POST") { drain(); return out({ ok: true }); }
+  res.writeHead(404).end();
+}
+
 const server = createServer((req, res) => {
   const url = req.url ?? "/";
+  if (url.startsWith("/api/internal/")) return internal(req, res);
   if (url.startsWith("/api/")) return void handleApi(req, res);
   if (config.webDir && (req.method === "GET" || req.method === "HEAD")) return serveStatic(url, res);
   res.writeHead(404).end();
@@ -110,19 +122,45 @@ function onConnection(ws: WebSocket, cookieToken: string | undefined) {
       // Sans niveau (ancien client) : Confirmé, comme avant la v1.6.
       const own = isLevel(msg.level) ? msg.level : "normal";
       const level = user ? higherLevel(own, accountLevel(user.id)) : own;
+      conns.add(ws);
       conn = { ws, playerId, name: user?.pseudo ?? guestName(msg.name), userId: user?.id ?? null, home: user?.home_dep ?? null, level, rttMs: 0, room: null, spectating: false };
+      const me = conn;
+      connRoom.set(ws, () => !!me.room);
       send(conn, { t: "welcome", you: playerId, name: conn.name, resume, serverNow: Date.now(), account: !!user });
-      if (msg.room) handle(conn, { t: "join", room: msg.room });
+      if (msg.room) handle(conn, { t: "join", room: msg.room, spectate: !!msg.spectate });
       return;
     }
     try { handle(conn, msg); } catch (e) { console.error(e); fail(conn, "bad_request", "Requête invalide."); }
   });
 
   ws.on("close", () => {
+    conns.delete(ws);
     clearInterval(pinger);
     clearInterval(refill);
     conn?.room?.disconnect(conn);
   });
+}
+
+/** Connexions ayant dit bonjour, avec leur salon éventuel (pour la vidange). */
+const conns = new Set<WebSocket>();
+const connRoom = new WeakMap<WebSocket, () => boolean>();
+
+/**
+ * Vidange : les joueurs sans partie (accueil, salon pas encore rejoint) sont reconnectés vers la nouvelle version ;
+ * ceux en partie finissent tranquillement. Dès qu'aucune partie n'occupe plus personne, l'instance s'arrête (code 0,
+ * l'aiguilleur l'oublie). Trois heures au plus.
+ */
+function drain() {
+  if (life.draining) return;
+  life.draining = true;
+  const t0 = Date.now();
+  console.log(`[vidange] ${life.color || "instance"} : plus de nouvelle partie, ${busyRooms()} en cours`);
+  for (const ws of wss.clients) if (!connRoom.get(ws)?.()) ws.close(4001, "nouvelle version");
+  setInterval(() => {
+    if (busyRooms() > 0 && Date.now() - t0 < 3 * 3_600_000) return;
+    console.log("[vidange] terminée, arrêt");
+    server.close(); wss.close(); process.exit(0);
+  }, 5_000);
 }
 
 server.listen(config.port, () => console.log(`Hexa écoute sur :${config.port}${config.webDir ? ` (web : ${config.webDir})` : ""}`));

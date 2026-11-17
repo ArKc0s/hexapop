@@ -48,7 +48,23 @@ class Session {
       this.me = null;
     } finally {
       this.ready = true;
+      if (!this.online) this.watchBack();
     }
+  }
+
+  /** Hors ligne : on revérifie toutes les 20 s, et tout revient tout seul (compte, défi, multi, synchronisation). */
+  private retry: ReturnType<typeof setInterval> | null = null;
+  private watchBack() {
+    if (this.retry) return;
+    this.retry = setInterval(async () => {
+      try {
+        const r = await fetch("/api/health", { cache: "no-store" });
+        if (!r.ok) return;
+        clearInterval(this.retry!); this.retry = null;
+        this.online = true;
+        await this.load();
+      } catch { /* toujours hors ligne */ }
+    }, 20_000);
   }
 
   async login(login: string, password: string) {

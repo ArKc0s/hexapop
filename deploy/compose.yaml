@@ -1,18 +1,49 @@
-# Conteneur unique (API, WebSocket, client web). À placer derrière un proxy HTTPS (voir Caddyfile.hexapop).
+# Déploiement à deux versions (bleue / verte) derrière un aiguilleur : mise à jour sans coupure.
+# L'aiguilleur écoute le port public (8787, derrière Caddy) ; il envoie les nouveaux joueurs à la version active et
+# laisse l'ancienne finir ses parties avant qu'elle s'arrête seule. Mode d'emploi : deploy/README.md.
+x-instance: &instance
+  image: hexapop:latest
+  build: ./src
+  restart: unless-stopped
+  env_file: .env
+  volumes:
+    - ./data:/data
+  mem_limit: 256m
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
 services:
-  hexapop:
-    build: ./src
-    image: hexapop:latest
-    container_name: hexapop
+  router:
+    # Image figée à part : une mise à jour du jeu ne redémarre jamais l'aiguilleur (ce serait une coupure).
+    image: hexapop-router:stable
+    container_name: hexapop-router
     restart: unless-stopped
     env_file: .env
     environment:
-      PUBLIC_URL: https://hexapop.app
+      ROUTER_STATE: /data/router.json
+      BACKENDS: blue=hexapop-blue:8787,green=hexapop-green:8787
+    command: ["node", "--max-old-space-size=64", "apps/server/src/router.ts"]
     ports:
       - "8787:8787"
+      - "127.0.0.1:8786:8786"
     volumes:
       - ./data:/data
-    mem_limit: 256m
+    mem_limit: 96m
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
+
+  blue:
+    <<: *instance
+    container_name: hexapop-blue
+    environment:
+      PUBLIC_URL: https://hexapop.app
+      COLOR: blue
+
+  green:
+    <<: *instance
+    container_name: hexapop-green
+    environment:
+      PUBLIC_URL: https://hexapop.app
+      COLOR: green

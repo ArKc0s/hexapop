@@ -98,6 +98,7 @@
     <RoadBar {km} />
 
     <div class="hello"><Mascot mood="happy" size={66} /><p class="bubble">{hello}</p></div>
+    {#if session.ready && !session.online}<p class="offline" role="status">Hors ligne : tes séances et l'Entraînement marchent, ta progression sera envoyée au retour. Le défi et le multi reviennent dès que la connexion est rétablie.</p>{/if}
 
     {#if install.suggest}
       <div class="card install">
@@ -279,4 +280,5 @@
     .acc.mob .back { max-width: 96px; font-size: 14px; padding-inline: 10px; }
   }
   @media (min-width: 861px) { .home { min-height: 100dvh; align-content: center; } }
+  .offline { margin: 0; padding: 10px 14px; border-radius: 14px; background: #fff4c2; box-shadow: inset 0 0 0 2px var(--yellow); font-weight: 700; font-size: 14px; }
 </style>
