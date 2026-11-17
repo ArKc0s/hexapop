@@ -2,9 +2,9 @@
   import { nav } from "../lib/nav.svelte.ts";
   import { EDITEUR, MAJ, SOUS_TRAITANTS } from "../lib/legal.ts";
 
-  export type Doc = "mentions" | "confidentialite" | "cgu";
+  export type Doc = "apropos" | "mentions" | "confidentialite" | "cgu";
   let { doc }: { doc: Doc } = $props();
-  const TITLES: Record<Doc, string> = { mentions: "Mentions légales", confidentialite: "Confidentialité", cgu: "Conditions d'utilisation" };
+  const TITLES: Record<Doc, string> = { apropos: "À propos", mentions: "Mentions légales", confidentialite: "Confidentialité", cgu: "Conditions d'utilisation" };
 </script>
 
 <main class="legal">
@@ -15,9 +15,17 @@
     {/each}
   </nav>
   <h1 class="title">{TITLES[doc]}</h1>
-  <p class="maj">Dernière mise à jour : {MAJ}</p>
+  {#if doc !== "apropos"}<p class="maj">Dernière mise à jour : {MAJ}</p>{/if}
 
-  {#if doc === "mentions"}
+  {#if doc === "apropos"}
+    <p>Hexa est un jeu gratuit pour apprendre les 101 départements français : leur place sur la carte, leur numéro, leur préfecture. Fait à titre personnel, <b>sans publicité ni traceur</b>.</p>
+    <ul class="about">
+      <li><a class="link" href="https://github.com/ArKc0s/hexapop/issues/new/choose" target="_blank" rel="noopener">Signaler un bug ou proposer une idée</a></li>
+      <li><a class="link" href="https://github.com/ArKc0s/hexapop" target="_blank" rel="noopener">Code source</a>, sous licence GNU AGPL-3.0</li>
+      <li>Contact : {EDITEUR.contact}</li>
+    </ul>
+    <p>Les documents légaux sont dans les onglets ci-dessus : mentions légales, confidentialité, conditions d'utilisation.</p>
+  {:else if doc === "mentions"}
     <h2>Éditeur</h2>
     <p>Hexa (hexapop.app) est un site non commercial, édité à titre personnel par :</p>
     <ul>

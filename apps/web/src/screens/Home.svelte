@@ -138,6 +138,7 @@
       <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
       <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
       <button onclick={() => nav.go({ name: "rappels" })}>Rappels</button>
+      <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
     </nav>
   </section>
 
@@ -162,19 +163,22 @@
     </div>
   </section>
 
-  <footer>
-    <button class="link" onclick={() => nav.go({ name: "legal", doc: "mentions" })}>Mentions légales</button>
-    <button class="link" onclick={() => nav.go({ name: "legal", doc: "confidentialite" })}>Confidentialité</button>
-    <button class="link" onclick={() => nav.go({ name: "legal", doc: "cgu" })}>Conditions d'utilisation</button>
-    <a class="link" href="https://github.com/ArKc0s/hexapop/issues/new/choose" target="_blank" rel="noopener">Signaler un bug</a>
-    <a class="link" href="https://github.com/ArKc0s/hexapop" target="_blank" rel="noopener">Code source (AGPL)</a>
-    <span>Sans publicité ni traceur.</span>
-  </footer>
 </main>
 {/if}
 
 <style>
-  .home { max-width: 1280px; margin: 0 auto; padding: 22px 24px 28px; display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); gap: 10px 48px; }
+  .home { max-width: 1720px; margin: 0 auto; padding: 22px 24px 28px; display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 10px 48px; }
+  /* Ordinateur : on occupe l'écran. La carte grandit jusqu'à la hauteur de la fenêtre, le tout centré verticalement. */
+  @media (min-width: 861px) {
+    .home { min-height: 100dvh; align-content: center; }
+    .right :global(.map) { max-height: calc(100dvh - 170px); }
+  }
+  /* Grands écrans : la colonne de gauche et les textes autour de la carte grossissent avec (la carte, elle, s'étire seule). */
+  @media (min-width: 1600px) and (min-height: 900px) {
+    .home { grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); gap: 10px 64px; }
+    .left, .rhead, .tip, .legend { zoom: 1.2; }
+    .right :global(.map) { max-height: calc(100dvh - 220px); }
+  }
   .left { display: flex; flex-direction: column; gap: 16px; }
   .top { display: flex; align-items: center; gap: 8px; }
   .logo { font-size: 44px; margin: 0 auto 0 0; }
@@ -205,8 +209,7 @@
   .snd { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; }
   .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 13px; font-weight: 700; color: var(--soft); justify-content: flex-end; }
   .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
-  footer { grid-column: 1 / -1; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--soft); padding-top: 14px; }
-  footer .link { font-weight: 600; color: var(--soft); }
+  .menu .soft { color: var(--soft); font-weight: 700; }
   .acc.mob { display: none; }
   .install { display: flex; gap: 12px; align-items: center; justify-content: space-between; border: 2px dashed var(--line); }
   .install b { font-weight: 900; }

@@ -15,11 +15,11 @@ export type Screen =
   | { name: "lobby"; join?: string }
   | { name: "live" }
   | { name: "stage"; code: string }
-  | { name: "legal"; doc: "mentions" | "confidentialite" | "cgu" }
+  | { name: "legal"; doc: "apropos" | "mentions" | "confidentialite" | "cgu" }
   | { name: "rappels" };
 
 const SIMPLE: Partial<Record<Screen["name"], string>> = { training: "#entrainement", album: "#album", atlas: "#atlas", daily: "#defi", rappels: "#rappels" };
-const LEGAL = { mentions: "#mentions-legales", confidentialite: "#confidentialite", cgu: "#cgu" };
+const LEGAL = { apropos: "#a-propos", mentions: "#mentions-legales", confidentialite: "#confidentialite", cgu: "#cgu" };
 
 class Nav {
   screen = $state<Screen>({ name: "home" });
