@@ -210,7 +210,9 @@
   .train small { font-size: 13.5px; font-weight: 700; color: var(--soft); }
   .train .arrow { font-size: 22px; font-weight: 900; }
   .foot { display: flex; flex-direction: column; gap: 14px; }
-  @media (min-width: 861px) { .foot { margin-top: auto; } }
+  /* Ordinateur : trois blocs répartis sur la hauteur de la carte (en-tête et voyage en haut, la mascotte et
+     les actions au milieu, objectif et liens en bas) ; le vide se partage au lieu de s'accumuler au milieu. */
+  @media (min-width: 861px) { .hello, .foot { margin-top: auto; } }
   .goal { display: flex; flex-direction: column; gap: 8px; }
   .gh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .gp { font-weight: 800; font-size: 13.5px; color: var(--soft); }
