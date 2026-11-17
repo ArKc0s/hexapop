@@ -157,7 +157,7 @@ Pour les comptes connectés, trois tableaux :
 - **Les kilomètres** (ex-XP) : ils montrent **combien tu joues**, quand la carte montre **ce que tu sais**. Chaque bonne réponse fait avancer Hexa sur la route, dans tous les modes et tous les atlas (défi et multi compris). Affichés comme une **barre d'expérience à deux échelles**, commune à tous les atlas :
   - **la route** : Hexa roule d'une escale à la suivante (« Lyon · encore 164 km · Marseille »), tronçons de 200 à 3 100 km, ça bouge à chaque séance ; à l'écran de fin, la mascotte avance sous tes yeux (« Hexa est arrivé à Marseille ! ») ;
   - **le grand voyage** : l'horizon, avec un segment par tronçon. Le tour de France (3 795 km, par la route, de ville en ville), puis les Antilles et la Guyane (9 800 km), l'océan Indien (14 215 km, jusqu'à La Réunion et Mayotte), le tour du monde (41 995 km, par Nouméa, Wallis, Papeete et Saint-Pierre). Hors de France, distances à vol d'oiseau calculées depuis les coordonnées des escales. Un cycle fait 69 805 km (≈ 5 mois pour un joueur assidu), puis « Grand voyage n° 2 ».
-  Et à la semaine (« 840 km cette semaine »), ils servent aux **ligues hebdomadaires** et à se comparer entre amis. **Pas de niveaux** (1, 2, 3…) et rien à débloquer : c'est un compteur d'activité, qui continue de monter quand la carte est finie.
+  - **à la semaine** (« 840 km cette semaine ») : ils servent aux **ligues hebdomadaires** et à se comparer entre amis. **Pas de niveaux** (1, 2, 3…) et rien à débloquer : c'est un compteur d'activité, qui continue de monter quand la carte est finie.
 - **Les succès** (ex-badges) : des exploits rares, rangés dans le profil, jamais au premier plan.
 
 ### 4.8 Ce qu'on retire ou fusionne
