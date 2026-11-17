@@ -68,8 +68,12 @@ export function learn(prev: Knowledge, results: RoundResult[], rounds: RoundPlay
           c.v = 1;
           if (!c.s) { c.b = Math.max(c.b, 1); c.d = now + INTERVALS[c.b]; }
         } else if (perfect) {
-          c.b = Math.min(c.b + 1, INTERVALS.length - 1);
-          c.d = now + INTERVALS[c.b];
+          // Leitner : on ne monte d'une boîte que si la révision était due. Sinon, rejouer le même département
+          // plusieurs fois dans la journée suffirait pour l'argent, qui doit dire « retenu sur plusieurs jours ».
+          if (!c.s || now >= c.d) {
+            c.b = Math.min(c.b + 1, INTERVALS.length - 1);
+            c.d = now + INTERVALS[c.b];
+          }
           c.v = 1;
           if (!c.s) { c.s = 1; stars.push({ code: r.code, facet: f }); }
         } else {

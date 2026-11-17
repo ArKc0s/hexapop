@@ -232,3 +232,19 @@ test("route d'Hexa : tronçons courts, grands voyages, en boucle", async () => {
   assert.deepEqual(R.tripEvents(3700, 3900), { cities: ["Paris"], voyages: ["Le tour de France"] });
   assert.deepEqual(R.tripEvents(R.CYCLE_KM - 10, R.CYCLE_KM + 230).cities, ["Paris", "Lille"]);
 });
+
+test("argent : rejouer le même jour ne suffit pas, il faut revoir à des jours d'écart", async () => {
+  const { learn, medalOf } = await import("./knowledge.ts");
+  const { makeGame } = await import("./round.ts");
+  const q = makeGame({ seed: 1, level: "normal", input: "libre", plan: [{ code: "29", hint: "nom", ask: ["carte", "numero", "prefecture"] }] })[0];
+  const res = { code: "29", accuracy: 1, points: 0, elapsedMs: 0, fields: q.fields.map((f) => ({ field: f, score: 1, given: "", expected: "" })) };
+  const play = [{ hint: q.hint, fields: q.fields, aided: [] }];
+  let k = {};
+  const t0 = T("2026-11-17");
+  for (let i = 0; i < 6; i++) k = learn(k as never, [res as never], play as never, t0 + i * 60_000).know;
+  assert.equal(medalOf(k as never, "29"), 1, "bronze seulement, même après 6 marathons dans la journée");
+  // En revoyant à chaque échéance (10 min, 1 jour, 3 jours) : argent.
+  let t = t0;
+  for (const wait of [10 * 60_000, 86_400_000, 3 * 86_400_000]) { t += wait + 1; k = learn(k as never, [res as never], play as never, t).know; }
+  assert.equal(medalOf(k as never, "29"), 2, "argent après des révisions espacées");
+});
