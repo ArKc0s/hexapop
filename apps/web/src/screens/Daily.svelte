@@ -7,18 +7,19 @@
   import SaveCard from "../lib/ui/SaveCard.svelte";
   import PushCard from "../lib/ui/PushCard.svelte";
   import { signup } from "../lib/signup.svelte.ts";
+  import { guestId } from "../lib/guest.ts";
   import { nav } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { progress } from "../lib/progress.svelte.ts";
   import Mascot from "../lib/ui/Mascot.svelte";
   import { LEVELS, LEVEL_NAMES, LEVEL_OF, PLAYER_LEVELS, levelAllowed, playerLevel, type Level, type Rewards } from "@hexa/game";
 
-  interface Board { day: string; number: number; level: Level; counts: Partial<Record<Level, number>>; top: { name: string; home: string | null; points: number; elapsedMs: number; grid: string }[]; departements: { code: string; nom: string; players: number; avg: number }[] }
+  interface Board { day: string; number: number; level: Level; counts: Partial<Record<Level, number>>; top: { name: string; home: string | null; points: number; elapsedMs: number; grid: string; guest?: number }[]; departements: { code: string; nom: string; players: number; avg: number }[] }
   interface DailyInfo { day: string; number: number; played: boolean; mine: { level: Level; points: number; elapsedMs: number; grid: string; finished: number } | null; rank: { rank: number; players: number } | null }
 
   let info = $state<DailyInfo | null>(null);
   // Invité : un seul essai par jour sur cet appareil ; le résultat est gardé pour l'afficher et le rattacher.
-  interface GuestDaily { day: string; level?: Level; points: number; elapsedMs: number; grid: number[]; claim?: string }
+  interface GuestDaily { day: string; level?: Level; points: number; elapsedMs: number; grid: number[]; claim?: string; name?: string; rank?: number; players?: number }
   let guest = $state<GuestDaily | null>((() => { try { return JSON.parse(localStorage.getItem(GUEST_DAILY) ?? "null"); } catch { return null; } })());
   let board = $state<Board | null>(null);
   let started = $state(false);
@@ -42,6 +43,7 @@
 
   function start() {
     started = true;
+    if (!session.me) guestId(true); // classé sous un pseudo généré, gardé par ce navigateur
     boardLevel = level;
     live.connect(session.me?.pseudo ?? "", () => live.create("daily", { level }));
   }
@@ -49,10 +51,12 @@
   $effect(() => {
     const o = live.daily;
     if (!o || session.me || (guest && guest.day === o.day)) return;
-    guest = { day: o.day, level: o.level, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim };
+    guest = { day: o.day, level: o.level, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim, name: o.name, rank: o.rank, players: o.players };
     offerTimer = setTimeout(() => signup.offer({ kind: "daily" }), 1000);
     try { localStorage.setItem(GUEST_DAILY, JSON.stringify(guest)); } catch { /* rien */ }
   });
+  /** Pseudo généré de l'invité au classement (« Mouette du Finistère »). */
+  const myGuestName = $derived(live.daily?.name ?? guest?.name ?? null);
   const guestToday = $derived(!session.me && !!guest && guest.day === info?.day ? guest : null);
   $effect(() => { if (guestToday?.level) boardLevel = guestToday.level; });
   /** Niveau auquel on a joué aujourd'hui. */
@@ -114,7 +118,7 @@
           </button>
         {/each}
       </div>
-      {#if !session.me}<p class="hint">Tu joues en invité : <button class="link" onclick={() => nav.go({ name: "account", view: "register", then: { name: "daily" } })}>crée un compte</button> pour entrer au classement.</p>{/if}
+      {#if !session.me}<p class="hint">Tu joues en invité : tu seras classé sous un pseudo tiré au sort. <button class="link" onclick={() => nav.go({ name: "account", view: "register", then: { name: "daily" } })}>Crée un compte</button> pour jouer sous ton pseudo et entrer au Hall of Fame.</p>{/if}
       <button class="btn pink big go" onclick={start}>Jouer le défi · {LEVEL_NAMES[level]}</button>
     </section>
   {:else if started && !outcome && live.question}
@@ -131,9 +135,10 @@
         <span class="chip lvchip">Défi n° {outcome?.number ?? info?.number} · {LEVEL_NAMES[playedLevel]}</span>
         <span class="riso scoreline" data-t={String(outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0)}>{outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0}</span>
         <div class="grid" aria-label="Résultat case par case">{#each grid as g, i (i)}<i class="g{g}"></i>{/each}</div>
-        {#if outcome?.rank || info?.rank}
-          {@const r = outcome?.rank ? { rank: outcome.rank, players: outcome.players } : info?.rank}
+        {#if outcome?.rank || info?.rank || guestToday?.rank}
+          {@const r = outcome?.rank ? { rank: outcome.rank, players: outcome.players } : info?.rank ?? { rank: guestToday?.rank, players: guestToday?.players }}
           <p><b>{r?.rank}{r?.rank === 1 ? "er" : "e"}</b> sur {r?.players} joueur{(r?.players ?? 0) > 1 ? "s" : ""} en {LEVEL_NAMES[playedLevel]} aujourd'hui</p>
+          {#if !session.me && myGuestName}<p class="hint">Tu es classé comme <b>{myGuestName}</b>. Crée un compte pour garder ce score sous ton pseudo.</p>{/if}
         {:else if !session.me}
           <p>Score pas encore classé.</p>
         {/if}
@@ -155,7 +160,7 @@
         </div>
         <ol class="lb">
           {#each board.top.slice(0, 20) as p, i (i)}
-            <li class:me={p.name === session.me?.pseudo}><span class="tabnum">{i + 1}</span><span>{p.name}{p.home ? ` · ${p.home}` : ""}</span><b class="tabnum">{p.points}</b></li>
+            <li class:me={p.name === (session.me?.pseudo ?? myGuestName)}><span class="tabnum">{i + 1}</span><span>{p.name}{p.home && !p.guest ? ` · ${p.home}` : ""}{#if p.guest}<small class="inv">invité</small>{/if}</span><b class="tabnum">{p.points}</b></li>
           {:else}<li class="empty">Personne encore, tu ouvres le bal.</li>{/each}
         </ol>
       </div>
@@ -222,4 +227,5 @@
   .card { box-shadow: 0 6px 0 var(--line) !important; border: 0 !important; background: #fff !important; border-radius: 28px !important; }
   .lb li.me { background: #fff4c2 !important; }
   .savewrap { display: flex; justify-content: center; }
+  .inv { margin-left: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--soft); background: var(--bg); border-radius: 999px; padding: 1px 7px; }
 </style>

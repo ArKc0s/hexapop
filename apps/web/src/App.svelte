@@ -2,6 +2,7 @@
   import { nav, screenFromHash } from "./lib/nav.svelte.ts";
   import { bugUrl } from "./lib/version.ts";
   import UpdateBanner from "./lib/ui/UpdateBanner.svelte";
+  import PseudoPrompt from "./lib/ui/PseudoPrompt.svelte";
   import { updater } from "./lib/update.svelte.ts";
   import { session } from "./lib/api.svelte.ts";
   import Home from "./screens/Home.svelte";
@@ -62,6 +63,7 @@
 
 <PushPrompt />
 <UpdateBanner />
+<PseudoPrompt />
 <SignupPrompt />
 
 <style>

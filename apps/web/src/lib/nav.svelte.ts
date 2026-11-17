@@ -36,6 +36,9 @@ export const nav = new Nav();
 export let pendingRegion: string | null = null;
 export const takePendingRegion = () => { const r = pendingRegion; pendingRegion = null; return r; };
 
+/** Compte créé via Google, Discord… : demander de confirmer le pseudo (voir PseudoPrompt). */
+export const welcomeAccount = $state({ ask: false });
+
 /** Écran de départ selon le lien ouvert. */
 export function screenFromHash(): Screen {
   const h = location.hash;
@@ -57,6 +60,7 @@ export function screenFromHash(): Screen {
   if (k === "nouveau-mdp") return { name: "account", view: "reset", token: v };
   // Retour de connexion via Google, Discord, Twitch ou Apple
   if (k === "oauth-ok") {
+    if (v === "nouveau") welcomeAccount.ask = true; // compte tout juste créé : confirmer le pseudo
     if (v.startsWith("lie-") && v !== "lie-auto") return { name: "account", view: "profile", notice: v };
     let back = "";
     try { back = sessionStorage.getItem("hexa.returnTo") ?? ""; sessionStorage.removeItem("hexa.returnTo"); } catch { /* rien */ }

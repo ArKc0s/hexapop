@@ -2,13 +2,13 @@ import { createServer } from "node:http";
 import { createReadStream, statSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
-import { PROTOCOL_VERSION, isLevel, type ClientMsg } from "@hexa/game";
+import { DEP, PROTOCOL_VERSION, isLevel, type ClientMsg } from "@hexa/game";
 import { config } from "./config.ts";
 import { handleApi, sessionToken, clientIp } from "./api.ts";
 import { userFromSession, rateLimit } from "./auth.ts";
 import { handle, newPlayerId, send, fail, type Conn } from "./rooms.ts";
 import { purge } from "./db.ts";
-import { accountLevel, higherLevel } from "./daily.ts";
+import { accountLevel, higherLevel, isGuestId } from "./daily.ts";
 import { startPushScheduler } from "./push.ts";
 import { life } from "./life.ts";
 import { busyRooms, roomCodes, stats } from "./rooms.ts";
@@ -82,7 +82,7 @@ const resumeIds = new Map<string, string>(); // jeton de reprise -> id joueur (r
 server.on("upgrade", (req, socket, head) => {
   if (!req.url?.startsWith("/api/ws")) return socket.destroy();
   if (!rateLimit("ws:" + clientIp(req), 60, 60_000)) return socket.destroy();
-  wss.handleUpgrade(req, socket, head, (ws) => onConnection(ws, sessionToken(req)));
+  wss.handleUpgrade(req, socket, head, (ws) => onConnection(ws, sessionToken(req), clientIp(req)));
 });
 
 function guestName(raw: unknown): string {
@@ -90,7 +90,7 @@ function guestName(raw: unknown): string {
   return n.length >= 2 ? n : `Invité ${Math.floor(Math.random() * 900 + 100)}`;
 }
 
-function onConnection(ws: WebSocket, cookieToken: string | undefined) {
+function onConnection(ws: WebSocket, cookieToken: string | undefined, ip: string) {
   let conn: Conn | null = null;
   let pingSent = 0;
   let alive = true;
@@ -133,7 +133,8 @@ function onConnection(ws: WebSocket, cookieToken: string | undefined) {
       const own = isLevel(msg.level) ? msg.level : "normal";
       const level = user ? higherLevel(own, accountLevel(user.id)) : own;
       conns.add(ws);
-      conn = { ws, playerId, name: user?.pseudo ?? guestName(msg.name), userId: user?.id ?? null, home: user?.home_dep ?? null, level, rttMs: 0, room: null, spectating: false };
+      const guestHome = typeof msg.home === "string" && DEP.has(msg.home) ? msg.home : null;
+      conn = { ws, playerId, name: user?.pseudo ?? guestName(msg.name), userId: user?.id ?? null, home: user?.home_dep ?? guestHome, level, guestId: !user && isGuestId(msg.guest) ? msg.guest : null, ip, rttMs: 0, room: null, spectating: false };
       const me = conn;
       connRoom.set(ws, () => !!me.room);
       send(conn, { t: "welcome", you: playerId, name: conn.name, resume, serverNow: Date.now(), account: !!user });

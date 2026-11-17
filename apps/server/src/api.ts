@@ -7,7 +7,7 @@ import {
   consumeEmailToken, createSession, deleteSession, emailToken, hashPassword, rateLimit, touchSession, userFromSession, verifyPassword, type User,
 } from "./auth.ts";
 import { resetMail, sendMail, verifyMail } from "./mail.ts";
-import { dailyNumber, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
+import { adoptGuest, dailyNumber, isGuestId, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
 import { stats } from "./rooms.ts";
 import { life } from "./life.ts";
 import { hallOfFame, saveMarathon } from "./hof.ts";
@@ -312,6 +312,14 @@ const routes: Record<string, Handler> = {
     const day = today();
     const mine = user ? db.prepare("SELECT level, points, accuracy, elapsed_ms AS elapsedMs, grid, finished FROM daily_results WHERE day = ? AND user_id = ?").get(day, user.id) : null;
     json(res, 200, { day, number: dailyNumber(day), played: !!mine, mine: mine ?? null, rank: user ? rankOf(day, user.id) : null });
+  },
+
+  /** Un invité vient de créer son compte ou de se connecter : ses défis passent sous son pseudo. */
+  "POST /api/me/adopt-guest": async (req, res, user) => {
+    const u = need(user, 401, "auth_required", "Connecte-toi d'abord.");
+    const b = await body(req);
+    need(isGuestId(b.guest), 400, "bad_request", "Identifiant d'invité invalide.");
+    json(res, 200, { moved: adoptGuest(b.guest as string, u.id) });
   },
 
   /** Rattacher au compte un défi joué juste avant en invité. */

@@ -1,6 +1,7 @@
 import type { Profile, Progress } from "@hexa/game";
 import { progress } from "./progress.svelte.ts";
 import { profile } from "./profile.svelte.ts";
+import { forgetGuest, guestId } from "./guest.ts";
 
 export interface Me { id: number; pseudo: string; email: string; emailVerified: boolean; home: string | null; providers: string[]; hasPassword: boolean }
 export interface ProviderInfo { id: "google" | "discord" | "twitch" | "apple"; label: string }
@@ -98,6 +99,9 @@ class Session {
   async syncProgress() {
     if (!this.me) return;
     await claimGuestDaily();
+    // Invité devenu joueur avec compte : ses défis passent sous son pseudo.
+    const g = guestId();
+    if (g) await api("POST", "/me/adopt-guest", { guest: g }).then(() => forgetGuest()).catch(() => {});
     const [r, p] = await Promise.all([
       api<{ progress: Progress }>("PUT", "/progress", { progress: progress.data }),
       api<{ profile: Profile }>("PUT", "/profile", { profile: profile.data }),

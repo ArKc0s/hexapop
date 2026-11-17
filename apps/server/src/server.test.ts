@@ -422,3 +422,36 @@ test("statistiques anonymes : visiteurs uniques du jour, parties, lecture proté
   assert.equal(r.days.length, 7);
   assert.ok(r.users.length >= 1 && r.users.every((u: Record<string, unknown>) => !("email" in u)), "jamais d'email dans les statistiques");
 });
+
+test("invités au classement du défi : pseudo généré, un essai par navigateur, repris par le compte", { timeout: 60_000 }, async () => {
+  const guest = "invite-test-0123456789ab";
+  const play = async () => {
+    const c = new Client(); await c.open();
+    c.send({ t: "hello", v: PROTOCOL_VERSION, name: "x", guest, home: "29", level: "decouverte" }); await c.wait("welcome");
+    c.send({ t: "create", kind: "daily", settings: { level: "decouverte" } });
+    return c;
+  };
+  const c = await play();
+  for (let i = 0; i < 10; i++) {
+    const q = (await c.wait("question", (m) => m.q.index === i)).q;
+    c.send({ t: "answer", index: i, answer: perfect(q) }); await c.wait("round", (m) => m.summary.index === i); c.send({ t: "next" });
+  }
+  const end = await c.wait("end");
+  assert.equal(end.daily?.saved, true, "invité classé");
+  assert.match(end.daily?.name ?? "", / du Finistère$/);
+  assert.ok((end.daily?.rank ?? 0) >= 1);
+  c.ws.close();
+  const lb = await (await fetch(BASE + "/api/daily/leaderboard?level=decouverte")).json();
+  assert.ok(lb.top.some((p: { name: string; guest: number }) => p.name === end.daily!.name && p.guest === 1));
+  // Deuxième essai depuis le même navigateur : refusé.
+  const c2 = await play();
+  assert.equal((await c2.wait("error")).code, "daily_done"); c2.ws.close();
+  // Il crée son compte : son défi passe sous son pseudo.
+  const r = await post("/api/auth/register", { email: "mouette@example.com", pseudo: "VraiPseudo", password: "motdepasse" });
+  const { token } = await r.json();
+  const a = await (await post("/api/me/adopt-guest", { guest }, token)).json();
+  assert.equal(a.moved, 1);
+  const lb2 = await (await fetch(BASE + "/api/daily/leaderboard?level=decouverte")).json();
+  assert.ok(lb2.top.some((p: { name: string; guest: number }) => p.name === "VraiPseudo" && p.guest === 0));
+  assert.ok(!lb2.top.some((p: { name: string }) => p.name === end.daily!.name), "l'entrée invitée a disparu");
+});

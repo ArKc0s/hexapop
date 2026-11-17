@@ -13,7 +13,7 @@ import {
 import { now } from "./db.ts";
 import { life } from "./life.ts";
 import { bump } from "./stats.ts";
-import { dailyConfig, dailyNumber, gridOf, newClaim, rankOf, saveDaily, startDaily, today } from "./daily.ts";
+import { dailyConfig, dailyNumber, gridOf, guestDisplayName, newClaim, rankOf, saveDaily, saveGuestDaily, startDaily, startGuestDaily, today } from "./daily.ts";
 
 /** Délai entre l'annonce d'une question et le départ du chrono, pour que tout le monde la reçoive. */
 const LEAD_MS = 400;
@@ -29,6 +29,9 @@ export interface Conn {
   home: string | null;
   /** Niveau du joueur (d'après sa carte) : niveau par défaut en salon, plafond au défi du jour. */
   level: Level;
+  /** Invité : identifiant gardé par son navigateur (classement du défi), et son adresse (limite d'abus, jamais gardée). */
+  guestId: string | null;
+  ip: string;
   rttMs: number;
   lastReact?: number;
   room: Room | null;
@@ -39,6 +42,8 @@ interface Seat {
   info: PlayerInfo;
   conn: Conn | null;
   userId: number | null;
+  /** Invité classé au défi (gardé même si la connexion tombe avant la fin). */
+  guestId: string | null;
   results: (RoundResult | undefined)[];
 }
 
@@ -147,7 +152,7 @@ export class Room {
     if (this.kind !== "daily" && !this.settings.levels[c.playerId]) this.settings = { ...this.settings, levels: { ...this.settings.levels, [c.playerId]: c.level } };
     this.seats.set(c.playerId, {
       info: { id: c.playerId, name: c.name, home: c.home ?? undefined, score: 0, connected: true, eliminated: false, answered: false, host, level: this.levelOf(c.playerId) },
-      conn: c, userId: c.userId, results: [],
+      conn: c, userId: c.userId, guestId: c.guestId, results: [],
     });
     c.room = this;
     this.broadcastRoom();
@@ -395,7 +400,12 @@ export class Room {
       }
       const daily: DailyOutcome = { day: this.day, number: dailyNumber(this.day), level: this.settings.level, points, accuracy, elapsedMs, grid, saved, rank: rank?.rank, players: rank?.players };
       if (!seat?.userId) bump("defi_invite");
-      if (!seat?.userId) daily.claim = newClaim({ day: this.day, level: this.settings.level, points, accuracy, elapsedMs, grid });
+      const guestId = !seat?.userId ? seat?.guestId ?? null : null;
+      if (guestId) {
+        const g = saveGuestDaily(this.day, guestId, points, accuracy, elapsedMs, grid);
+        if (g) { daily.saved = true; daily.rank = g.rank; daily.players = g.players; daily.name = guestDisplayName(guestId, seat?.info.home ?? null); }
+      }
+      if (!seat?.userId) daily.claim = newClaim({ day: this.day, level: this.settings.level, points, accuracy, elapsedMs, grid, guestId: guestId ?? undefined });
       this.broadcast({ t: "end", ranking, daily });
     } else if (this.kind === "coop") {
       this.broadcast({ t: "end", ranking, team: { ...this.team, stars: teamStars(this.team.accuracy, this.team.lives) } });
@@ -427,6 +437,12 @@ export function handle(c: Conn, msg: ClientMsg) {
         const wanted = msg.settings?.level;
         const level: Level = isLevel(wanted) && levelAllowed(wanted, c.level) ? wanted : c.level;
         if (c.userId && !startDaily(day, c.userId, level)) return fail(c, "daily_done", "Tu as déjà joué le défi du jour. Rendez-vous demain !");
+        // Invité : classé sous un pseudo généré, un défi par navigateur et par jour.
+        if (!c.userId && c.guestId) {
+          const g = startGuestDaily(day, c.guestId, c.home, level, c.ip);
+          if (g === "already") return fail(c, "daily_done", "Tu as déjà joué le défi du jour sur cet appareil. Rendez-vous demain !");
+          if (g === "limit") c.guestId = null; // trop d'invités sur cette connexion : on joue quand même, sans classement
+        }
         const room = new Room("daily", { ...DEFAULT_SETTINGS, level, rounds: 10 });
         room.day = day;
         room.add(c);
