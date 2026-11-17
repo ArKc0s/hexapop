@@ -11,6 +11,8 @@ import { dailyNumber, leaderboard, rankOf, redeemClaim, today } from "./daily.ts
 import { stats } from "./rooms.ts";
 import { life } from "./life.ts";
 import { hallOfFame, saveMarathon } from "./hof.ts";
+import { CLIENT_EVENTS, bump, report, visit } from "./stats.ts";
+import { timingSafeEqual } from "node:crypto";
 import { DEFAULT_PREFS, cleanPrefs, pushEnabled, validEndpoint, vapidPublicKey } from "./push.ts";
 import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
 
@@ -323,6 +325,26 @@ const routes: Record<string, Handler> = {
   },
 
   "GET /api/hof": (_req, res) => json(res, 200, hallOfFame()),
+
+  /** Statistiques anonymes : une visite, ou une partie solo terminée (voir stats.ts). */
+  "POST /api/stats/event": async (req, res) => {
+    const ip = clientIp(req);
+    if (!rateLimit("stats:" + ip, 60, 60_000)) { res.writeHead(204).end(); return; }
+    const b = await body(req);
+    const e = s(b.e);
+    if (e === "visite") visit(ip, String(req.headers["user-agent"] ?? "").slice(0, 200), b.app === true);
+    else if (CLIENT_EVENTS.has(e)) bump(e);
+    res.writeHead(204).end();
+  },
+
+  /** Lecture des statistiques (Grafana), protégée par STATS_TOKEN. */
+  "GET /api/admin/stats": (req, res) => {
+    const given = Buffer.from(String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
+    const want = Buffer.from(config.statsToken);
+    need(config.statsToken && given.length === want.length && timingSafeEqual(given, want), 401, "auth_required", "Jeton invalide.");
+    const days = Math.min(365, Math.max(1, Number(new URL(req.url ?? "/", "http://x").searchParams.get("days")) || 30));
+    json(res, 200, report(days), { "cache-control": "no-store" });
+  },
 
   /** Marathon (les 101 en fiche complète, au clavier) : garde le meilleur résultat du compte. */
   "POST /api/marathon": async (req, res, user) => {

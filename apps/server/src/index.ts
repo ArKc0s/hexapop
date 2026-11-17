@@ -12,6 +12,9 @@ import { accountLevel, higherLevel } from "./daily.ts";
 import { startPushScheduler } from "./push.ts";
 import { life } from "./life.ts";
 import { busyRooms, roomCodes, stats } from "./rooms.ts";
+import { peak } from "./stats.ts";
+// Pic de joueurs connectés en même temps, par jour (statistiques).
+setInterval(() => { const n = stats().players; if (n > 0 && !life.draining) peak("joueurs_max", n); }, 30_000).unref();
 startPushScheduler();
 
 // Purge quotidienne des données arrivées à échéance (et une fois au démarrage).

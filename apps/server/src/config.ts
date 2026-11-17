@@ -7,6 +7,8 @@ export const config = {
   webDir: process.env.WEB_DIR ?? "",
   /** Secret de tirage du défi du jour (empêche de le calculer à l'avance). */
   dailySecret: process.env.DAILY_SECRET ?? "dev-secret",
+  /** Jeton de lecture des statistiques (Grafana) ; sans jeton, la route est fermée. */
+  statsToken: process.env.STATS_TOKEN ?? "",
   smtp: {
     host: process.env.SMTP_HOST ?? "",
     port: Number(process.env.SMTP_PORT ?? 465),

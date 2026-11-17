@@ -19,6 +19,8 @@ set -eu
 cd "$DIR"
 # Jeton partagé aiguilleur <-> instances (créé une fois, jamais affiché).
 grep -q '^INTERNAL_TOKEN=' .env || echo "INTERNAL_TOKEN=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env
+# Jeton de lecture des statistiques (Grafana), créé une fois, jamais affiché.
+grep -q '^STATS_TOKEN=' .env || echo "STATS_TOKEN=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env
 docker compose build --pull blue
 joueurs() { curl -fsS -m 3 http://127.0.0.1:8787/api/health 2>/dev/null | sed -n 's/.*"players":\([0-9]*\).*/\1/p'; }
 attendre() { for i in $(seq 1 40); do curl -fsS -m 2 "$1" >/dev/null 2>&1 && return 0; sleep 1; done; echo "pas de réponse : $1"; return 1; }

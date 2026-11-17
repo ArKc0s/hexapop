@@ -15,3 +15,9 @@ mount(App, { target: document.getElementById("app")! });
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
 }
+
+// Statistiques anonymes (visiteurs uniques du jour, sans cookie : voir la page Confidentialité).
+if (import.meta.env.PROD) {
+  const app = matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
+  fetch("/api/stats/event", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ e: "visite", app }), keepalive: true }).catch(() => {});
+}

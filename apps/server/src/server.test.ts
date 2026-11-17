@@ -15,7 +15,7 @@ let srv: ChildProcess;
 let logs = "";
 
 before(async () => {
-  srv = spawn(process.execPath, ["src/index.ts"], { env: { ...process.env, PORT: String(PORT), DB_PATH: join(dir, "t.db"), GOOGLE_CLIENT_ID: "id-test", GOOGLE_CLIENT_SECRET: "secret-test" }, stdio: ["ignore", "pipe", "pipe"] });
+  srv = spawn(process.execPath, ["src/index.ts"], { env: { ...process.env, PORT: String(PORT), DB_PATH: join(dir, "t.db"), GOOGLE_CLIENT_ID: "id-test", GOOGLE_CLIENT_SECRET: "secret-test", STATS_TOKEN: "jeton-stats" }, stdio: ["ignore", "pipe", "pipe"] });
   srv.stdout!.on("data", (d) => (logs += d));
   srv.stderr!.on("data", (d) => (logs += d));
   for (let i = 0; i < 50; i++) {
@@ -404,4 +404,21 @@ test("Hall of Fame : Marathon (record gardé), défi de la semaine par niveau, l
   assert.ok(hof.daily.week.normal.some((p: { name: string }) => p.name === "Daily"), "le défi de la semaine compte les points du jour");
   assert.ok(Array.isArray(hof.daily.week.decouverte));
   assert.ok(hof.legends.france.some((p: { name: string }) => p.name === "Marathonien"));
+});
+
+test("statistiques anonymes : visiteurs uniques du jour, parties, lecture protégée par jeton", async () => {
+  const ev = (body: unknown, ip: string, ua = "Navigateur A") => fetch(BASE + "/api/stats/event", { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": ip, "user-agent": ua }, body: JSON.stringify(body) });
+  await ev({ e: "visite" }, "10.0.0.1"); await ev({ e: "visite" }, "10.0.0.1"); // même personne, deux visites
+  await ev({ e: "visite", app: true }, "10.0.0.2");
+  await ev({ e: "seance" }, "10.0.0.1"); await ev({ e: "seance" }, "10.0.0.2"); await ev({ e: "n-importe-quoi" }, "10.0.0.2");
+  assert.equal((await fetch(BASE + "/api/admin/stats")).status, 401, "jeton requis");
+  assert.equal((await fetch(BASE + "/api/admin/stats", { headers: { authorization: "Bearer mauvais" } })).status, 401);
+  const r = await (await fetch(BASE + "/api/admin/stats?days=7", { headers: { authorization: "Bearer jeton-stats" } })).json();
+  const t = r.days.at(-1);
+  assert.equal(t.visiteurs, 2, "deux visiteurs uniques");
+  assert.equal(t.visites, 3);
+  assert.equal(t.visiteurs_appli, 1);
+  assert.equal(t.seance, 2);
+  assert.equal(r.days.length, 7);
+  assert.ok(r.users.length >= 1 && r.users.every((u: Record<string, unknown>) => !("email" in u)), "jamais d'email dans les statistiques");
 });

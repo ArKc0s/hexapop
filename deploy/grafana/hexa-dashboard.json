@@ -1,0 +1,874 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_HEXA",
+      "label": "Hexa (Infinity)",
+      "type": "datasource",
+      "pluginId": "yesoreyeram-infinity-datasource",
+      "pluginName": "Infinity"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "yesoreyeram-infinity-datasource",
+      "name": "Infinity",
+      "version": "2.0.0"
+    }
+  ],
+  "title": "Hexa · fréquentation",
+  "uid": "hexa-frequentation",
+  "tags": [
+    "hexa"
+  ],
+  "timezone": "Europe/Paris",
+  "editable": true,
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "refresh": "5m",
+  "schemaVersion": 41,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Visiteurs aujourd'hui",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "visiteurs",
+              "text": "Visiteurs",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ff4fae"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Visiteurs sur 30 jours (somme)",
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "visiteurs",
+              "text": "Visiteurs",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#1572c4"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Séances aujourd'hui",
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "seance",
+              "text": "Séances",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ffd93d"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Comptes",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "totals.comptes",
+              "text": "Comptes",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#1c1a37"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Nouveaux comptes (30 j)",
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "nouveaux_comptes",
+              "text": "Nouveaux comptes",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2f9e6f"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Pic de joueurs en direct (30 j)",
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "joueurs_max",
+              "text": "Joueurs",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#cf2486"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Visiteurs uniques par jour",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "visiteurs",
+              "text": "Visiteurs",
+              "type": "number"
+            },
+            {
+              "selector": "visiteurs_appli",
+              "text": "Dont appli installée",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 2,
+            "barAlignment": 0,
+            "stacking": {
+              "mode": "none"
+            },
+            "pointSize": 5,
+            "showPoints": "auto"
+          },
+          "decimals": 0,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Parties solo par jour",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "seance",
+              "text": "Séances (Continuer)",
+              "type": "number"
+            },
+            {
+              "selector": "entrainement",
+              "text": "Entraînement",
+              "type": "number"
+            },
+            {
+              "selector": "marathon",
+              "text": "Marathon",
+              "type": "number"
+            },
+            {
+              "selector": "revision",
+              "text": "Révisions",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 2,
+            "barAlignment": 0,
+            "stacking": {
+              "mode": "normal"
+            },
+            "pointSize": 5,
+            "showPoints": "auto"
+          },
+          "decimals": 0,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Défi du jour par niveau",
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "defi_decouverte",
+              "text": "Découverte",
+              "type": "number"
+            },
+            {
+              "selector": "defi_normal",
+              "text": "Confirmé",
+              "type": "number"
+            },
+            {
+              "selector": "defi_expert",
+              "text": "Expert",
+              "type": "number"
+            },
+            {
+              "selector": "defi_invite",
+              "text": "Invités (non classés)",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 2,
+            "barAlignment": 0,
+            "stacking": {
+              "mode": "normal"
+            },
+            "pointSize": 5,
+            "showPoints": "auto"
+          },
+          "decimals": 0,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Entre amis",
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "days",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Jour",
+              "type": "timestamp"
+            },
+            {
+              "selector": "salon_duel",
+              "text": "Duels",
+              "type": "number"
+            },
+            {
+              "selector": "salon_coop",
+              "text": "En équipe",
+              "type": "number"
+            },
+            {
+              "selector": "salon_plateau",
+              "text": "Soirées",
+              "type": "number"
+            },
+            {
+              "selector": "joueurs_max",
+              "text": "Pic de joueurs connectés",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 2,
+            "barAlignment": 0,
+            "stacking": {
+              "mode": "none"
+            },
+            "pointSize": 5,
+            "showPoints": "auto"
+          },
+          "decimals": 0,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Comptes (du plus récent au plus ancien)",
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/stats?days=30",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "users",
+          "columns": [
+            {
+              "selector": "pseudo",
+              "text": "Pseudo",
+              "type": "string"
+            },
+            {
+              "selector": "dep",
+              "text": "Dép.",
+              "type": "string"
+            },
+            {
+              "selector": "connexion",
+              "text": "Connexion",
+              "type": "string"
+            },
+            {
+              "selector": "verifie",
+              "text": "Vérifié",
+              "type": "number"
+            },
+            {
+              "selector": "defis",
+              "text": "Défis joués",
+              "type": "number"
+            },
+            {
+              "selector": "inscrit",
+              "text": "Inscrit le",
+              "type": "string"
+            },
+            {
+              "selector": "vu",
+              "text": "Vu le",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    }
+  ]
+}

@@ -47,6 +47,9 @@
     if (play.learn) progress.record(results);
     const input = play.config.switchable ? (usedChoices ? "choix" : "libre") : play.config.input;
     const rewards = profile.record({ mode: play.mode, level: play.config.level, input, results, region: play.region, now: Date.now(), learn: play.learn, rounds });
+    // Statistiques anonymes : une partie solo terminée, par type.
+    const e = play.mode === "seance" ? "seance" : play.mode === "marathon" ? "marathon" : play.mode === "apprendre" ? "revision" : "entrainement";
+    fetch("/api/stats/event", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ e }), keepalive: true }).catch(() => {});
     nav.go({ name: "results", play, questions, results, rewards, input });
   }
   function next() {

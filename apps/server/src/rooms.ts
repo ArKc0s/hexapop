@@ -12,6 +12,7 @@ import {
 } from "@hexa/game";
 import { now } from "./db.ts";
 import { life } from "./life.ts";
+import { bump } from "./stats.ts";
 import { dailyConfig, dailyNumber, gridOf, newClaim, rankOf, saveDaily, startDaily, today } from "./daily.ts";
 
 /** Délai entre l'annonce d'une question et le départ du chrono, pour que tout le monde la reçoive. */
@@ -393,6 +394,7 @@ export class Room {
         rank ??= rankOf(this.day, seat.userId);
       }
       const daily: DailyOutcome = { day: this.day, number: dailyNumber(this.day), level: this.settings.level, points, accuracy, elapsedMs, grid, saved, rank: rank?.rank, players: rank?.players };
+      if (!seat?.userId) bump("defi_invite");
       if (!seat?.userId) daily.claim = newClaim({ day: this.day, level: this.settings.level, points, accuracy, elapsedMs, grid });
       this.broadcast({ t: "end", ranking, daily });
     } else if (this.kind === "coop") {
@@ -433,6 +435,7 @@ export function handle(c: Conn, msg: ClientMsg) {
       const kind: RoomKind = msg.kind === "plateau" ? "plateau" : msg.kind === "coop" ? "coop" : "duel";
       const base = { ...DEFAULT_SETTINGS, elimination: kind === "plateau" };
       const room = new Room(kind, clampSettings(msg.settings ?? {}, base));
+      bump(`salon_${kind}`);
       room.add(c);
       return;
     }
