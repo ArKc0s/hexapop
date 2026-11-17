@@ -16,6 +16,8 @@
   --ok: var(--green); --ok-d: var(--green-d);
   --ko: var(--pink);  --ko-d: var(--pink-d);
   --tint-ok: #c3ead8;
+  /* La correction (la bonne réponse qu'on n'a pas trouvée) : en bleu, pour ne pas la confondre avec « tu as bon ». */
+  --fix: var(--blue); --fix-d: var(--blue-d); --tint-fix: #cfe3f6;
   --tint-ko: #ffd0e8;
   --f-ui: "Gabarito", system-ui, sans-serif;
   --f-pop: "Bowlby One", Impact, "Arial Black", sans-serif;

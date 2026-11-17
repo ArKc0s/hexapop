@@ -4,10 +4,11 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
-    id: 10, version: "1.14.1", date: "2026-11-17", title: "Entraînement : rejouer sans tout reconfigurer",
+    id: 11, version: "1.14.2", date: "2026-11-17", title: "Rejouer sans tout reconfigurer, correction en bleu",
     items: [
       "Après « Rejouer les ratés », le bouton « Nouvelle partie » relance ton entraînement complet, et plus la dernière série de ratés (merci Mathis !).",
       "« Changer les réglages » ramène directement aux réglages de l'Entraînement depuis le bilan.",
+      "Correction : la bonne réponse que tu n'as pas trouvée s'affiche en bleu, pour ne plus la confondre avec le vert de « tu as bon ».",
     ],
   },
   {

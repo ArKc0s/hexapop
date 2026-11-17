@@ -300,7 +300,7 @@
             <div class="choices" role="radiogroup" aria-label={LABELS[f]}>
               {#each choicesOf(f)! as opt (opt)}
                 <button role="radio" aria-checked={text[f] === opt} class="opt" class:on={text[f] === opt}
-                  class:right={r && opt === r.expected} class:wrong={r && text[f] === opt && opt !== r.expected}
+                  class:right={r && opt === r.expected && text[f] === opt} class:fix={r && opt === r.expected && text[f] !== opt} class:wrong={r && text[f] === opt && opt !== r.expected}
                   disabled={!!result || submitted} onclick={() => choose(f, opt)}>{opt}</button>
               {/each}
             </div>
@@ -433,7 +433,8 @@
   .state { font-weight: 700; }
   .f.ok .state, .f.ok .label { color: var(--ok-d); }
   .f.ko .label { color: var(--pink-d); }
-  .exp { font-weight: 800; }
+  .exp { font-weight: 800; color: var(--fix-d); }
+  .f.ko .state { color: var(--fix-d); }
   .exp::before { content: "Réponse : "; color: var(--soft); font-weight: 600; }
   .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .opt { font-weight: 700; font-size: 16px; line-height: 1.15; background: #f6f2ea; border: 0; border-radius: 14px; padding: 12px; text-align: left; cursor: pointer; box-shadow: 0 3px 0 #e2dacb; transition: transform .08s, background .1s; }
@@ -441,12 +442,13 @@
   .opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #e2dacb; }
   .opt.on { background: var(--ink); color: #fff; box-shadow: 0 3px 0 #000; }
   .opt.right { background: var(--ok); color: #fff; box-shadow: 0 3px 0 var(--ok-d); }
+  .opt.fix { background: var(--fix); color: #fff; box-shadow: 0 3px 0 var(--fix-d); }
   .opt.wrong { background: var(--pink); color: #fff; box-shadow: 0 3px 0 var(--pink-d); animation: shake .35s; }
   .opt:disabled { cursor: default; }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .tags .chip.good { background: var(--ok); color: #fff; opacity: 1; }
   .tags .chip.bad { background: var(--ko); color: #fff; opacity: 1; text-decoration: line-through; text-decoration-thickness: 2px; }
-  .tags .chip.miss { background: var(--tint-ok); color: var(--ok-d); box-shadow: inset 0 0 0 2px var(--ok); }
+  .tags .chip.miss { background: var(--tint-fix); color: var(--fix-d); box-shadow: inset 0 0 0 2px var(--fix); }
   .tags.missed { align-items: center; }
   .ml { font-size: 13px; font-weight: 800; color: var(--soft); }
   /* Légende de la carte à la correction */
@@ -455,7 +457,7 @@
   .sw { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1.5px var(--ink); }
   .sw.ok { background: var(--ok); }
   .sw.ko { background: var(--ko); }
-  .sw.miss { background: var(--tint-ok); box-shadow: inset 0 0 0 2.5px var(--ok-d); }
+  .sw.miss { background: var(--tint-fix); box-shadow: inset 0 0 0 2.5px var(--fix-d); }
   .sw.subject { background: var(--yellow); }
   .nerr { color: var(--pink-d); font-weight: 700; font-size: 14px; animation: shake .3s; }
   .react { display: flex; align-items: center; gap: 12px; }
@@ -528,7 +530,7 @@
     .rl { flex: none; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
     .ra { flex: 1; min-width: 0; text-align: right; font-size: 14.5px; font-weight: 800; line-height: 1.2; }
     .good .ra { color: var(--ok-d); }
-    .bad .ra { color: var(--ink); }
+    .bad .ra { color: var(--fix-d); }
     .ra .hit { color: var(--ok-d); }
     .ra s { color: var(--ko-d); text-decoration-thickness: 2px; }
     /* Barre teintée aux couleurs du jeu selon le résultat */
