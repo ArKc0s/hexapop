@@ -1,7 +1,8 @@
 // Méta-jeu v1.1 : XP et niveaux, série quotidienne, quêtes du jour, Tour de France (étoiles par
 // région), album de plaques et badges. Fonctions pures : le client les applique (invité ou compte),
 // le serveur fusionne les profils synchronisés.
-import { DEPARTEMENTS, DEP, REGIONS } from "./data.ts";
+import { DEPARTEMENTS, DEP, REGIONS, REGION_ITEMS, R_METRO, R_OUTRE_MER } from "./data.ts";
+import { ATLASES, isAtlas, type AtlasId } from "./atlas.ts";
 import { rng, shuffle } from "./random.ts";
 import type { InputMode, Level, RoundResult } from "./round.ts";
 import { learn, medalOf, mergeKnowledge, sanitizeKnowledge, type Knowledge, type KnowledgeGain, type RoundPlay } from "./knowledge.ts";
@@ -43,6 +44,10 @@ export interface Profile {
   focus?: string;
   /** Date du dernier choix de région (ou de son annulation) : entre deux appareils, le plus récent l'emporte. */
   focusAt?: number;
+  /** Atlas affiché (un atlas = un monde, docs/atlas.md) ; absent = départements. */
+  atlas?: AtlasId;
+  /** Date du dernier changement d'atlas : entre deux appareils, le plus récent l'emporte. */
+  atlasAt?: number;
   /** Kilomètres (ex-XP) de la semaine en cours, pour les ligues et entre amis. */
   week?: { id: string; km: number };
   /** Parties du jour, pour l'objectif personnel facultatif. */
@@ -80,6 +85,9 @@ export function mergeProfiles(a: Profile, b: Profile): Profile {
   const f = (b.focusAt ?? 0) >= (a.focusAt ?? 0) ? b : a;
   if (f.focus) p.focus = f.focus;
   if (f.focusAt) p.focusAt = f.focusAt;
+  const at = (b.atlasAt ?? 0) >= (a.atlasAt ?? 0) ? b : a;
+  if (at.atlas) p.atlas = at.atlas;
+  if (at.atlasAt) p.atlasAt = at.atlasAt;
   const later = <T extends { id?: string; day?: string }>(x?: T, y?: T, key: "id" | "day" = "id") => (!x ? y : !y ? x : (x[key] ?? "") >= (y[key] ?? "") ? x : y);
   if (a.week || b.week) p.week = a.week && b.week && a.week.id === b.week.id ? { id: a.week.id, km: Math.max(a.week.km, b.week.km) } : later(a.week, b.week);
   if (a.today || b.today) p.today = a.today && b.today && a.today.day === b.today.day ? { day: a.today.day, games: Math.max(a.today.games, b.today.games) } : later(a.today, b.today, "day");
@@ -110,7 +118,9 @@ export function sanitizeProfile(raw: unknown): Profile {
   const know = sanitizeKnowledge(r.know);
   if (know) p.know = know;
   if (typeof r.home === "string" && DEP.has(r.home)) p.home = r.home;
-  if (typeof r.focus === "string" && TOUR_REGIONS.some((t) => t.code === r.focus)) p.focus = r.focus;
+  if (typeof r.focus === "string" && TOUR.has(r.focus)) p.focus = r.focus;
+  if (isAtlas(r.atlas)) p.atlas = r.atlas;
+  if (r.atlasAt) p.atlasAt = num(r.atlasAt, 8.64e15);
   if (r.focusAt) p.focusAt = num(r.focusAt, 8.64e15);
   if (r.week && day(r.week.id)) p.week = { id: r.week.id, km: num(r.week.km, 1e8) };
   if (r.today && day(r.today.day)) p.today = { day: r.today.day, games: num(r.today.games, 1e4) };
@@ -129,7 +139,7 @@ export function tierFor(level: Level, input: InputMode): number {
 export const platesOwned = (p: Profile) => Object.values(p.tiers).filter((t) => t > 0).length;
 const medal = (p: Profile, code: string) => (p.know ? medalOf(p.know, code) : 0);
 /** Nombre de départements ayant au moins cette médaille. */
-export const medalCount = (p: Profile, min: number) => DEPARTEMENTS.filter((d) => medal(p, d.code) >= min).length;
+export const medalCount = (p: Profile, min: number, a: AtlasId = "france") => ATLASES[a].items.filter((d) => medal(p, d.code) >= min).length;
 export const tierPoints = (p: Profile) => Object.values(p.tiers).reduce((n, t) => n + t, 0);
 
 // ---------- niveaux ----------
@@ -161,8 +171,15 @@ export const TOUR_REGIONS: TourRegion[] = (() => {
   out.push({ code: OUTRE_MER, nom: "Outre-mer", deps: DEPARTEMENTS.filter((d) => d.outreMer).map((d) => d.code), neighbors: [] });
   return out;
 })();
-export const TOUR = new Map(TOUR_REGIONS.map((r) => [r.code, r]));
-export const tourRegionOf = (code: string) => TOUR_REGIONS.find((r) => r.deps.includes(code))!;
+/** Atlas Régions : deux groupes pour les séances, la métropole puis l'outre-mer. */
+export const REGION_GROUPS: TourRegion[] = [
+  { code: R_METRO, nom: "Métropole", deps: REGION_ITEMS.filter((r) => !r.outreMer).map((r) => r.code), neighbors: [R_OUTRE_MER] },
+  { code: R_OUTRE_MER, nom: "Outre-mer", deps: REGION_ITEMS.filter((r) => r.outreMer).map((r) => r.code), neighbors: [] },
+];
+/** Groupes de séance d'un atlas (départements : les régions et l'outre-mer). */
+export const groupsOf = (a: AtlasId): TourRegion[] => (a === "regions" ? REGION_GROUPS : TOUR_REGIONS);
+export const TOUR = new Map([...TOUR_REGIONS, ...REGION_GROUPS].map((r) => [r.code, r]));
+export const tourRegionOf = (code: string) => [...TOUR_REGIONS, ...REGION_GROUPS].find((r) => r.deps.includes(code))!;
 export const totalStars = (p: Profile) => Object.values(p.stars).reduce((n, s) => n + s, 0);
 
 export type TourState = "locked" | "open" | "done";

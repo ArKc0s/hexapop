@@ -56,7 +56,7 @@ Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement co
 - **Récompenses cosmétiques** liées aux médailles, à « Ta France » et aux kilomètres parcourus (ex-XP) : accessoires pour la mascotte, thèmes de carte. Visibles par les autres joueurs en multi.
 - **Ligues hebdomadaires** : groupes d'une trentaine de joueurs classés sur les **kilomètres de la semaine**, montée et descente chaque semaine. À lancer quand il y aura assez de joueurs.
 
-### Les atlas (décidé avec Léo le 2026-11-16)
+### Les atlas (décidé avec Léo le 2026-11-16 ; organisation revue le 2026-11-17 : voir [`atlas.md`](atlas.md), un atlas = un monde)
 Hexa reste un jeu sur la France, mais d'autres cartes pourront s'ajouter sous forme d'**atlas**. Un atlas = **une carte + une liste de choses à apprendre + des facettes** (ce qu'on apprend sur chaque chose), et tout y fonctionne pareil : Continuer, Défi, Entre amis, Entraînement, étoiles, médailles bronze / argent / or.
 
 **Les règles**

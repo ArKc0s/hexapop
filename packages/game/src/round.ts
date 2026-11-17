@@ -1,4 +1,5 @@
-import { DEPARTEMENTS, DEP, dep, type Departement } from "./data.ts";
+import { DEP, ITEM, dep, type Departement } from "./data.ts";
+import { ATLASES, atlasOf, type AtlasId } from "./atlas.ts";
 import { matchSet, sameCode, sameName } from "./answer.ts";
 import { rng, shuffle, type Rng } from "./random.ts";
 
@@ -64,6 +65,8 @@ export interface RoundResult {
 
 export interface GameConfig {
   seed: number;
+  /** Atlas joué (défaut : les départements). */
+  atlas?: AtlasId;
   level: Level;
   input: InputMode;
   /** Codes des départements joués ; défaut : les 101. */
@@ -89,7 +92,7 @@ export function fieldsFor(d: Departement, hint: Hint, level: Level, ask?: Field[
   if (ask) {
     return ask.filter((f) => f !== hint && (f !== "sousPrefectures" || d.sousPrefectures.length > 0) && (f !== "limitrophes" || d.limitrophes.length > 0));
   }
-  const base: Field[] = ["carte", "nom", "numero", "prefecture"];
+  const base = atlasOf(d.code).full;
   const fields = base.filter((f) => f !== hint);
   if (level === "expert") {
     if (d.sousPrefectures.length) fields.push("sousPrefectures");
@@ -101,14 +104,19 @@ export function fieldsFor(d: Departement, hint: Hint, level: Level, ask?: Field[
 /** Leurres plausibles : voisins et même région d'abord, puis le reste. */
 function distractors(d: Departement, r: Rng): Departement[] {
   const near = shuffle(d.limitrophes.map((c) => dep(c)), r);
-  const region = shuffle(DEPARTEMENTS.filter((x) => x.region === d.region && x.code !== d.code && !d.limitrophes.includes(x.code)), r);
-  const rest = shuffle(DEPARTEMENTS.filter((x) => x.region !== d.region && x.code !== d.code && !d.limitrophes.includes(x.code)), r);
+  const all = atlasOf(d.code).items;
+  const region = shuffle(all.filter((x) => x.region === d.region && x.code !== d.code && !d.limitrophes.includes(x.code)), r);
+  const rest = shuffle(all.filter((x) => x.region !== d.region && x.code !== d.code && !d.limitrophes.includes(x.code)), r);
   return [...near.slice(0, 2), ...region.slice(0, 1), ...rest].slice(0, 3);
 }
 
 /** Leurres lointains (autres régions, pas de voisin) : pour la première rencontre. */
 function easyDistractors(d: Departement, r: Rng): Departement[] {
-  return shuffle(DEPARTEMENTS.filter((x) => x.region !== d.region && !d.limitrophes.includes(x.code) && x.outreMer === d.outreMer), r).slice(0, 3);
+  const all = atlasOf(d.code).items;
+  const far = all.filter((x) => x.code !== d.code && x.region !== d.region && !d.limitrophes.includes(x.code) && x.outreMer === d.outreMer);
+  // Petit atlas (régions) : pas assez de lointains, on complète avec les autres.
+  const pool = far.length >= 3 ? far : all.filter((x) => x.code !== d.code && !d.limitrophes.includes(x.code));
+  return shuffle(pool.length >= 3 ? pool : all.filter((x) => x.code !== d.code), r).slice(0, 3);
 }
 
 function makeChoices(d: Departement, fields: Field[], others: Departement[], r: Rng): Question["choices"] {
@@ -134,10 +142,10 @@ export function makeGame(cfg: GameConfig): Question[] {
   const r = rng(cfg.seed);
   if (cfg.plan) {
     const duration = cfg.durationMs ?? 0;
-    return cfg.plan.filter((it) => DEP.has(it.code)).map((it, index) => {
+    return cfg.plan.filter((it) => ITEM.has(it.code)).map((it, index) => {
       const d = dep(it.code);
       let fields = fieldsFor(d, it.hint, cfg.level, it.ask);
-      if (!fields.length) fields = fieldsFor(d, it.hint, cfg.level, ["carte", "numero", "prefecture"]);
+      if (!fields.length) fields = fieldsFor(d, it.hint, cfg.level, [...atlasOf(d.code).base] as Field[]);
       const q: Question = { index, code: it.code, hint: it.hint, fields, durationMs: duration };
       if (it.tag) q.tag = it.tag;
       if (it.recall) q.recall = true;
@@ -148,12 +156,13 @@ export function makeGame(cfg: GameConfig): Question[] {
       return q;
     });
   }
-  const pool = cfg.codes ?? DEPARTEMENTS.map((d) => d.code);
+  const atlas = ATLASES[cfg.atlas ?? "france"];
+  const pool = cfg.codes ?? atlas.items.map((d) => d.code);
   const codes = shuffle(pool, r).slice(0, cfg.rounds ?? pool.length);
   // Découverte : on donne toujours quelque chose qu'on peut connaître (le nom, ou le département qui clignote).
   const easy = cfg.level === "decouverte";
   const known = (cfg.hints ?? ["nom", "carte"]).filter((h) => h === "nom" || h === "carte");
-  const hints = easy ? (known.length ? known : ["nom", "carte"] as Hint[]) : cfg.hints ?? ["nom", "numero", "carte"];
+  const hints = easy ? (known.length ? known : ["nom", "carte"] as Hint[]) : cfg.hints ?? (atlas.id === "france" ? ["nom", "numero", "carte"] : ["nom", "carte"]);
   const duration = cfg.durationMs ?? DEFAULT_DURATION[cfg.level];
   return codes.map((code, index) => {
     const d = dep(code);
@@ -212,7 +221,8 @@ export function grade(q: Question, a: Answer): RoundResult {
       case "nom": return { field, score: a.nom && sameName(a.nom, d.nom) ? 1 : 0, expected: d.nom };
       case "numero": return { field, score: a.numero && sameCode(a.numero, d.code) ? 1 : 0, expected: d.code };
       case "prefecture": return { field, score: a.prefecture && [d.prefecture, ...(PREFECTURE_ALIASES[d.code] ?? [])].some((p) => sameName(a.prefecture!, p)) ? 1 : 0, expected: d.prefecture };
-      case "sousPrefectures": return { field, score: gradeList(a.sousPrefectures, d.sousPrefectures, true), expected: d.sousPrefectures };
+      // Régions : « ses départements », par leur nom ou leur numéro.
+      case "sousPrefectures": return { field, score: gradeList(d.code.startsWith("R") ? a.sousPrefectures?.map((x) => DEP.get(x.trim().toUpperCase().padStart(2, "0"))?.nom ?? x) : a.sousPrefectures, d.sousPrefectures, true), expected: d.sousPrefectures };
       case "limitrophes": return { field, score: gradeList(a.limitrophes, d.limitrophes, false), expected: d.limitrophes };
     }
   });

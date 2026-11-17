@@ -6,7 +6,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import {
   COUNTDOWN_MS, DEFAULT_SETTINGS, DUEL_HP, REACTIONS, duelDamage, DEFAULT_DURATION, TEAM_LIVES, TEAM_LIFE_THRESHOLD, roomPoints, teamStars,
-  type Level, type TeamState, isLevel, levelAllowed, DEPARTEMENTS, MAX_PLAYERS, REVIEW_MS, grade, makeGame, randomSeed,
+  type Level, type TeamState, isLevel, isAtlas, type AtlasId, levelAllowed, DEPARTEMENTS, MAX_PLAYERS, REVIEW_MS, grade, makeGame, randomSeed,
   type Answer, type ClientMsg, type DailyOutcome, type ErrorCode, type Phase, type PlayerInfo, type Question,
   type QuestionPayload, type RoomKind, type RoomSettings, type RoundResult, type ServerMsg,
 } from "@hexa/game";
@@ -14,7 +14,7 @@ import { now } from "./db.ts";
 import { life } from "./life.ts";
 import { bump } from "./stats.ts";
 import { createShare } from "./share.ts";
-import { dailyConfig, dailyNumber, gridOf, guestDisplayName, newClaim, rankOf, saveDaily, saveGuestDaily, startDaily, startGuestDaily, today } from "./daily.ts";
+import { dailyConfig, dailyKey, dailyNumber, gridOf, guestDisplayName, newClaim, rankOf, saveDaily, saveGuestDaily, startDaily, startGuestDaily, today } from "./daily.ts";
 
 /** Délai entre l'annonce d'une question et le départ du chrono, pour que tout le monde la reçoive. */
 const LEAD_MS = 400;
@@ -248,7 +248,7 @@ export class Room {
     if (this.phase !== "lobby") return;
     const codes = this.settings.regions.length ? DEPARTEMENTS.filter((d) => this.settings.regions.includes(d.region)).map((d) => d.code) : undefined;
     const cfg = this.kind === "daily" && this.day
-      ? dailyConfig(this.day, this.settings.level)
+      ? dailyConfig(this.day, this.settings.level, this.settings.atlas ?? "france")
       : { seed: randomSeed(), level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes };
     if (this.kind === "daily") {
       this.questions = makeGame(cfg);
@@ -400,6 +400,8 @@ export class Room {
     this.broadcastRoom();
     const ranking = this.players();
     if (this.kind === "daily" && this.day) {
+      const atlas = this.settings.atlas ?? "france";
+      const key = dailyKey(this.day, atlas);
       const seat = [...this.seats.values()][0];
       const results = this.questions.map((_, i) => seat?.results[i]);
       const points = seat?.info.score ?? 0;
@@ -408,15 +410,15 @@ export class Room {
       const grid = gridOf(results);
       let saved = false, rank: { rank: number; players: number } | null = null;
       if (seat?.userId) {
-        rank = saveDaily(this.day, seat.userId, points, accuracy, elapsedMs, grid);
+        rank = saveDaily(key, seat.userId, points, accuracy, elapsedMs, grid);
         saved = !!rank;
-        rank ??= rankOf(this.day, seat.userId);
+        rank ??= rankOf(key, seat.userId);
       }
-      const daily: DailyOutcome = { day: this.day, number: dailyNumber(this.day), level: this.settings.level, points, accuracy, elapsedMs, grid, saved, rank: rank?.rank, players: rank?.players };
+      const daily: DailyOutcome = { day: this.day, number: dailyNumber(this.day), level: this.settings.level, ...(atlas !== "france" ? { atlas } : {}), points, accuracy, elapsedMs, grid, saved, rank: rank?.rank, players: rank?.players };
       if (!seat?.userId) bump("defi_invite");
       const guestId = !seat?.userId ? seat?.guestId ?? null : null;
       if (guestId) {
-        const g = saveGuestDaily(this.day, guestId, points, accuracy, elapsedMs, grid);
+        const g = saveGuestDaily(key, guestId, points, accuracy, elapsedMs, grid);
         if (g) { daily.saved = true; daily.rank = g.rank; daily.players = g.players; daily.name = guestDisplayName(guestId, seat?.info.home ?? null); }
       }
       // Page de résultat à partager (hexapop.app/d/…), avec les réponses données.
@@ -424,9 +426,9 @@ export class Room {
         const who = seat?.userId ? `u${seat.userId}` : guestId ? `g${guestId}` : null;
         const name = seat?.userId ? seat.info.name : daily.name ?? "Un joueur";
         const qs = seat ? this.questions.map((_, i) => this.qFor(seat.info.id, i)) : this.questions;
-        daily.share = createShare(this.day, who, { name, level: this.settings.level, points, elapsedMs, grid, rank: daily.rank, players: daily.players }, qs, seat?.answers ?? [], results);
+        daily.share = createShare(key, who, { name, level: this.settings.level, points, elapsedMs, grid, rank: daily.rank, players: daily.players }, qs, seat?.answers ?? [], results);
       } catch (e) { console.error("[partage]", e); }
-      if (!seat?.userId) daily.claim = newClaim({ day: this.day, level: this.settings.level, points, accuracy, elapsedMs, grid, guestId: guestId ?? undefined });
+      if (!seat?.userId) daily.claim = newClaim({ day: key, level: this.settings.level, points, accuracy, elapsedMs, grid, guestId: guestId ?? undefined });
       this.broadcast({ t: "end", ranking, daily });
     } else if (this.kind === "coop") {
       this.broadcast({ t: "end", ranking, team: { ...this.team, stars: teamStars(this.team.accuracy, this.team.lives) } });
@@ -454,17 +456,20 @@ export function handle(c: Conn, msg: ClientMsg) {
       c.room?.leave(c);
       if (msg.kind === "daily") {
         const day = today();
-        // Son niveau ou en dessous, jamais au-dessus (conception 4.3).
+        // Un défi par atlas (docs/atlas.md) : départements par défaut.
+        const atlas: AtlasId = isAtlas(msg.settings?.atlas) ? msg.settings!.atlas! : "france";
+        const key = dailyKey(day, atlas);
+        // Son niveau ou en dessous, jamais au-dessus (conception 4.3). Autres atlas : le niveau que le jeu calcule pour cet atlas.
         const wanted = msg.settings?.level;
-        const level: Level = isLevel(wanted) && levelAllowed(wanted, c.level) ? wanted : c.level;
-        if (c.userId && !startDaily(day, c.userId, level)) return fail(c, "daily_done", "Tu as déjà joué le défi du jour. Rendez-vous demain !");
+        const level: Level = isLevel(wanted) && (atlas !== "france" || levelAllowed(wanted, c.level)) ? wanted : atlas === "france" ? c.level : "decouverte";
+        if (c.userId && !startDaily(key, c.userId, level)) return fail(c, "daily_done", "Tu as déjà joué le défi du jour. Rendez-vous demain !");
         // Invité : classé sous un pseudo généré, un défi par navigateur et par jour.
         if (!c.userId && c.guestId) {
-          const g = startGuestDaily(day, c.guestId, c.home, level, c.ip);
+          const g = startGuestDaily(key, c.guestId, c.home, level, c.ip);
           if (g === "already") return fail(c, "daily_done", "Tu as déjà joué le défi du jour sur cet appareil. Rendez-vous demain !");
           if (g === "limit") c.guestId = null; // trop d'invités sur cette connexion : on joue quand même, sans classement
         }
-        const room = new Room("daily", { ...DEFAULT_SETTINGS, level, rounds: 10 });
+        const room = new Room("daily", { ...DEFAULT_SETTINGS, level, rounds: 10, atlas });
         room.day = day;
         room.add(c);
         return room.start(null);

@@ -28,7 +28,7 @@ function dailyBoard(from: string, level: Level, limit = 10) {
   return db.prepare(
     `SELECT u.pseudo AS name, u.home_dep AS home, SUM(d.points) AS points, COUNT(*) AS days
      FROM daily_results d JOIN users u ON u.id = d.user_id
-     WHERE d.day >= ? AND d.level = ? AND d.finished = 1
+     WHERE d.day >= ? AND d.day NOT LIKE '%:%' AND d.level = ? AND d.finished = 1
      GROUP BY d.user_id ORDER BY points DESC, days ASC LIMIT ?`,
   ).all(from, level, limit) as { name: string; home: string | null; points: number; days: number }[];
 }

@@ -1,21 +1,39 @@
 <script lang="ts">
-  import { DEPARTEMENTS, REGIONS, playable, randomSeed, type Field, type GameConfig, type GameMode, type Hint, type InputMode } from "@hexa/game";
+  import { DEPARTEMENTS, REGIONS, REGION_ITEMS, playable, randomSeed, type Field, type GameConfig, type GameMode, type Hint, type InputMode } from "@hexa/game";
   import { nav } from "../lib/nav.svelte.ts";
+  import { world } from "../lib/world.svelte.ts";
+  import { profile } from "../lib/profile.svelte.ts";
   import Mascot from "../lib/ui/Mascot.svelte";
   import { previewSeance, startSeance } from "../lib/seance.svelte.ts";
 
+  let { preset: linkPreset }: { preset?: string } = $props();
+  // Les pages de quiz (hexapop.app/quiz/…) parlent des départements : on y revient si besoin.
+  // svelte-ignore state_referenced_locally
+  if (linkPreset && world.id !== "france") profile.setAtlas("france");
+  /** Atlas Régions : ses propres indices, questions et zones (un atlas = un monde). */
+  const R = world.id === "regions";
   /** Révisions dues : la même séance que celle proposée sur l'accueil. */
   const due = previewSeance("revision").reviews;
 
   // ---------- options ----------
   type Zone = "france" | "region" | "om";
-  const GIVE: { id: Hint; label: string }[] = [
+  const GIVE: { id: Hint; label: string }[] = R ? [
+    { id: "nom", label: "Le nom" },
+    { id: "carte", label: "La carte" },
+    { id: "prefecture", label: "Le chef-lieu" },
+  ] : [
     { id: "nom", label: "Le nom" },
     { id: "carte", label: "La carte" },
     { id: "numero", label: "Le numéro" },
     { id: "prefecture", label: "La préfecture" },
   ];
-  const ASK: { id: Field; label: string; expert?: boolean }[] = [
+  const ASK: { id: Field; label: string; expert?: boolean }[] = R ? [
+    { id: "carte", label: "La placer" },
+    { id: "nom", label: "Le nom" },
+    { id: "prefecture", label: "Le chef-lieu" },
+    { id: "sousPrefectures", label: "Ses départements", expert: true },
+    { id: "limitrophes", label: "Les régions voisines", expert: true },
+  ] : [
     { id: "carte", label: "Le placer" },
     { id: "nom", label: "Le nom" },
     { id: "numero", label: "Le numéro" },
@@ -23,7 +41,12 @@
     { id: "sousPrefectures", label: "Les sous-préfectures", expert: true },
     { id: "limitrophes", label: "Les voisins", expert: true },
   ];
-  const PRESETS: { nom: string; desc: string; give: Hint[]; ask: Field[] }[] = [
+  const PRESETS: { nom: string; desc: string; give: Hint[]; ask: Field[] }[] = R ? [
+    { nom: "Apprendre la carte", desc: "On te donne le nom, tu la places", give: ["nom"], ask: ["carte"] },
+    { nom: "Les chefs-lieux", desc: "Nom ou carte → chef-lieu", give: ["nom", "carte"], ask: ["prefecture"] },
+    { nom: "Fiche complète", desc: "Tout à la fois, le « à moitié bon » compte", give: ["nom", "carte"], ask: ["carte", "nom", "prefecture"] },
+    { nom: "Expert", desc: "Ses départements et ses voisines", give: ["nom"], ask: ["sousPrefectures", "limitrophes"] },
+  ] : [
     { nom: "Apprendre la carte", desc: "On te donne le nom, tu le places", give: ["nom"], ask: ["carte"] },
     { nom: "Les numéros", desc: "Nom ou carte → numéro", give: ["nom", "carte"], ask: ["numero"] },
     { nom: "Les préfectures", desc: "Nom ou carte → préfecture", give: ["nom", "carte"], ask: ["prefecture"] },
@@ -33,7 +56,7 @@
   const METRO_REGIONS = REGIONS.filter((r) => DEPARTEMENTS.some((d) => d.region === r.code && !d.outreMer));
 
   // ---------- réglages (mémorisés) ----------
-  const KEY = "hexa.training";
+  const KEY = R ? "hexa.training.regions" : "hexa.training";
   interface Settings { zone: Zone; region: string; give: Hint[]; ask: Field[]; length: number | "all"; input: InputMode }
   const DEFAULTS: Settings = { zone: "france", region: METRO_REGIONS[0].code, give: ["nom"], ask: ["carte"], length: 10, input: "choix" };
   function load(): Settings {
@@ -50,7 +73,6 @@
       };
     } catch { return DEFAULTS; }
   }
-  let { preset: linkPreset }: { preset?: string } = $props();
   const init = load();
   // Arrivée depuis une page de quiz (hexapop.app/quiz/…) : le raccourci correspondant, sur toute la France.
   // svelte-ignore state_referenced_locally
@@ -69,8 +91,10 @@
   function applyPreset(p: (typeof PRESETS)[number]) { give = [...p.give]; ask = [...p.ask]; }
 
   // ---------- dérivés ----------
+  const ITEMS = R ? REGION_ITEMS : DEPARTEMENTS;
   const pool = $derived(
-    zone === "om" ? DEPARTEMENTS.filter((d) => d.outreMer).map((d) => d.code)
+    R ? ITEMS.filter((d) => (zone === "om" ? d.outreMer : zone === "region" ? !d.outreMer : true)).map((d) => d.code)
+    : zone === "om" ? DEPARTEMENTS.filter((d) => d.outreMer).map((d) => d.code)
     : zone === "region" ? DEPARTEMENTS.filter((d) => d.region === region).map((d) => d.code)
     : DEPARTEMENTS.map((d) => d.code),
   );
@@ -94,11 +118,11 @@
     if (!ok) return;
     const expert = ask.includes("sousPrefectures") || ask.includes("limitrophes");
     const config: GameConfig = {
-      seed: randomSeed(), level: expert ? "expert" : "normal", input,
+      seed: randomSeed(), atlas: world.id, level: expert ? "expert" : "normal", input,
       codes: pool, rounds: count, hints: [...give], ask: [...ask], durationMs: 0, switchable: true,
     };
-    const mode: GameMode = zone === "france" && count >= 101 ? "marathon" : zone === "region" ? "region" : "eclair";
-    const where = zone === "region" ? REGIONS.find((r) => r.code === region)!.nom : zone === "om" ? "Outre-mer" : "France";
+    const mode: GameMode = !R && zone === "france" && count >= 101 ? "marathon" : !R && zone === "region" ? "region" : "eclair";
+    const where = R ? `Régions${zone === "region" ? " · métropole" : zone === "om" ? " · outre-mer" : ""}` : zone === "region" ? REGIONS.find((r) => r.code === region)!.nom : zone === "om" ? "Outre-mer" : "France";
     nav.go({ name: "play", mode, config, title: preset ? `${preset.nom} · ${where}` : `Entraînement · ${where}`, learn: true });
   }
 </script>
@@ -107,12 +131,12 @@
   <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
   <div class="head">
     <Mascot mood="think" size={58} />
-    <div><h1 class="title">Entraînement</h1><p>Choisis exactement ce que tu veux réviser. Sans chrono.</p></div>
+    <div><h1 class="title">Entraînement{R ? " · Régions" : ""}</h1><p>Choisis exactement ce que tu veux réviser. Sans chrono.</p></div>
   </div>
 
   {#if due}
     <button class="btn yellow revise" onclick={() => startSeance("revision")}>
-      <b>Réviser {due} département{due > 1 ? "s" : ""}</b><small>Ceux dont une étoile est à revoir, partout en France.</small>
+      <b>Réviser {due} {due > 1 ? world.atlas.des : world.atlas.un}</b><small>{R ? "Celles dont une étoile est à revoir." : "Ceux dont une étoile est à revoir, partout en France."}</small>
     </button>
   {/if}
 
@@ -131,7 +155,7 @@
       <div class="chips">
         {#each GIVE as g (g.id)}<button class="chip" class:on={give.includes(g.id)} aria-pressed={give.includes(g.id)} onclick={() => (give = toggle(give, g.id))}>{g.label}</button>{/each}
       </div>
-      <p class="hint">« La carte » : le département clignote, à toi de le reconnaître. Avec plusieurs choix, l'indice change d'une question à l'autre.</p>
+      <p class="hint">« La carte » : {R ? "la région clignote" : "le département clignote"}, à toi de le reconnaître. Avec plusieurs choix, l'indice change d'une question à l'autre.</p>
     </div>
     <div class="row">
       <h2 class="label">On te demande</h2>
@@ -150,11 +174,11 @@
     <div class="row">
       <h2 class="label">Zone</h2>
       <div class="seg">
-        <button class:on={zone === "france"} onclick={() => (zone = "france")}>France</button>
-        <button class:on={zone === "region"} onclick={() => (zone = "region")}>Une région</button>
+        <button class:on={zone === "france"} onclick={() => (zone = "france")}>{R ? "Toutes" : "France"}</button>
+        <button class:on={zone === "region"} onclick={() => (zone = "region")}>{R ? "Métropole" : "Une région"}</button>
         <button class:on={zone === "om"} onclick={() => (zone = "om")}>Outre-mer</button>
       </div>
-      {#if zone === "region"}
+      {#if zone === "region" && !R}
         <div class="chips">
           {#each METRO_REGIONS as r (r.code)}<button class="chip" class:on={region === r.code} onclick={() => (region = r.code)}>{r.nom}</button>{/each}
         </div>
@@ -165,7 +189,7 @@
       <div class="seg">
         {#if pool.length > 10}<button class:on={length === 10} onclick={() => (length = 10)}>10</button>{/if}
         {#if pool.length > 20}<button class:on={length === 20} onclick={() => (length = 20)}>20</button>{/if}
-        <button class:on={length === "all" || pool.length <= (length as number)} onclick={() => (length = "all")}>{zone === "france" ? "Les 101 · Marathon" : `Toute la zone (${pool.length})`}</button>
+        <button class:on={length === "all" || pool.length <= (length as number)} onclick={() => (length = "all")}>{zone === "france" && !R ? "Les 101 · Marathon" : `Toute la zone (${pool.length})`}</button>
       </div>
     </div>
     <div class="row">
@@ -174,7 +198,7 @@
         <button class:on={input === "choix"} onclick={() => (input = "choix")}>Propositions</button>
         <button class:on={input === "libre"} onclick={() => (input = "libre")}>Au clavier</button>
       </div>
-      <p class="hint">Changeable à tout moment pendant la partie. En propositions, pour placer sur la carte, tu choisis parmi 4 départements surlignés.</p>
+      <p class="hint">Changeable à tout moment pendant la partie. En propositions, pour placer sur la carte, tu choisis parmi 4 {R ? "régions surlignées" : "départements surlignés"}.</p>
     </div>
   </section>
 

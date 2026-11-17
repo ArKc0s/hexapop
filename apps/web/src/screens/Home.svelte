@@ -2,7 +2,7 @@
   import { knowFills } from "../lib/knowFills.ts";
   import RoadBar from "../lib/ui/RoadBar.svelte";
   import { onDestroy } from "svelte";
-  import { DEP, DEPARTEMENTS, MAX_STARS, PLAYER_LEVELS, TOUR, dayKey, fadingCodes, knownStars, liveStreak, medalCount, medalOf, playerLevel, starsOf, taFrance, titleFor, tourRegionOf } from "@hexa/game";
+  import { ATLASES, ATLAS_IDS, maxStars, ITEM, DEP, DEPARTEMENTS, PLAYER_LEVELS, TOUR, dayKey, fadingCodes, knownStars, liveStreak, medalCount, medalOf, playerLevel, starsOf, taFrance, titleFor, tourRegionOf } from "@hexa/game";
   import Welcome from "../lib/ui/Welcome.svelte";
   import { previewSeance, startSeance } from "../lib/seance.svelte.ts";
   import Map from "../lib/Map.svelte";
@@ -16,11 +16,16 @@
   import { latestNews, markNewsSeen, newsSeen } from "../lib/news.ts";
   import { sound } from "../lib/sound.svelte.ts";
   import { install } from "../lib/install.svelte.ts";
+  import { world } from "../lib/world.svelte.ts";
 
   const all = DEPARTEMENTS.map((d) => d.code);
   const p = $derived(profile.data);
   const know = $derived(p.know ?? {});
-  const rank = $derived(titleFor(know).name);
+  // Un atlas = un monde (docs/atlas.md) : tout l'accueil parle de l'atlas affiché.
+  const A = $derived(world.atlas);
+  const fr = $derived(world.id === "france");
+  const plural = (n: number) => `${n} ${n > 1 ? A.des : A.un}`;
+  const rank = $derived(titleFor(know, world.id).name);
   const streak = $derived(liveStreak(p, Date.now()));
   const playedToday = $derived(p.streak.last === dayKey(Date.now()));
   // Premier lancement : « Tu viens d'où ? »
@@ -33,10 +38,10 @@
   let goal = $state((() => { try { return Number(localStorage.getItem("hexa.goal")) || 0; } catch { return 0; } })());
   function setGoal(g: number) { goal = g; try { localStorage.setItem("hexa.goal", String(g)); } catch { /* */ } }
   const goalDone = $derived(goal > 0 && todayGames >= goal);
-  const names = (codes: string[]) => codes.map((c) => DEP.get(c)?.nom).join(", ");
+  const names = (codes: string[]) => codes.map((c) => ITEM.get(c)?.nom).join(", ");
   /** Ce que contient la prochaine séance, écrit dans le bouton Continuer. */
   const seanceDesc = $derived(
-    seance.kind === "revision" ? `Révisions · ${seance.reviews} département${seance.reviews > 1 ? "s" : ""} à revoir, partout en France`
+    seance.kind === "revision" ? `Révisions · ${plural(seance.reviews)} à revoir, ${fr ? "partout en France" : `dans tout l'atlas ${A.nom}`}`
     : seance.region && seance.expert ? `${seance.region.nom} · expert${seance.experts.length ? ` : ${names(seance.experts)}` : ""}`
     : seance.region ? `${seance.region.nom}${seance.reviews ? ` · ${seance.reviews} à revoir` : ""}${seance.discover.length ? ` · nouveau : ${names(seance.discover)}` : ""}`
     : "");
@@ -52,20 +57,22 @@
     sound.play("tap");
   }
   // « Ta France » : les étoiles (placer, numéro, préfecture) de chaque département, puis ses médailles.
-  const fading = $derived(fadingCodes(know, Date.now()));
-  const pct = $derived(taFrance(know));
-  const stars = $derived(knownStars(know));
-  const level = $derived(PLAYER_LEVELS[playerLevel(know)].nom);
-  const fills = $derived(knowFills(know, Date.now()));
+  const fading = $derived(fadingCodes(know, Date.now(), world.id));
+  const pct = $derived(taFrance(know, world.id));
+  const stars = $derived(knownStars(know, world.id));
+  const level = $derived(PLAYER_LEVELS[playerLevel(know, world.id)].nom);
+  const fills = $derived(knowFills(know, Date.now(), world.id));
+  /** Avancée dans chaque atlas, pour le sélecteur. */
+  const atlasPct = $derived(Object.fromEntries(ATLAS_IDS.map((a) => [a, taFrance(know, a)])));
 
   const hello = $derived.by(() => {
     if (!p.stats.games) return "Salut ! Moi c'est Hexa. Ta première séance t'attend : 2 minutes, promis.";
-    if (seance.kind === "revision") return `${seance.reviews} département${seance.reviews > 1 ? "s" : ""} à revoir sur ta carte : on fait une séance de révisions ?`;
+    if (seance.kind === "revision") return `${plural(seance.reviews)} à revoir sur ta carte : on fait une séance de révisions ?`;
     if (streak > 0 && !playedToday) return `Une séance aujourd'hui pour garder ta série de ${streak} jour${streak > 1 ? "s" : ""} !`;
-    if (seance.expert && seance.region) return `Toute la région ${seance.region.nom} a ses étoiles : place à l'expert (sous-préfectures et voisins), pour l'or !`;
+    if (seance.expert && seance.region) return fr ? `Toute la région ${seance.region.nom} a ses étoiles : place à l'expert (sous-préfectures et voisins), pour l'or !` : `${seance.region.nom} : toutes les régions ont leurs étoiles. Place à l'expert (leurs départements et leurs voisines), pour l'or !`;
     if (seance.discover.length) return `Au programme : ${names(seance.discover)}.`;
-    if (seance.region) return `On continue en ${seance.region.nom} ?`;
-    return `Ta France est à ${pct} %. On consolide ?`;
+    if (seance.region) return fr ? `On continue en ${seance.region.nom} ?` : `On continue les régions (${seance.region.nom.toLowerCase()}) ?`;
+    return fr ? `Ta France est à ${pct} %. On consolide ?` : `Tes ${A.des} sont à ${pct} %. On consolide ?`;
   });
 
   /** Point rose sur « Nouveautés » tant que la dernière n'a pas été lue (pas pour un tout nouveau joueur : tout est neuf). */
@@ -108,6 +115,14 @@
         <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
       </div>
     </div>
+    <!-- Un atlas = un monde : on choisit ce qu'on apprend, tout l'accueil suit -->
+    <div class="worlds" role="tablist" aria-label="Ce que tu apprends">
+      {#each ATLAS_IDS as a (a)}
+        <button role="tab" aria-selected={world.id === a} class="world" class:on={world.id === a} onclick={() => { if (world.id !== a) { profile.setAtlas(a); sound.play("tap"); } }}>
+          {ATLASES[a].nom}<span class="tabnum">{atlasPct[a]} %</span>
+        </button>
+      {/each}
+    </div>
     <RoadBar {km} />
 
     <div class="hello"><Mascot mood="happy" size={66} />
@@ -137,12 +152,12 @@
           {#if seanceDesc}<small>{seanceDesc}</small>{/if}
         </button>
         {#if seance.expertRegion}<button class="link more" onclick={() => profile.setFocus(seance.expertRegion!.code)}>Expert ouvert : {seance.expertRegion.nom}, en route vers l'or</button>{/if}
-        {#if seance.kind === "region" && seance.elsewhere}<button class="link more" onclick={() => startSeance("revision")}>Plutôt réviser {seance.elsewhere} département{seance.elsewhere > 1 ? "s" : ""} ailleurs</button>{/if}
-        {#if p.focus && TOUR.has(p.focus)}<button class="focus" onclick={() => profile.setFocus(null)}>Région choisie : {TOUR.get(p.focus)?.nom} <span aria-label="Annuler">✕</span></button>{/if}
+        {#if seance.kind === "region" && seance.elsewhere}<button class="link more" onclick={() => startSeance("revision")}>Plutôt réviser {plural(seance.elsewhere)} ailleurs</button>{/if}
+        {#if p.focus && TOUR.has(p.focus)}<button class="focus" onclick={() => profile.setFocus(null)}>{fr ? "Région choisie" : "Choisi"} : {TOUR.get(p.focus)?.nom} <span aria-label="Annuler">✕</span></button>{/if}
       </div>
       <div class="row2">
         <button class="btn pink" disabled={!session.online} onclick={() => nav.go({ name: "daily" })}>Défi du jour<small>nouveau dans {countdown}</small></button>
-        <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel, équipe ou soirée</small></button>
+        <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>{fr ? "duel, équipe ou soirée" : "sur les départements"}</small></button>
       </div>
       <button class="btn white train" onclick={() => nav.go({ name: "training" })}>
         <span><b>Entraînement</b><small>Choisis la zone et les questions, sans chrono</small></span>
@@ -170,7 +185,7 @@
       </div>
 
       <nav class="menu" aria-label="Plus">
-        <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
+        <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1, world.id)}/{A.items.length}</span></button>
         <button onclick={() => nav.go({ name: "hof" })}>Hall of Fame</button>
         <button onclick={() => nav.go({ name: "news" })}>Nouveautés{#if newsDot}<i class="dot" aria-label="(nouveau)"></i>{/if}</button>
         <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
@@ -178,9 +193,9 @@
     </div>
   </section>
 
-  <section class="right" aria-label="Ta France">
+  <section class="right" aria-label={fr ? "Ta France" : `Tes ${A.des}`}>
     <div class="rhead">
-      <div><span class="k">Ta France</span><div class="pct tabnum">{pct} %</div><span class="sub tabnum">{stars}/{MAX_STARS} étoiles · niveau {level}</span></div>
+      <div><span class="k">{fr ? "Ta France" : `Tes ${A.des}`}</span><div class="pct tabnum">{pct} %</div><span class="sub tabnum">{stars}/{maxStars(world.id)} étoiles · niveau {level}</span></div>
       <div class="acc desk">
         {#if session.me}
           <button class="back me" title="Ton profil, tes réglages et tes rappels" aria-label="{session.me.pseudo} : profil et réglages" onclick={() => nav.go({ name: "account", view: "profile" })}><Icon name="gear" size={15} /><span>{session.me.pseudo}</span></button>
@@ -190,8 +205,8 @@
         <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
       </div>
     </div>
-    <Map {fills} marks={p.focus && TOUR.has(p.focus) ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label="Ta France : touche une région pour y faire ta prochaine séance" />
-    <p class="tip">Touche une région pour y faire ta prochaine séance.</p>
+    <Map {fills} marks={p.focus && TOUR.has(p.focus) ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label={fr ? "Ta France : touche une région pour y faire ta prochaine séance" : "Tes régions : touche la métropole ou l'outre-mer pour y faire ta prochaine séance"} />
+    <p class="tip">{fr ? "Touche une région pour y faire ta prochaine séance." : "Touche la métropole ou l'outre-mer pour y faire ta prochaine séance."}</p>
     <div class="legend">
       <span><i style="background:#eef3f8; box-shadow: inset 0 0 0 1px #c8d4e0"></i>découvert</span><span><i style="background:#b6d6f1"></i>1-2 étoiles</span><span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
       <span><i style="background:var(--tint-ko)"></i>à réviser</span>
@@ -266,6 +281,10 @@
   .me span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row2 .btn { flex-direction: column; gap: 3px; padding: 13px 10px; }
+  .worlds { display: flex; gap: 6px; background: var(--bg-2); padding: 4px; border-radius: 999px; margin: 2px 0 4px; overflow-x: auto; scrollbar-width: none; }
+  .world { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 8px 12px; font-weight: 800; font-size: 15px; color: var(--soft); cursor: pointer; white-space: nowrap; display: inline-flex; gap: 8px; justify-content: center; align-items: baseline; }
+  .world span { font-size: 12.5px; font-weight: 700; opacity: .8; }
+  .world.on { background: #fff; color: var(--ink); box-shadow: 0 3px 0 var(--line); }
   .menu { display: flex; flex-wrap: wrap; gap: 6px 18px; border-top: 2px solid var(--line); padding-top: 10px; }
   .menu button { background: none; border: 0; padding: 4px 0; cursor: pointer; font-weight: 800; font-size: 15.5px; color: var(--ink); }
   .menu button:hover { color: var(--blue); }

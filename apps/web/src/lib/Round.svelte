@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dep, DEPARTEMENTS, matchSet, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
+  import { atlasOf, dep, matchSet, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
   import Map, { type Mark } from "./Map.svelte";
   import Fiche from "./Fiche.svelte";
   import { onDestroy, type Snippet } from "svelte";
@@ -48,7 +48,7 @@
     if (result.accuracy >= 0.999) return { mood: combo >= 5 ? "wow" : "happy", text: combo >= 3 ? `Combo ×${combo} ! ${PRAISE[combo % PRAISE.length]}` : PRAISE[q.index % PRAISE.length] } as const;
     if (fresh) return { mood: "think", text: `Maintenant tu sais ! On y revient en fin de séance.` } as const;
     if (result.accuracy > 0) return { mood: "think", text: `Presque ! ${Math.round(result.accuracy * 100)} % de bon, la correction est juste au-dessus.` } as const;
-    return { mood: "sad", text: `Raté : ${d.nom} (${d.code}). Tu le retiendras !` } as const;
+    return { mood: "sad", text: `Raté : ${nameOf(d)}. Tu le retiendras !` } as const;
   });
   $effect(() => {
     if (!result) return;
@@ -58,7 +58,14 @@
 
   const d = $derived(dep(q.code));
   /** Comment désigner l'indice dans les consignes (« Place … sur la carte »). */
-  const target = $derived(q.hint === "numero" ? `le ${d.code}` : q.hint === "prefecture" ? `le département de ${d.prefecture}` : d.nom);
+  // Atlas de la question (départements, régions…) : intitulés, mots et recherche suivent.
+  const A = $derived(atlasOf(q.code));
+  const fr = $derived(A.id === "france");
+  /** « Finistère (29) » pour un département, « Bretagne » pour une région. */
+  const nameOf = (x: { nom: string; code: string }) => (fr ? `${x.nom} (${x.code})` : x.nom);
+  const le = $derived(A.feminin ? "la" : "le");
+  const ce = $derived(A.feminin ? "cette" : "ce");
+  const target = $derived(q.hint === "numero" ? `le ${d.code}` : q.hint === "prefecture" ? `${le} ${A.un} de ${d.prefecture}` : d.nom);
   const has = (f: Field) => q.fields.includes(f);
 
   let sel = $state<string | null>(null);
@@ -80,8 +87,9 @@
   // La carte ne sert qu'à placer le département ; les voisins se tapent (nom ou numéro).
   const mapTarget = $derived(has("carte") ? "carte" : null);
 
-  /** Retrouve un département à partir d'un nom ou d'un numéro tapé. */
+  /** Retrouve un élément de l'atlas (département, région) à partir d'un nom ou d'un numéro tapé. */
   function findDep(raw: string) {
+    const DEPARTEMENTS = A.items;
     const v = raw.trim();
     if (!v) return null;
     // Exact d'abord (« Loiret » ne doit pas tomber sur « Loire »), puis tolérant aux fautes.
@@ -89,7 +97,7 @@
   }
   function addNear() {
     const found = findDep(nearDraft);
-    if (!found) { nearError = `« ${nearDraft.trim()} » : département introuvable`; return; }
+    if (!found) { nearError = `« ${nearDraft.trim()} » : ${A.un} introuvable`; return; }
     nearError = "";
     if (!near.includes(found.code)) near = [...near, found.code];
     nearDraft = "";
@@ -175,8 +183,8 @@
   const nearMissed = $derived(result && has("limitrophes") ? d.limitrophes.filter((c) => !near.includes(c)) : []);
 
   const fieldResult = (f: Field) => result?.fields.find((x) => x.field === f);
-  const LABELS: Record<Field, string> = { carte: "Sur la carte", nom: "Nom", numero: "Numéro", prefecture: "Préfecture", sousPrefectures: "Sous-préfectures", limitrophes: "Voisins" };
-  const PLACEHOLDER: Record<ChoiceField, string> = { nom: "Nom du département", numero: "Numéro", prefecture: "Préfecture" };
+  const LABELS = $derived(A.labels);
+  const PLACEHOLDER = $derived<Record<ChoiceField, string>>({ nom: `Nom ${A.feminin ? "de la" : "du"} ${A.un}`, numero: "Numéro", prefecture: A.labels.prefecture });
   const textFields = $derived((["nom", "numero", "prefecture"] as ChoiceField[]).filter(has));
 
   // Mobile + 4 propositions : une question à la fois, pour répondre sans faire défiler.
@@ -210,12 +218,12 @@
   }
   function focusFirst(node: HTMLInputElement, first: boolean) { if (first && window.matchMedia("(pointer: fine)").matches) node.focus(); }
   function expectedLabel(f: Field, v: string | string[]) {
-    if (f === "limitrophes" && Array.isArray(v)) return v.map((c) => `${dep(c).nom} (${c})`).join(", ");
-    if (f === "carte") return `${d.nom} (${d.code})`;
+    if (f === "limitrophes" && Array.isArray(v)) return v.map((c) => nameOf(dep(c))).join(", ");
+    if (f === "carte") return nameOf(d);
     return Array.isArray(v) ? (v.length ? v.join(", ") : "aucune") : v;
   }
   const coarse = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-  const mapHelp = $derived(result ? "" : mapTarget !== "carte" ? "" : sel ? `Placé ! Tu peux changer en ${coarse ? "touchant" : "cliquant"} un autre département.` : coarse ? "Touche la région, puis le département. Pince pour zoomer." : "Clique le département sur la carte.");
+  const mapHelp = $derived(result ? "" : mapTarget !== "carte" ? "" : sel ? `Placé ! Tu peux changer en ${coarse ? "touchant" : "cliquant"} ${A.feminin ? "une autre" : "un autre"} ${A.un}.` : !fr ? `${coarse ? "Touche" : "Clique"} la région sur la carte.` : coarse ? "Touche la région, puis le département. Pince pour zoomer." : "Clique le département sur la carte.");
 </script>
 
 
@@ -235,7 +243,7 @@
             <span>{nudge ? "Tu n'as pas placé" : "Place"} <b>{target}</b>{nudge ? " !" : " sur la carte"}</span>
           </div>
         {/key}
-        <span class="help sub">{candidates ? "Choisis parmi les 4 départements surlignés" : coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
+        <span class="help sub">{candidates ? `Choisis parmi les 4 ${A.des} surlignés${A.feminin ? "es" : ""}` : !fr ? `${coarse ? "Touche" : "Clique"} la région` : coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
       {:else if legend.length}
         <ul class="legend" aria-label="Légende de la carte">
           {#each legend as l (l.cls)}<li><i class="sw {l.cls}"></i>{l.text}</li>{/each}
@@ -244,7 +252,7 @@
         <span class="help">{mapHelp}</span>
       {/if}
     </div>
-    <Map {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} {candidates} />
+    <Map atlas={A.id} {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} {candidates} />
   </div>
 
   <section class="panel">
@@ -263,14 +271,14 @@
         <span class="kicker">{rev}Le département numéro</span>
         <span class="riso bignum" data-t={d.code}>{d.code}</span>
       {:else if q.hint === "prefecture"}
-        <span class="kicker">{rev}Le département de</span>
+        <span class="kicker">{rev}{fr ? "Le département de" : "La région dont le chef-lieu est"}</span>
         <h2 class="qname">{d.prefecture}</h2>
       {:else if q.hint === "nom"}
         <span class="kicker">{q.tag === "new" ? "Nouveau · devine !" : q.tag === "expert" ? "Expert · tu les connais ?" : q.tag === "home" ? "Chez toi" : q.tag === "review" ? "À revoir" : "Trouve"}</span>
         <h2 class="qname">{d.nom}</h2>
       {:else}
         <span class="kicker">{rev}Il clignote sur la carte</span>
-        <h2 class="qname">Quel est ce département ?</h2>
+        <h2 class="qname">{A.feminin ? "Quelle est" : "Quel est"} {ce} {A.un} ?</h2>
       {/if}
     </div>
 
@@ -321,7 +329,7 @@
             <div class="tags">{#each sousPrefs as s (s)}<button class="chip" class:good={spCheck && !spCheck.wrong.has(s)} class:bad={spCheck?.wrong.has(s)} disabled={!!result} onclick={() => (sousPrefs = sousPrefs.filter((x) => x !== s))}>{s}{result ? "" : " ×"}</button>{/each}</div>
           {/if}
           {#if spCheck?.missed.length}<div class="tags missed"><span class="ml">Il manquait</span>{#each spCheck.missed as s (s)}<span class="chip miss">{s}</span>{/each}</div>{/if}
-          <input id="in-sp" class="field" autocomplete="off" spellcheck="false" placeholder="Une ville, puis Entrée"
+          <input id="in-sp" class="field" autocomplete="off" spellcheck="false" placeholder={fr ? "Une ville, puis Entrée" : "Un département (nom ou numéro), puis Entrée"}
             bind:value={spDraft} disabled={!!result || submitted}
             onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (spDraft.trim()) addSousPref(); else enter(e); } }} />
           {#if r && r.score < 1 && !sousPrefs.length}<span class="exp">{expectedLabel("sousPrefectures", r.expected)}</span>{/if}
@@ -331,15 +339,15 @@
       {#if has("limitrophes")}
         {@const r = fieldResult("limitrophes")}
         <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
-          <label class="label" for="in-near">{LABELS.limitrophes} · {d.limitrophes.length} à trouver, nom ou numéro</label>
+          <label class="label" for="in-near">{LABELS.limitrophes} · {d.limitrophes.length} à trouver{fr ? ", nom ou numéro" : ""}</label>
           {#if near.length}
-            <div class="tags">{#each near as c (c)}<button class="chip" class:good={r && d.limitrophes.includes(c)} class:bad={r && !d.limitrophes.includes(c)} disabled={!!result} onclick={() => (near = near.filter((x) => x !== c))}>{dep(c).nom} ({c}){result ? "" : " ×"}</button>{/each}</div>
+            <div class="tags">{#each near as c (c)}<button class="chip" class:good={r && d.limitrophes.includes(c)} class:bad={r && !d.limitrophes.includes(c)} disabled={!!result} onclick={() => (near = near.filter((x) => x !== c))}>{nameOf(dep(c))}{result ? "" : " ×"}</button>{/each}</div>
           {/if}
-          <input id="in-near" class="field" autocomplete="off" spellcheck="false" placeholder="ex. Morbihan ou 56, puis Entrée"
+          <input id="in-near" class="field" autocomplete="off" spellcheck="false" placeholder={fr ? "ex. Morbihan ou 56, puis Entrée" : "ex. Normandie, puis Entrée"}
             bind:value={nearDraft} disabled={!!result || submitted} oninput={() => (nearError = "")}
             onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (nearDraft.trim()) addNear(); else enter(e); } }} />
           {#if nearError}<span class="nerr">{nearError}</span>{/if}
-          {#if near.length && nearMissed.length}<div class="tags missed"><span class="ml">Il manquait</span>{#each nearMissed as c (c)}<span class="chip miss">{dep(c).nom} ({c})</span>{/each}</div>
+          {#if near.length && nearMissed.length}<div class="tags missed"><span class="ml">Il manquait</span>{#each nearMissed as c (c)}<span class="chip miss">{nameOf(dep(c))}</span>{/each}</div>
           {:else if r && r.score < 1 && !near.length}<span class="exp">{expectedLabel("limitrophes", r.expected)}</span>{/if}
         </div>
       {/if}

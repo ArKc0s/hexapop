@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DEP } from "@hexa/game";
+  import { ITEM, shortCode } from "@hexa/game";
   import { depShape } from "../shapes.ts";
 
   // Vignette de collection : la silhouette du département, son numéro, son nom.
@@ -7,13 +7,14 @@
   const NAMES = ["", "bronze", "argent", "or"];
   /** tier : 0 = à découvrir. size : s (pastille), m (album), l (récompense). */
   let { code, tier = 1, size = "m", label = true }: { code: string; tier?: number; size?: "s" | "m" | "l"; label?: boolean } = $props();
-  const d = $derived(DEP.get(code)!);
+  const d = $derived(ITEM.get(code)!);
+  const short = $derived(shortCode(code));
   const shape = $derived(depShape(code));
   const uid = "g" + Math.random().toString(36).slice(2, 8);
 </script>
 
 <span class="vg {size} t{tier}" class:missing={!tier} class:holo={d.outreMer && tier > 0}
-  role="img" aria-label={tier ? `${d.nom} (${d.code}), vignette ${NAMES[tier]}` : `Vignette à découvrir`}>
+  role="img" aria-label={tier ? `${d.nom} (${short}), vignette ${NAMES[tier]}` : `Vignette à découvrir`}>
   <span class="wrap"><span class="art">
     <svg viewBox={shape.viewBox} aria-hidden="true">
       <defs>
@@ -30,9 +31,9 @@
         <path d={shape.d} class="ghost" />
       {/if}
     </svg>
-  </span>{#if size !== "s"}<span class="code">{tier ? d.code : "?"}</span>{/if}</span>
+  </span>{#if size !== "s"}<span class="code">{tier ? short : "?"}</span>{/if}</span>
   {#if label && size !== "s"}<span class="nm">{tier ? d.nom : "À découvrir"}</span>{/if}
-  {#if size === "s"}<span class="code-s">{tier ? d.code : "?"}</span>{/if}
+  {#if size === "s"}<span class="code-s">{tier ? short : "?"}</span>{/if}
 </span>
 
 <style>

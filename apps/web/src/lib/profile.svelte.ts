@@ -1,6 +1,6 @@
 // Profil de jeu (kilomètres, série, étoiles et médailles, badges) : stocké dans le navigateur,
 // fusionné avec le compte quand on est connecté.
-import { applyGame, emptyProfile, migrateKnowledge, sanitizeProfile, type GameReport, type Profile, type Progress, type Rewards } from "@hexa/game";
+import { applyGame, emptyProfile, migrateKnowledge, sanitizeProfile, type GameReport, type Profile, type Progress, type Rewards, type AtlasId } from "@hexa/game";
 
 const KEY = "hexa.profile.v1";
 /** Profils d'avant les étoiles (v1.4) : on reprend la révision et les vignettes, personne ne perd rien. */
@@ -45,6 +45,14 @@ class ProfileStore {
   /** Région choisie sur la carte de l'accueil pour la prochaine séance (null : retour à l'ordre normal). */
   setFocus(region: string | null) {
     this.data = { ...this.data, focus: region ?? undefined, focusAt: Date.now() };
+    this.save();
+    for (const fn of this.listeners) fn();
+  }
+
+  /** Change d'atlas (un atlas = un monde). Le choix de région d'un autre atlas est oublié. */
+  setAtlas(id: AtlasId) {
+    const t = Date.now();
+    this.data = { ...this.data, atlas: id, atlasAt: t, focus: undefined, focusAt: t };
     this.save();
     for (const fn of this.listeners) fn();
   }

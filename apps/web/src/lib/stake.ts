@@ -1,11 +1,11 @@
 // Ce qu'un invité risque de perdre (sa progression n'existe que sur cet appareil) : km, étoiles, médailles, série.
-import { DEPARTEMENTS, medalOf, starsOf } from "@hexa/game";
+import { ITEM, medalOf, starsOf } from "@hexa/game";
 import type { Profile } from "@hexa/game";
 
 export function stakeOf(p: Profile): { km: number; stars: number; medals: number; streak: number; text: string } {
   const know = p.know ?? {};
   let stars = 0, medals = 0;
-  for (const d of DEPARTEMENTS) { stars += starsOf(know, d.code); if (medalOf(know, d.code)) medals++; }
+  for (const c of ITEM.keys()) { stars += starsOf(know, c); if (medalOf(know, c)) medals++; }
   const km = p.xp, streak = p.streak.count;
   const parts = [
     km ? `${km.toLocaleString("fr-FR")} km` : "",

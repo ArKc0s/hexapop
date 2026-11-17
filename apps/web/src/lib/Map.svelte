@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { tourRegionOf, OUTRE_MER } from "@hexa/game";
-  import { MAP, IDF_SOURCE, IDF_TARGET, zoomTransform } from "./map.ts";
+  import { tourRegionOf, OUTRE_MER, type AtlasId } from "@hexa/game";
+  import { MAP, IDF_SOURCE, IDF_TARGET, zoomTransform, geoOf } from "./map.ts";
+  import { world } from "./world.svelte.ts";
 
   export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near" | "done-ok" | "done-ko" | "focus" | "subject";
   interface Props {
@@ -14,15 +15,18 @@
     label?: string;
     /** Mode propositions : seuls ces départements sont surlignés et sélectionnables. */
     candidates?: string[];
+    /** Atlas dessiné (défaut : celui affiché) : départements, régions… */
+    atlas?: AtlasId;
   }
-  let { marks = {}, fills, interactive = true, zoomable = false, onpick, label = "Carte des départements", candidates }: Props = $props();
+  let { marks = {}, fills, interactive = true, zoomable = false, onpick, label = "Carte des départements", candidates, atlas }: Props = $props();
+  const geo = $derived(geoOf(atlas ?? world.id));
   const cand = $derived(candidates ? new Set(candidates) : null);
   const allowed = (code: string) => !cand || cand.has(code);
 
-  const codes = Object.keys(MAP.paths);
+  const codes = $derived(Object.keys(geo.paths));
   // Outre-mer : pas de contour de région, on lui donne un trait d'encre.
-  const OM = new Set(MAP.insets.map((b) => b.code));
-  const regions = Object.values((MAP as unknown as { regions: Record<string, string> }).regions ?? {});
+  const OM = $derived(new Set(geo.insets.map((b) => b.code)));
+  const regions = $derived(geo.outlines);
   const uid = "m" + Math.random().toString(36).slice(2, 7);
   const idfT = zoomTransform(IDF_SOURCE, IDF_TARGET);
 
@@ -37,7 +41,7 @@
   const METRO_H = MAP.viewBox[3] - 20;
   const STRIP_Y = METRO_H + 24, STRIP_W = 1000 / MAP.insets.length;
   /** Décalage de chaque encart d'outre-mer en disposition étroite. */
-  const insetShift = Object.fromEntries(MAP.insets.map((b, i) => [b.code, { dx: i * STRIP_W + (STRIP_W - b.w) / 2 - b.x, dy: STRIP_Y - b.y }]));
+  const insetShift = $derived(Object.fromEntries(geo.insets.map((b, i) => [b.code, { dx: i * STRIP_W + (STRIP_W - b.w) / 2 - b.x, dy: STRIP_Y - b.y }])));
   const shiftOf = (code: string) => (narrow && insetShift[code] ? `translate(${insetShift[code].dx} ${insetShift[code].dy})` : undefined);
   const FULL_WIDE: number[] = [...MAP.viewBox];
   const FULL_NARROW = [-10, -10, 1020, STRIP_Y + MAP.insets[0].h + 20];
@@ -70,7 +74,7 @@
   /** Cadre d'une région (métropole), au ratio de la vue complète. */
   function regionBox(code: string): number[] {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const c of tourRegionOf(code).deps) for (const [, x, y] of MAP.paths[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
+    for (const c of tourRegionOf(code).deps) for (const [, x, y] of geo.paths[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
       x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y);
     }
     const pad = 0.12, ratio = full[3] / full[2];
@@ -82,9 +86,9 @@
 
   /** Cadre englobant des propositions (métropole hors petite couronne), au ratio de la vue complète. */
   function boxOf(list: string[]): number[] | null {
-    if (list.some((c) => OM.has(c) || IDF_SOURCE.codes.includes(c))) return null;
+    if (list.some((c) => OM.has(c) || (geo.zoom && IDF_SOURCE.codes.includes(c)))) return null;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const c of list) for (const [, x, y] of MAP.paths[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
+    for (const c of list) for (const [, x, y] of geo.paths[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
       x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y);
     }
     const pad = 0.25, ratio = full[3] / full[2];
@@ -180,7 +184,7 @@
     }
     const inZoomBox = !!target?.closest(".zoom");
     // Au doigt, vue complète : toucher une région de métropole zoome dessus d'abord.
-    if (zoomable && coarse && !view && !OM.has(code) && !inZoomBox && tourRegionOf(code).code !== OUTRE_MER) {
+    if (zoomable && coarse && geo.zoom && !view && !OM.has(code) && !inZoomBox && tourRegionOf(code).code !== OUTRE_MER) {
       animateTo(regionBox(code));
       lockUntil = performance.now() + 400;
       lastTap = { t: 0, x: 0, y: 0 };
@@ -214,18 +218,20 @@
 
 <div class="wrap" class:zoomable>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <svg bind:this={svg} class="map" class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
+  <svg bind:this={svg} class="map" class:r={geo.atlas === "regions"} class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
     onclick={pickFrom} onkeydown={key} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onwheel={wheel}>
     <defs>
-      {#each codes as code (code)}<path id="{uid}-{code}" d={MAP.paths[code]} />{/each}
+      {#each codes as code (code)}<path id="{uid}-{code}" d={geo.paths[code]} />{/each}
     </defs>
 
-    {#each MAP.insets as b (b.code)}
+    {#each geo.insets as b (b.code)}
       <rect class="frame" x={b.x} y={b.y} width={b.w} height={b.h} rx="8" transform={shiftOf(b.code)} />
     {/each}
-    <rect class="frame" x={IDF_TARGET.x} y={IDF_TARGET.y} width={IDF_TARGET.w} height={IDF_TARGET.h} rx="8" />
-    <text class="cap" x={IDF_TARGET.x + IDF_TARGET.w / 2} y={IDF_TARGET.y + IDF_TARGET.h + 16} text-anchor="middle">Paris et petite couronne</text>
-    <rect class="src" x={IDF_SOURCE.x - 3} y={IDF_SOURCE.y - 3} width={IDF_SOURCE.w + 6} height={IDF_SOURCE.h + 6} rx="3" />
+    {#if geo.zoom}
+      <rect class="frame" x={IDF_TARGET.x} y={IDF_TARGET.y} width={IDF_TARGET.w} height={IDF_TARGET.h} rx="8" />
+      <text class="cap" x={IDF_TARGET.x + IDF_TARGET.w / 2} y={IDF_TARGET.y + IDF_TARGET.h + 16} text-anchor="middle">Paris et petite couronne</text>
+      <rect class="src" x={IDF_SOURCE.x - 3} y={IDF_SOURCE.y - 3} width={IDF_SOURCE.w + 6} height={IDF_SOURCE.h + 6} rx="3" />
+    {/if}
 
     <!-- Ombre rose : un léger décalage de la silhouette, la seule touche riso de la carte -->
     <g class="shadow" transform="translate(4 4)" aria-hidden="true">
@@ -236,20 +242,26 @@
       {#each codes as code (code)}
         <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
         <use href="#{uid}-{code}" data-code={code} class="{marks[code] ?? ''} {OM.has(code) ? 'om' : ''} {cand?.has(code) ? 'cand' : ''}" style={fills?.[code] ? `--f:${fills[code]}` : undefined}
-          transform={shiftOf(code)} tabindex={interactive && allowed(code) ? 0 : -1} role={interactive ? "button" : undefined} aria-label={interactive ? "département" : undefined} />
+          transform={shiftOf(code)} tabindex={interactive && allowed(code) ? 0 : -1} role={interactive ? "button" : undefined} aria-label={interactive ? (geo.atlas === "regions" ? "région" : "département") : undefined} />
       {/each}
     </g>
+    {#if geo.inner.length}
+      <!-- Carte des régions : les départements en filigrane, pour voir ce qu'elles contiennent -->
+      <g class="inner" aria-hidden="true">{#each geo.inner as d, i (i)}<path {d} />{/each}</g>
+    {/if}
     <g class="regions" aria-hidden="true">
       {#each regions as d, i (i)}<path {d} />{/each}
     </g>
-    <g class="deps zoom" transform={idfT}>
-      {#each IDF_SOURCE.codes as code (code)}
-        <use href="#{uid}-{code}" data-code={code} class="{marks[code] ?? ''} {cand?.has(code) ? 'cand' : ''}" style={fills?.[code] ? `--f:${fills[code]}` : undefined} />
-      {/each}
-    </g>
+    {#if geo.zoom}
+      <g class="deps zoom" transform={idfT}>
+        {#each IDF_SOURCE.codes as code (code)}
+          <use href="#{uid}-{code}" data-code={code} class="{marks[code] ?? ''} {cand?.has(code) ? 'cand' : ''}" style={fills?.[code] ? `--f:${fills[code]}` : undefined} />
+        {/each}
+      </g>
+    {/if}
   </svg>
   {#if zoomable && zoomed}
-    <button class="out" onclick={() => animateTo(null)}>← Toute la France</button>
+    <button class="out" onclick={() => animateTo(null)}>← Toute la carte</button>
   {/if}
 </div>
 
@@ -262,6 +274,8 @@
   .deps use.sel, .interactive .deps use.sel:hover { fill: var(--ink); stroke: var(--yellow) !important; stroke-width: 3 !important; paint-order: stroke; }
   /* Épaisseur des traits constante à l'écran, quel que soit le zoom */
   .deps use, .regions path, .frame, .src { vector-effect: non-scaling-stroke; }
+  /* Carte des régions : contours de région plus marqués */
+  .map.r .deps use:not(.om) { stroke: var(--ink); stroke-width: 1.4; }
   .shadow use { fill: var(--pink); }
   .frame { fill: #fffdf8; stroke: #d6cdb9; stroke-width: 1.5; }
   .cap { font: 700 13px var(--f-ui); fill: var(--soft); }
@@ -269,6 +283,7 @@
   .deps use { fill: var(--f, #fffdf8); stroke: #9a907c; stroke-width: .75; stroke-linejoin: round; transition: fill .15s; outline: none; transform-box: fill-box; transform-origin: center; }
   .deps use.om { stroke: var(--ink); stroke-width: 1.5; }
   .regions path { fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; pointer-events: none; }
+  .inner path { fill: none; stroke: #9a907c; stroke-opacity: .45; stroke-width: .6; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; pointer-events: none; }
   .zoom use { stroke-width: .8; stroke: #8a806c; }
   .interactive .deps use { cursor: pointer; }
   /* Région choisie pour la prochaine séance (accueil) : simple contour, la couleur reste celle de la maîtrise */

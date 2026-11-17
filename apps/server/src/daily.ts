@@ -1,5 +1,5 @@
 import { createHmac, randomBytes } from "node:crypto";
-import { DAILY_EPOCH, DAILY_ROUNDS, DEP, LEVELS, LEVEL_OF, playerLevel, sanitizeProfile, type GameConfig, type Level, type RoundResult } from "@hexa/game";
+import { ATLASES, DAILY_EPOCH, DAILY_ROUNDS, DEP, LEVELS, LEVEL_OF, playerLevel, sanitizeProfile, type AtlasId, type GameConfig, type Level, type RoundResult } from "@hexa/game";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
 
@@ -10,10 +10,16 @@ export function today(t = now()): string {
 export function dailyNumber(day: string): number {
   return Math.round((Date.parse(day) - Date.parse(DAILY_EPOCH)) / 86_400_000) + 1;
 }
-/** Même graine pour tous les niveaux : les mêmes 10 départements, seules les questions changent. */
-export function dailyConfig(day: string, level: Level = "normal"): GameConfig {
-  const h = createHmac("sha256", config.dailySecret).update(day).digest();
-  return { seed: h.readUInt32LE(0), level, input: level === "decouverte" ? "choix" : "libre", rounds: DAILY_ROUNDS };
+/** Clé du défi en base : le jour pour les départements, « atlas:jour » pour les autres atlas (un défi par atlas). */
+export function dailyKey(day: string, atlas: AtlasId = "france"): string {
+  return atlas === "france" ? day : `${atlas}:${day}`;
+}
+/** Jour réel d'une clé de défi (« regions:2026-11-17 » → « 2026-11-17 »). */
+export const dayOfKey = (key: string) => key.slice(key.lastIndexOf(":") + 1);
+/** Même graine pour tous les niveaux : les mêmes départements (ou régions), seules les questions changent. */
+export function dailyConfig(day: string, level: Level = "normal", atlas: AtlasId = "france"): GameConfig {
+  const h = createHmac("sha256", config.dailySecret).update(dailyKey(day, atlas)).digest();
+  return { seed: h.readUInt32LE(0), atlas, level, input: level === "decouverte" ? "choix" : "libre", rounds: atlas === "france" ? DAILY_ROUNDS : ATLASES[atlas].dailyRounds };
 }
 
 export function gridOf(results: (RoundResult | undefined)[]): number[] {
@@ -33,13 +39,13 @@ export function newClaim(c: Claim): string {
 export function redeemClaim(id: string, userId: number): { rank: number; players: number } | "expired" | "already" {
   const row = db.prepare("DELETE FROM daily_claims WHERE id = ? RETURNING data").get(id) as { data: string } | undefined;
   const c = row ? (JSON.parse(row.data) as Claim) : null;
-  if (!c || c.day !== today()) return "expired";
+  if (!c || dayOfKey(c.day) !== today()) return "expired";
   // Invité classé : son résultat passe sous le compte (et ses autres jours avec lui).
   if (c.guestId) { adoptGuest(c.guestId, userId); const r = rankOf(c.day, userId); if (r) return r; }
   if (!startDaily(c.day, userId, c.level ?? "normal")) return "already";
   return saveDaily(c.day, userId, c.points, c.accuracy, c.elapsedMs, c.grid) ?? "already";
 }
-setInterval(() => { db.prepare("DELETE FROM daily_claims WHERE day < ?").run(today()); }, 3_600_000).unref();
+setInterval(() => { db.prepare("DELETE FROM daily_claims WHERE substr(day, -10) < ?").run(today()); }, 3_600_000).unref();
 
 // ---------- invités au classement (pseudo généré, un défi par navigateur et par jour) ----------
 db.exec(`
@@ -100,7 +106,7 @@ export function adoptGuest(guestId: string, userId: number): number {
   return moved;
 }
 // Les empreintes de connexion ne servent que le jour même.
-setInterval(() => { db.prepare("UPDATE daily_guest_results SET fp = NULL WHERE day < ? AND fp IS NOT NULL").run(today()); }, 3_600_000).unref();
+setInterval(() => { db.prepare("UPDATE daily_guest_results SET fp = NULL WHERE substr(day, -10) < ? AND fp IS NOT NULL").run(today()); }, 3_600_000).unref();
 
 export function hasPlayed(day: string, userId: number): boolean {
   return !!db.prepare("SELECT 1 FROM daily_results WHERE day = ? AND user_id = ?").get(day, userId);
@@ -147,7 +153,7 @@ export function leaderboard(day: string, level: Level = "normal", limit = 50) {
      FROM daily_all WHERE day = ? AND level = ? AND finished = 1 AND home IS NOT NULL GROUP BY home HAVING COUNT(*) >= 3
      ORDER BY avg DESC LIMIT 20`,
   ).all(day, level) as { code: string; players: number; avg: number }[]).map((r) => ({ ...r, nom: DEP.get(r.code)?.nom ?? r.code }));
-  return { day, number: dailyNumber(day), level, counts, top, departements };
+  return { day: dayOfKey(day), number: dailyNumber(dayOfKey(day)), level, counts, top, departements };
 }
 
 /** Niveau d'un compte d'après son profil enregistré (« Ta France ») ; Découverte sans profil. */

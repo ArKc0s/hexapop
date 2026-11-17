@@ -8,3 +8,4 @@ export * from "./meta.ts";
 export * from "./knowledge.ts";
 export * from "./seance.ts";
 export * from "./road.ts";
+export * from "./atlas.ts";

@@ -1,11 +1,12 @@
-import { MAP } from "./map.ts";
+import { atlasOf } from "@hexa/game";
+import { geoOf } from "./map.ts";
 
 /** Silhouette d'un département : son tracé et une viewBox cadrée dessus (avec marge). */
 const cache = new Map<string, { d: string; viewBox: string }>();
 export function depShape(code: string) {
   const hit = cache.get(code);
   if (hit) return hit;
-  const d = MAP.paths[code];
+  const d = geoOf(atlasOf(code).id).paths[code];
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const [, x, y] of d.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
     x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y);

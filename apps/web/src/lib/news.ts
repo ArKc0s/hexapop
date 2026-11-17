@@ -4,6 +4,14 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
+    id: 13, version: "1.16", date: "2026-11-18", title: "Nouveau : les régions",
+    items: [
+      "Un deuxième atlas : les 18 régions, leur chef-lieu, puis en expert leurs départements et leurs voisines.",
+      "Choisis ce que tu apprends en haut de l'accueil : tout suit (Continuer, la carte, l'Album, l'Entraînement, le défi du jour).",
+      "Chaque atlas a son défi du jour et son classement. Ta série et les kilomètres d'Hexa restent communs.",
+    ],
+  },
+  {
     id: 12, version: "1.15", date: "2026-11-17", title: "Montre tes réponses (ou cache-les)",
     items: [
       "Partager ton défi du jour donne un lien vers ta page de résultat : ton score, ta grille, et toutes tes réponses, question par question (idée de Mathis).",

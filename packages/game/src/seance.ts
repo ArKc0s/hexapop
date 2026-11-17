@@ -1,8 +1,8 @@
 // « Continuer » : le jeu compose la séance à la place du joueur (docs/conception.md, section 5).
 // D'abord ce qui est à revoir, puis la découverte de la région en cours, puis la consolidation.
-import { DEP } from "./data.ts";
-import { BASE_FACETS, EXPERT_FACETS, FACETS, expertFacetsOf, medalOf, type Facet, type Knowledge } from "./knowledge.ts";
-import { OUTRE_MER, TOUR, TOUR_REGIONS, type TourRegion } from "./meta.ts";
+import { ATLASES, inAtlas, R_METRO, type AtlasId } from "./atlas.ts";
+import { EXPERT_FACETS, FACETS, baseFacetsOf, expertFacetsOf, medalOf, type Facet, type Knowledge } from "./knowledge.ts";
+import { OUTRE_MER, TOUR, groupsOf, type TourRegion } from "./meta.ts";
 import { rng, shuffle } from "./random.ts";
 import type { Field, Hint, PlanItem } from "./round.ts";
 
@@ -12,8 +12,8 @@ export const DEFAULT_START = "53";
 
 const seen = (k: Knowledge, code: string, f: Facet) => !!(k[code]?.[f]?.v || k[code]?.[f]?.s);
 const starred = (k: Knowledge, code: string, f: Facet) => !!k[code]?.[f]?.s;
-/** Département pas encore « fini » : une de ses 3 étoiles manque. */
-const unfinished = (k: Knowledge, code: string) => BASE_FACETS.some((f) => !starred(k, code, f));
+/** Département (ou élément d'un autre atlas) pas encore « fini » : une de ses étoiles de base manque. */
+const unfinished = (k: Knowledge, code: string) => baseFacetsOf(code).some((f) => !starred(k, code, f));
 /** Facettes expert pas encore étoilées (sous-préfectures, voisins), quand le département en a. */
 const expertTodo = (k: Knowledge, code: string) => expertFacetsOf(code).filter((f) => !starred(k, code, f));
 /** L'expert d'une région s'ouvre quand toutes ses étoiles de base sont gagnées (conception 4.4). */
@@ -22,7 +22,9 @@ export const expertOpen = (k: Knowledge, r: TourRegion) => r.deps.every((c) => !
 export const expertPending = (k: Knowledge, r: TourRegion) => expertOpen(k, r) && r.deps.some((c) => expertTodo(k, c).length > 0);
 
 /** Ordre de découverte des régions : la région de départ, puis ses voisines de proche en proche ; l'outre-mer à la fin. */
-export function regionOrder(start: string): TourRegion[] {
+export function regionOrder(start: string, atlas: AtlasId = "france"): TourRegion[] {
+  // Autres atlas : leurs groupes dans l'ordre (régions : la métropole, puis l'outre-mer).
+  if (atlas !== "france") return groupsOf(atlas);
   // Un joueur d'outre-mer commence par l'outre-mer, puis la métropole.
   if (start === OUTRE_MER) return [TOUR.get(OUTRE_MER)!, ...regionOrder(DEFAULT_START).filter((r) => r.code !== OUTRE_MER)];
   const first = TOUR.has(start) ? start : DEFAULT_START;
@@ -30,17 +32,18 @@ export function regionOrder(start: string): TourRegion[] {
   for (let i = 0; i < order.length; i++) {
     for (const n of TOUR.get(order[i])!.neighbors) if (!order.includes(n) && n !== OUTRE_MER) order.push(n);
   }
-  for (const r of TOUR_REGIONS) if (!order.includes(r.code)) order.push(r.code);
+  for (const r of groupsOf("france")) if (!order.includes(r.code)) order.push(r.code);
   return order.map((c) => TOUR.get(c)!);
 }
 
 /** Région en cours : celle choisie par le joueur, sinon la première, dans l'ordre de découverte, qui n'est pas finie. */
-export function currentRegion(k: Knowledge, start: string, focus?: string | null): TourRegion | null {
-  if (focus && TOUR.has(focus) && TOUR.get(focus)!.deps.some((c) => unfinished(k, c))) return TOUR.get(focus)!;
-  return regionOrder(start).find((r) => r.deps.some((c) => unfinished(k, c))) ?? null;
+export function currentRegion(k: Knowledge, start: string, focus?: string | null, atlas: AtlasId = "france"): TourRegion | null {
+  const groups = groupsOf(atlas);
+  if (focus && groups.some((g) => g.code === focus) && TOUR.get(focus)!.deps.some((c) => unfinished(k, c))) return TOUR.get(focus)!;
+  return regionOrder(start, atlas).find((r) => r.deps.some((c) => unfinished(k, c))) ?? null;
 }
 
-export interface SeanceOpts { now: number; seed: number; start: string; focus?: string | null; home?: string | null; size?: number; /** Forcer une séance de révisions. */ kind?: SeanceKind }
+export interface SeanceOpts { now: number; seed: number; start: string; /** Atlas joué (défaut : départements). */ atlas?: AtlasId; focus?: string | null; home?: string | null; size?: number; /** Forcer une séance de révisions. */ kind?: SeanceKind }
 export type SeanceKind = "region" | "revision";
 export interface Seance {
   kind: SeanceKind; plan: PlanItem[]; region: TourRegion | null; reviews: number; discover: string[];
@@ -57,10 +60,10 @@ export interface Seance {
 export const REVISION_MIN = 3;
 
 /** Départements dont une étoile est à revoir, les plus en retard d'abord. */
-function dueOf(k: Knowledge, now: number) {
+function dueOf(k: Knowledge, now: number, atlas: AtlasId) {
   return Object.entries(k)
     .map(([code, dep]) => ({ code, facets: FACETS.filter((f) => dep[f]?.s && dep[f]!.d <= now), late: Math.min(...FACETS.map((f) => (dep[f]?.s ? dep[f]!.d : Infinity))) }))
-    .filter((x) => x.facets.length && DEP.has(x.code))
+    .filter((x) => x.facets.length && inAtlas(atlas, x.code))
     .sort((a, b) => a.late - b.late);
 }
 
@@ -77,9 +80,12 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   const used = new Set<string>();
   const add = (it: PlanItem) => { plan.push(it); used.add(it.code); };
   const pick = <T,>(xs: T[]) => xs[Math.floor(r() * xs.length)];
-  const full = (c: string): PlanItem => ({ code: c, hint: pick<Hint>(["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"] });
+  const atlas = o.atlas ?? "france";
+  const A = ATLASES[atlas];
+  const BASE = A.base as Field[];
+  const full = (c: string): PlanItem => ({ code: c, hint: pick<Hint>(["nom", "carte"]), ask: [...A.full] });
   const review = (x: { code: string; facets: Facet[] }): PlanItem => {
-    const base = x.facets.filter((f) => BASE_FACETS.includes(f));
+    const base = x.facets.filter((f) => A.base.includes(f));
     const exp = x.facets.filter((f) => EXPERT_FACETS.includes(f)) as Field[];
     if (base.length >= 2) { const it = full(x.code); return { ...it, ask: [...it.ask, ...exp], tag: "review" }; }
     if (!base.length) return { code: x.code, hint: "nom", ask: exp, tag: "review" };
@@ -90,16 +96,18 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   };
   /** Consolidation (fiche complète), les moins solides d'abord. Jamais deux inconnues : le numéro ne sert d'indice que s'il est connu. */
   const consolidate = (codes: string[], n: number) => {
-    const known = codes.filter((c) => DEP.has(c) && !used.has(c) && BASE_FACETS.some((f) => starred(k, c, f)))
+    const known = codes.filter((c) => inAtlas(atlas, c) && !used.has(c) && A.base.some((f) => starred(k, c, f)))
       .sort((a, b) => medalOf(k, a) - medalOf(k, b) || (k[a].carte?.b ?? 0) - (k[b].carte?.b ?? 0));
-    for (const c of known.slice(0, Math.max(0, n))) add({ code: c, hint: pick<Hint>(starred(k, c, "numero") ? ["nom", "carte", "numero"] : ["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"], tag: "review" });
+    for (const c of known.slice(0, Math.max(0, n))) add({ code: c, hint: pick<Hint>(atlas === "france" && starred(k, c, "numero") ? ["nom", "carte", "numero"] : ["nom", "carte"]), ask: [...A.full], tag: "review" });
   };
 
-  const due = dueOf(k, o.now);
-  const focus = o.focus && TOUR.has(o.focus) ? TOUR.get(o.focus)! : null;
-  const order = regionOrder(o.start);
+  const due = dueOf(k, o.now, atlas);
+  const groups = groupsOf(atlas);
+  const focus = o.focus && groups.some((g) => g.code === o.focus) ? TOUR.get(o.focus)! : null;
+  const start = atlas === "france" ? o.start : R_METRO;
+  const order = regionOrder(start, atlas);
   // La région choisie, sinon la suivante à découvrir ; tout découvert : la première dont l'expert n'est pas fini.
-  const region = focus ?? currentRegion(k, o.start) ?? order.find((x) => expertPending(k, x)) ?? null;
+  const region = focus ?? currentRegion(k, start, null, atlas) ?? order.find((x) => expertPending(k, x)) ?? null;
   const expert = !!region && expertOpen(k, region);
   // Quand la séance est ailleurs, une région à l'expert ouvert est proposée à côté (jamais glissée dedans).
   const expertRegion = expert ? null : order.find((x) => expertPending(k, x)) ?? null;
@@ -110,7 +118,7 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   if (o.kind === "revision" || !region || (!focus && elsewhere.length >= REVISION_MIN)) {
     for (const x of due.slice(0, size)) add(review(x));
     const reviews = plan.length;
-    if (plan.length < size && o.kind !== "revision" && !region) consolidate(Object.keys(k), size - plan.length);
+    if (plan.length < size && o.kind !== "revision" && !region) consolidate(Object.keys(k).filter((c) => inAtlas(atlas, c)), size - plan.length);
     return { kind: "revision", plan, region: null, reviews, discover: [], elsewhere: 0, expert: false, experts: [], expertRegion };
   }
 
@@ -136,27 +144,27 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   } else {
     // 2. On fait avancer les départements commencés, puis on en découvre de nouveaux.
     const deps = shuffle(region.deps.filter((c) => unfinished(k, c) && !used.has(c)), r);
-    const started = deps.filter((c) => BASE_FACETS.some((f) => seen(k, c, f)));
+    const started = deps.filter((c) => A.base.some((f) => seen(k, c, f)));
     let fresh = deps.filter((c) => !started.includes(c));
     // Départements commencés : ce qui reste à trouver, ou la fiche complète si tout a été vu.
     const steps: PlanItem[] = [];
     for (const c of started) {
-      const unseen = BASE_FACETS.filter((f) => !seen(k, c, f)) as Field[];
+      const unseen = A.base.filter((f) => !seen(k, c, f)) as Field[];
       steps.push(unseen.length ? { code: c, hint: "nom", ask: unseen } : full(c));
     }
     for (const it of steps.slice(0, Math.max(0, room() - 3))) add(it);
     // Chez toi : tu le connais sûrement, demandé d'emblée. S'il est su, ce sont 3 étoiles tout de suite.
     if (o.home && fresh.includes(o.home) && room() >= 3) {
-      add({ code: o.home, hint: "nom", ask: ["carte", "numero", "prefecture"], tag: "home" });
+      add({ code: o.home, hint: "nom", ask: [...BASE], tag: "home" });
       fresh = fresh.filter((c) => c !== o.home);
     }
     // Découverte : rien n'est montré avant. Une question complète par département (« devine ! ») : si tu sais, c'est fini,
     // 3 étoiles d'un coup. Sinon la correction t'apprend, et il revient une fois en fin de séance (rappel).
     const nNew = Math.min(fresh.length, reviews ? 3 : 4, Math.floor(room() / 2));
     const news = fresh.slice(0, nNew);
-    for (const c of news) add({ code: c, hint: "nom", ask: ["carte", "numero", "prefecture"], tag: "new" });
+    for (const c of news) add({ code: c, hint: "nom", ask: [...BASE], tag: "new" });
     discover.push(...news);
-    recall.push(...news.map((c): PlanItem => ({ code: c, hint: "nom", ask: ["carte", "numero", "prefecture"], recall: true })));
+    recall.push(...news.map((c): PlanItem => ({ code: c, hint: "nom", ask: [...BASE], recall: true })));
     for (const it of steps) if (room() > 0 && !used.has(it.code)) add(it);
   }
 

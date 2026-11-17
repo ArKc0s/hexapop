@@ -1,3 +1,4 @@
+import { ATLAS_IDS } from "@hexa/game";
 import type { Profile, Progress } from "@hexa/game";
 import { progress } from "./progress.svelte.ts";
 import { profile } from "./profile.svelte.ts";
@@ -114,12 +115,16 @@ export const session = new Session();
 
 /** Défi joué en invité aujourd'hui : on le rattache au compte qui vient de se connecter. */
 export const GUEST_DAILY = "hexa.dailyGuest";
+/** Défi joué en invité, par atlas (un défi par atlas : docs/atlas.md). */
+export const guestDailyKey = (atlas: string) => (atlas === "france" ? GUEST_DAILY : `${GUEST_DAILY}.${atlas}`);
 async function claimGuestDaily() {
-  let saved: { day: string; claim?: string } | null = null;
-  try { saved = JSON.parse(localStorage.getItem(GUEST_DAILY) ?? "null"); } catch { /* rien */ }
-  if (!saved?.claim) return;
-  try { await api("POST", "/daily/claim", { claim: saved.claim }); } catch { /* expiré ou déjà joué : on abandonne */ }
-  try { localStorage.setItem(GUEST_DAILY, JSON.stringify({ ...saved, claim: undefined })); } catch { /* rien */ }
+  for (const key of [GUEST_DAILY, ...ATLAS_IDS.filter((a) => a !== "france").map(guestDailyKey)]) {
+    let saved: { day: string; claim?: string } | null = null;
+    try { saved = JSON.parse(localStorage.getItem(key) ?? "null"); } catch { /* rien */ }
+    if (!saved?.claim) continue;
+    try { await api("POST", "/daily/claim", { claim: saved.claim }); } catch { /* expiré ou déjà joué : on abandonne */ }
+    try { localStorage.setItem(key, JSON.stringify({ ...saved, claim: undefined })); } catch { /* rien */ }
+  }
 }
 
 let pending: ReturnType<typeof setTimeout> | null = null;

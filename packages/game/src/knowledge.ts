@@ -1,7 +1,8 @@
 // Ce que le joueur sait vraiment : une fiche par département et par facette
 // (carte, numéro, préfecture, puis en expert sous-préfectures et voisins).
 // Voir docs/conception.md, sections 2 et 4.
-import { DEPARTEMENTS, DEP } from "./data.ts";
+import { DEPARTEMENTS, ITEM } from "./data.ts";
+import { ATLASES, atlasOf, type AtlasId } from "./atlas.ts";
 import type { Field, Hint, Level, RoundResult } from "./round.ts";
 import { INTERVALS, type Progress } from "./srs.ts";
 
@@ -10,6 +11,10 @@ export const BASE_FACETS: readonly Facet[] = ["carte", "numero", "prefecture"];
 export const EXPERT_FACETS: readonly Facet[] = ["sousPrefectures", "limitrophes"];
 export const FACETS: readonly Facet[] = [...BASE_FACETS, ...EXPERT_FACETS];
 export const MAX_STARS = DEPARTEMENTS.length * BASE_FACETS.length; // 303
+/** Étoiles possibles dans un atlas (départements : 303 ; régions : 36). */
+export const maxStars = (a: AtlasId = "france") => ATLASES[a].items.length * ATLASES[a].base.length;
+/** Facettes de base de l'élément de ce code (selon son atlas). */
+export const baseFacetsOf = (code: string): readonly Facet[] => atlasOf(code).base;
 
 /** Fiche d'une facette : boîte de Leitner, prochaine révision, étoile gagnée, déjà vue en propositions. */
 export interface FacetCard { b: number; d: number; s: 0 | 1; v: 0 | 1 }
@@ -53,7 +58,7 @@ export function learn(prev: Knowledge, results: RoundResult[], rounds: RoundPlay
   const stars: KnowledgeGain["stars"] = [];
   results.forEach((r, i) => {
     const play = rounds[i];
-    if (!play || !DEP.has(r.code)) return;
+    if (!play || !ITEM.has(r.code)) return;
     if (!before.has(r.code)) before.set(r.code, medalOf(know, r.code, now));
     const dep = (know[r.code] ??= {});
     for (const fr of r.fields) {
@@ -91,40 +96,41 @@ export function learn(prev: Knowledge, results: RoundResult[], rounds: RoundPlay
 
 /** Facettes expert qui existent pour ce département (pas de voisins pour une île, pas de sous-préfecture à Paris). */
 export function expertFacetsOf(code: string): Facet[] {
-  const d = DEP.get(code);
+  const d = ITEM.get(code);
   if (!d) return [];
-  return EXPERT_FACETS.filter((f) => (f === "sousPrefectures" ? d.sousPrefectures.length > 0 : d.limitrophes.length > 0));
+  return atlasOf(code).expert.filter((f) => (f === "sousPrefectures" ? d.sousPrefectures.length > 0 : d.limitrophes.length > 0));
 }
 
 export function starsOf(k: Knowledge, code: string): number {
-  return BASE_FACETS.filter((f) => k[code]?.[f]?.s).length;
+  return baseFacetsOf(code).filter((f) => k[code]?.[f]?.s).length;
 }
 
 /** Bronze : les 3 étoiles. Argent : retenues dans la durée. Or : argent + le niveau expert du département. */
 export function medalOf(k: Knowledge, code: string, _now = 0): Medal {
   const dep = k[code];
-  if (!dep || starsOf(k, code) < 3) return 0;
-  if (!BASE_FACETS.every((f) => (dep[f]?.b ?? 0) >= ARGENT_BOX)) return 1;
+  const base = baseFacetsOf(code);
+  if (!dep || starsOf(k, code) < base.length) return 0;
+  if (!base.every((f) => (dep[f]?.b ?? 0) >= ARGENT_BOX)) return 1;
   return expertFacetsOf(code).every((f) => dep[f]?.s) ? 3 : 2;
 }
 
 /** Médaille ternie : une de ses étoiles pâlit (elle revient en priorité dans les séances). */
 export function tarnished(k: Knowledge, code: string, now: number): boolean {
-  return BASE_FACETS.some((f) => cardFading(k[code]?.[f], now));
+  return baseFacetsOf(code).some((f) => cardFading(k[code]?.[f], now));
 }
 
 /** Départements dont au moins une étoile pâlit. */
-export function fadingCodes(k: Knowledge, now: number): string[] {
-  return DEPARTEMENTS.map((d) => d.code).filter((c) => tarnished(k, c, now));
+export function fadingCodes(k: Knowledge, now: number, a: AtlasId = "france"): string[] {
+  return ATLASES[a].items.map((d) => d.code).filter((c) => tarnished(k, c, now));
 }
 
-export function knownStars(k: Knowledge): number {
-  return DEPARTEMENTS.reduce((n, d) => n + starsOf(k, d.code), 0);
+export function knownStars(k: Knowledge, a: AtlasId = "france"): number {
+  return ATLASES[a].items.reduce((n, d) => n + starsOf(k, d.code), 0);
 }
 
-/** « Ta France » : étoiles gagnées sur 303, en pourcentage entier. */
-export function taFrance(k: Knowledge): number {
-  return Math.floor((knownStars(k) / MAX_STARS) * 100);
+/** « Ta France » (ou l'avancée dans un autre atlas) : étoiles gagnées sur le total, en pourcentage entier. */
+export function taFrance(k: Knowledge, a: AtlasId = "france"): number {
+  return Math.floor((knownStars(k, a) / maxStars(a)) * 100);
 }
 
 export type PlayerLevel = "decouverte" | "confirme" | "expert";
@@ -141,8 +147,8 @@ export const LEVELS: readonly Level[] = ["decouverte", "normal", "expert"];
 /** Le joueur peut jouer à son niveau ou en dessous, jamais au-dessus (conception 4.3). */
 export const levelAllowed = (wanted: Level, max: Level) => LEVELS.indexOf(wanted) <= LEVELS.indexOf(max);
 export const isLevel = (v: unknown): v is Level => v === "decouverte" || v === "normal" || v === "expert";
-export function playerLevel(k: Knowledge): PlayerLevel {
-  const pct = taFrance(k);
+export function playerLevel(k: Knowledge, a: AtlasId = "france"): PlayerLevel {
+  const pct = taFrance(k, a);
   return pct >= 90 ? "expert" : pct >= 50 ? "confirme" : "decouverte";
 }
 
@@ -155,17 +161,20 @@ export const TITLES = [
   { min: 240, name: "Préfet" },
   { min: MAX_STARS, name: "Géomètre de l'IGN" },
 ];
-export function titleFor(k: Knowledge): { name: string; next: string | null; toNext: number } {
-  const n = knownStars(k);
+export function titleFor(k: Knowledge, a: AtlasId = "france"): { name: string; next: string | null; toNext: number } {
+  const n = knownStars(k, a);
+  // Autres atlas : mêmes titres, à la même proportion du total.
+  const scale = maxStars(a) / MAX_STARS;
+  const min = (i: number) => Math.round(TITLES[i].min * scale);
   let i = 0;
-  while (i + 1 < TITLES.length && n >= TITLES[i + 1].min) i++;
+  while (i + 1 < TITLES.length && n >= min(i + 1)) i++;
   const next = TITLES[i + 1];
-  return { name: TITLES[i].name, next: next?.name ?? null, toNext: next ? next.min - n : 0 };
+  return { name: TITLES[i].name, next: next?.name ?? null, toNext: next ? min(i + 1) - n : 0 };
 }
 
-export function medalCounts(k: Knowledge): [number, number, number, number] {
+export function medalCounts(k: Knowledge, a: AtlasId = "france"): [number, number, number, number] {
   const out: [number, number, number, number] = [0, 0, 0, 0];
-  for (const d of DEPARTEMENTS) out[medalOf(k, d.code)]++;
+  for (const d of ATLASES[a].items) out[medalOf(k, d.code)]++;
   return out;
 }
 
@@ -198,7 +207,7 @@ export function migrateKnowledge(progress: Progress, tiers: Record<string, numbe
 export function mergeKnowledge(a: Knowledge, b: Knowledge): Knowledge {
   const out: Knowledge = {};
   for (const code of new Set([...Object.keys(a), ...Object.keys(b)])) {
-    if (!DEP.has(code)) continue;
+    if (!ITEM.has(code)) continue;
     const dep: Partial<Record<Facet, FacetCard>> = {};
     for (const f of FACETS) {
       const x = a[code]?.[f], y = b[code]?.[f];
@@ -216,7 +225,7 @@ export function sanitizeKnowledge(raw: unknown): Knowledge | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const out: Knowledge = {};
   for (const [code, dep] of Object.entries(raw as Record<string, unknown>)) {
-    if (!DEP.has(code) || !dep || typeof dep !== "object") continue;
+    if (!ITEM.has(code) || !dep || typeof dep !== "object") continue;
     const clean: Partial<Record<Facet, FacetCard>> = {};
     for (const f of FACETS) {
       const c = (dep as Record<string, unknown>)[f] as Partial<FacetCard> | undefined;

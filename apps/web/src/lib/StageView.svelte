@@ -35,7 +35,7 @@
 </script>
 
 <div class="stage">
-  <div class="mapside"><Map {marks} interactive={false} label="Carte du plateau" /></div>
+  <div class="mapside"><Map atlas="france" {marks} interactive={false} label="Carte du plateau" /></div>
   <aside>
     {#if room}
       <div class="joinbox"><span>Rejoins sur <b>{location.host}</b></span><span class="riso code" data-t={room.code}>{room.code}</span></div>

@@ -1,13 +1,13 @@
 // API HTTP JSON sous /api. Authentification : cookie HttpOnly (web) ou en-tête Bearer (mobile).
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { DEP, isLevel, mergeProfiles, sanitizeProfile, type Progress } from "@hexa/game";
+import { DEP, isAtlas, isLevel, mergeProfiles, sanitizeProfile, type Progress } from "@hexa/game";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
 import {
   consumeEmailToken, createSession, deleteSession, emailToken, hashPassword, rateLimit, touchSession, userFromSession, verifyPassword, type User,
 } from "./auth.ts";
 import { resetMail, sendMail, verifyMail } from "./mail.ts";
-import { adoptGuest, dailyNumber, isGuestId, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
+import { adoptGuest, dailyKey, dailyNumber, isGuestId, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
 import { stats } from "./rooms.ts";
 import { life } from "./life.ts";
 import { hallOfFame, saveMarathon } from "./hof.ts";
@@ -317,10 +317,12 @@ const routes: Record<string, Handler> = {
   },
   "GET /api/auth/providers": (_req, res) => json(res, 200, { providers: enabledProviders() }),
 
-  "GET /api/daily": (_req, res, user) => {
+  "GET /api/daily": (req, res, user) => {
     const day = today();
-    const mine = user ? db.prepare("SELECT level, points, accuracy, elapsed_ms AS elapsedMs, grid, finished FROM daily_results WHERE day = ? AND user_id = ?").get(day, user.id) : null;
-    json(res, 200, { day, number: dailyNumber(day), played: !!mine, mine: mine ? { ...mine, share: shareOf(day, `u${user!.id}`) } : null, rank: user ? rankOf(day, user.id) : null });
+    const a = new URL(req.url ?? "/", "http://x").searchParams.get("atlas");
+    const key = dailyKey(day, isAtlas(a) ? a : "france");
+    const mine = user ? db.prepare("SELECT level, points, accuracy, elapsed_ms AS elapsedMs, grid, finished FROM daily_results WHERE day = ? AND user_id = ?").get(key, user.id) : null;
+    json(res, 200, { day, number: dailyNumber(day), played: !!mine, mine: mine ? { ...mine, share: shareOf(key, `u${user!.id}`) } : null, rank: user ? rankOf(key, user.id) : null });
   },
 
   /** Un invité vient de créer son compte ou de se connecter : ses défis passent sous son pseudo. */
@@ -391,7 +393,8 @@ const routes: Record<string, Handler> = {
     const url = new URL(req.url ?? "/", "http://x");
     const day = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("day") ?? "") ? url.searchParams.get("day")! : today();
     const level = url.searchParams.get("level");
-    json(res, 200, leaderboard(day, isLevel(level) ? level : "normal"));
+    const a = url.searchParams.get("atlas");
+    json(res, 200, leaderboard(dailyKey(day, isAtlas(a) ? a : "france"), isLevel(level) ? level : "normal"));
   },
 };
 

@@ -1,6 +1,7 @@
 <script lang="ts">
   // L'Album : ta collection (médailles), la carte avec la fiche de chaque département (ex-Atlas), et tes succès.
-  import { BADGES, DEPARTEMENTS, TOUR_REGIONS, BASE_FACETS, medalCounts, medalOf, starsOf, tarnished, type Facet } from "@hexa/game";
+  import { BADGES, DEPARTEMENTS, groupsOf, medalCounts, medalOf, shortCode, starsOf, tarnished, type Facet } from "@hexa/game";
+  import { world } from "../lib/world.svelte.ts";
   import Map, { type Mark } from "../lib/Map.svelte";
   import Fiche from "../lib/Fiche.svelte";
   import Vignette from "../lib/ui/Vignette.svelte";
@@ -15,24 +16,32 @@
   let region = $state<string | null>(null);
   /** Département dont la fiche est ouverte. */
   let open = $state<string | null>(null);
-  let focus = $state("75");
+  // Album de l'atlas affiché (un atlas = un monde).
+  const A = world.atlas;
+  const fr = A.id === "france";
+  const TOUR_REGIONS = groupsOf(A.id);
+  const BASE_FACETS = A.base;
+  const NB = A.base.length;
+  let focus = $state(fr ? "75" : "R53");
 
   const p = $derived(profile.data);
   const know = $derived(p.know ?? {});
   const now = Date.now();
   const shown = $derived(TOUR_REGIONS.filter((r) => !region || r.code === region));
   const got = (codes: string[]) => codes.reduce((n, c) => n + starsOf(know, c), 0);
-  const counts = $derived(medalCounts(know));
+  const counts = $derived(medalCounts(know, A.id));
   const owned = $derived(counts[1] + counts[2] + counts[3]);
   const TIER = ["À découvrir", "Bronze", "Argent", "Or"];
-  const FACET: Record<string, string> = { carte: "Le placer", numero: "Son numéro", prefecture: "Sa préfecture" };
+  const FACET: Record<string, string> = { carte: "La placer", numero: "Son numéro", prefecture: fr ? "Sa préfecture" : "Son chef-lieu" };
+  if (fr) FACET.carte = "Le placer";
   const fmt = (t: number) => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   const starred = (c: string, f: Facet) => !!know[c]?.[f]?.s;
   /** Page de référence du département (générée par scripts/seo.ts, même adresse). */
-  const depPage = (c: string) => { const d = DEPARTEMENTS.find((x) => x.code === c)!; return `/france/departements/${c.toLowerCase()}-${d.nom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`; };
+  const depPage = (c: string) => { const d = DEPARTEMENTS.find((x) => x.code === c);
+    if (!d) return null; return `/france/departements/${c.toLowerCase()}-${d.nom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`; };
 
   // Onglet Carte
-  const fills = $derived(knowFills(know, now));
+  const fills = $derived(knowFills(know, now, A.id));
   const regionDeps = $derived(region ? TOUR_REGIONS.find((r) => r.code === region)?.deps ?? [] : []);
   const marks = $derived.by(() => {
     const m: Record<string, Mark> = {};
@@ -40,7 +49,7 @@
     m[focus] = "sel";
     return m;
   });
-  const list = $derived(DEPARTEMENTS.filter((d) => !region || regionDeps.includes(d.code)));
+  const list = $derived(A.items.filter((d) => !region || regionDeps.includes(d.code)));
 </script>
 
 <svelte:window onkeydown={(e) => { if (e.key === "Escape") open = null; }} />
@@ -55,7 +64,7 @@
     </ul>
   </div>
   <Fiche code={c} />
-  <a class="link more" href={depPage(c)}>Sa page : carte, voisins et repères</a>
+  {#if depPage(c)}<a class="link more" href={depPage(c)}>Sa page : carte, voisins et repères</a>{/if}
 {/snippet}
 
 <main class="album page" class:wide={cur === "carte"}>
@@ -71,26 +80,30 @@
   {#if cur !== "succes"}
     <div class="tabs">
       <button class="chip" class:on={!region} onclick={() => (region = null)}>Toutes</button>
-      {#each TOUR_REGIONS as r (r.code)}<button class="chip" class:on={region === r.code} onclick={() => (region = r.code)}>{r.nom} <span>{got(r.deps)}/{r.deps.length * 3}</span></button>{/each}
+      {#each TOUR_REGIONS as r (r.code)}<button class="chip" class:on={region === r.code} onclick={() => (region = r.code)}>{r.nom} <span>{got(r.deps)}/{r.deps.length * NB}</span></button>{/each}
     </div>
   {/if}
 
   {#if cur === "medailles"}
     <div class="top">
-      <div><span class="k">Ton album · {counts[1]} bronze · {counts[2]} argent · {counts[3]} or</span><div class="riso big" data-t="{owned} / 101">{owned} / 101</div></div>
-      <p>Chaque département a 3 étoiles : le placer, son numéro, sa préfecture, gagnées en répondant juste sans aide. <b>Bronze</b> avec les 3, <b>argent</b> quand tu les as retenues sur plusieurs jours, <b>or</b> avec en plus ses sous-préfectures et ses voisins. Touche un département pour voir sa fiche.</p>
+      <div><span class="k">Ton album {fr ? "" : `des ${A.des} `}· {counts[1]} bronze · {counts[2]} argent · {counts[3]} or</span><div class="riso big" data-t="{owned} / {A.items.length}">{owned} / {A.items.length}</div></div>
+      {#if fr}
+        <p>Chaque département a 3 étoiles : le placer, son numéro, sa préfecture, gagnées en répondant juste sans aide. <b>Bronze</b> avec les 3, <b>argent</b> quand tu les as retenues sur plusieurs jours, <b>or</b> avec en plus ses sous-préfectures et ses voisins. Touche un département pour voir sa fiche.</p>
+      {:else}
+        <p>Chaque région a 2 étoiles : la placer et son chef-lieu, gagnées en répondant juste sans aide. <b>Bronze</b> avec les 2, <b>argent</b> quand tu les as retenues sur plusieurs jours, <b>or</b> avec en plus ses départements et ses régions voisines. Touche une région pour voir sa fiche.</p>
+      {/if}
     </div>
     {#each shown as r (r.code)}
       <section>
-        <h2>{r.nom} <span>{got(r.deps)}/{r.deps.length * 3}</span></h2>
+        <h2>{r.nom} <span>{got(r.deps)}/{r.deps.length * NB}</span></h2>
         <div class="grid">
           {#each r.deps as c (c)}
             {@const tier = medalOf(know, c)}
             {@const s = starsOf(know, c)}
-            <button class="st" class:miss={!tier} class:dull={tier > 0 && tarnished(know, c, now)} onclick={() => (open = c)} aria-label="Fiche du département {c}">
+            <button class="st" class:miss={!tier} class:dull={tier > 0 && tarnished(know, c, now)} onclick={() => (open = c)} aria-label="Fiche {fr ? 'du département' : 'de la région'} {c}">
               <Vignette code={c} {tier} />
               {#if tier}<em class="tr t{tier}">{TIER[tier]}{tarnished(know, c, now) ? " · à réviser" : ""}</em>
-              {:else}<span class="mini" aria-label="{s} étoile{s > 1 ? 's' : ''} sur 3">{#each [0, 1, 2] as k (k)}<i class:on={k < s}>★</i>{/each}</span>{/if}
+              {:else}<span class="mini" aria-label="{s} étoile{s > 1 ? 's' : ''} sur {NB}">{#each BASE_FACETS as _, k (k)}<i class:on={k < s}>★</i>{/each}</span>{/if}
             </button>
           {/each}
         </div>
@@ -101,11 +114,11 @@
       <section class="side">
         {@render card(focus)}
         <div class="list">
-          {#each list as d (d.code)}<button class:on={focus === d.code} onclick={() => (focus = d.code)}><b class="tabnum">{d.code}</b> {d.nom}</button>{/each}
+          {#each list as d (d.code)}<button class:on={focus === d.code} onclick={() => (focus = d.code)}><b class="tabnum">{shortCode(d.code)}</b> {d.nom}</button>{/each}
         </div>
       </section>
       <section class="mapcol">
-        <Map {fills} {marks} onpick={(c) => (focus = c)} label="Carte de ta collection : touche un département pour voir sa fiche" />
+        <Map atlas={A.id} {fills} {marks} onpick={(c) => (focus = c)} label="Carte de ta collection : touche {fr ? 'un département' : 'une région'} pour voir sa fiche" />
       </section>
     </div>
   {:else}

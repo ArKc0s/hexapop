@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import WebSocket from "ws";
-import { DEP, PROTOCOL_VERSION, type ServerMsg, type QuestionPayload } from "@hexa/game";
+import { DEP, ITEM, PROTOCOL_VERSION, type ServerMsg, type QuestionPayload } from "@hexa/game";
 
 const PORT = 18000 + Math.floor(Math.random() * 1000);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -83,7 +83,7 @@ class Client {
 }
 
 function perfect(q: QuestionPayload) {
-  const d = DEP.get(q.code)!;
+  const d = ITEM.get(q.code)!;
   return { carte: d.code, nom: d.nom, numero: d.code, prefecture: d.prefecture };
 }
 
@@ -421,6 +421,32 @@ test("statistiques anonymes : visiteurs uniques du jour, parties, lecture proté
   assert.equal(t.seance, 2);
   assert.equal(r.days.length, 7);
   assert.ok(r.users.length >= 1 && r.users.every((u: Record<string, unknown>) => !("email" in u)), "jamais d'email dans les statistiques");
+});
+
+test("défi du jour par atlas : Régions à part, 5 régions, son classement", { timeout: 30_000 }, async () => {
+  const guest = "invite-regions-0123456789";
+  const c = new Client(); await c.open();
+  c.send({ t: "hello", v: PROTOCOL_VERSION, name: "x", guest, home: "29", level: "decouverte" }); await c.wait("welcome");
+  c.send({ t: "create", kind: "daily", settings: { level: "normal", atlas: "regions" } });
+  for (let i = 0; i < 5; i++) {
+    const q = (await c.wait("question", (m) => m.q.index === i)).q;
+    assert.ok(q.code.startsWith("R"), "une région");
+    c.send({ t: "answer", index: i, answer: perfect(q) }); await c.wait("round", (m) => m.summary.index === i); c.send({ t: "next" });
+  }
+  const end = await c.wait("end");
+  assert.equal(end.daily?.atlas, "regions");
+  assert.equal(end.daily?.grid.length, 5);
+  assert.equal(end.daily?.saved, true);
+  // Le classement des régions est à part de celui des départements.
+  const lb = await (await fetch(BASE + "/api/daily/leaderboard?level=normal&atlas=regions")).json();
+  assert.ok(lb.top.some((r: { name: string }) => r.name === end.daily!.name));
+  const fr = await (await fetch(BASE + "/api/daily/leaderboard?level=normal")).json();
+  assert.ok(!fr.top.some((r: { name: string }) => r.name === end.daily!.name), "pas dans le classement des départements");
+  // Le même invité peut encore jouer le défi des départements.
+  c.send({ t: "create", kind: "daily", settings: { level: "normal" } });
+  const q0 = (await c.wait("question", (m) => m.q.index === 0)).q;
+  assert.ok(!q0.code.startsWith("R"));
+  c.send({ t: "leave" }); c.ws.close();
 });
 
 test("stats en direct : présents par écran et salons en cours", async () => {

@@ -13,7 +13,7 @@
   import { nav, type PlayScreen } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
-  import { DEPARTEMENTS, DEP, MEDAL_NAMES, taFrance, titleFor, type Facet } from "@hexa/game";
+  import { ITEM, MEDAL_NAMES, atlasOf, shortCode, taFrance, titleFor, type Facet } from "@hexa/game";
   import SaveCard from "../lib/ui/SaveCard.svelte";
   import { signup } from "../lib/signup.svelte.ts";
   import PushCard from "../lib/ui/PushCard.svelte";
@@ -48,16 +48,20 @@
   const marks: Record<string, Mark> = Object.fromEntries(results.map((x) => [x.code, x.accuracy >= 0.999 ? "done-ok" : "done-ko"]));
   let focus = $state<string | null>(missed[0]?.code ?? null);
 
-  const rank = titleFor(profile.data.know ?? {}).name;
+  const resAtlas = atlasOf(results[0]?.code ?? "75").id;
+  const rank = titleFor(profile.data.know ?? {}, resAtlas).name;
   // Étoiles gagnées, regroupées par département (« Finistère : placer, numéro »).
-  const FACET_LABEL: Record<Facet, string> = { carte: "placer", numero: "numéro", prefecture: "préfecture", sousPrefectures: "sous-préfectures", limitrophes: "voisins" };
+  const regionsAtlas = results.some((x) => atlasOf(x.code).id === "regions");
+  const FACET_LABEL: Record<Facet, string> = regionsAtlas
+    ? { carte: "placer", numero: "numéro", prefecture: "chef-lieu", sousPrefectures: "départements", limitrophes: "voisines" }
+    : { carte: "placer", numero: "numéro", prefecture: "préfecture", sousPrefectures: "sous-préfectures", limitrophes: "voisins" };
   const starList = (() => {
     const by = new globalThis.Map<string, Facet[]>();
     for (const s of r.knowledge?.stars ?? []) by.set(s.code, [...(by.get(s.code) ?? []), s.facet]);
     return [...by].map(([code, facets]) => ({ code, facets }));
   })();
   const newStars = r.knowledge?.stars.length ?? 0;
-  const pctNow = taFrance(profile.data.know ?? {});
+  const pctNow = taFrance(profile.data.know ?? {}, resAtlas);
   // Quitter l'écran avant l'invitation l'annule (elle ne doit jamais surgir pendant la partie suivante).
   let offerTimer: ReturnType<typeof setTimeout> | undefined;
   onDestroy(() => clearTimeout(offerTimer));
@@ -136,8 +140,8 @@
           <div class="pl">{#each r.knowledge.medals.slice(0, 8) as m (m.code)}<span class="md"><Vignette code={m.code} tier={m.medal} size="s" /><small>{MEDAL_NAMES[m.medal]}</small></span>{/each}{#if r.knowledge.medals.length > 8}<span class="more">+{r.knowledge.medals.length - 8}</span>{/if}</div></div></div>
       {/if}
       {#if newStars}
-        <div class="rw"><span class="ico star"><Icon name="star" size={28} /></span><div><span class="k">+{newStars} étoile{newStars > 1 ? "s" : ""} · Ta France {pctNow} %</span>
-          <ul class="sl">{#each starList.slice(0, 6) as s (s.code)}<li><b>{DEP.get(s.code)?.nom}</b> {s.facets.map((f) => FACET_LABEL[f]).join(", ")}</li>{/each}{#if starList.length > 6}<li class="more">et {starList.length - 6} autre{starList.length - 6 > 1 ? "s" : ""}</li>{/if}</ul></div></div>
+        <div class="rw"><span class="ico star"><Icon name="star" size={28} /></span><div><span class="k">+{newStars} étoile{newStars > 1 ? "s" : ""} · {resAtlas === "france" ? "Ta France" : "Tes régions"} {pctNow} %</span>
+          <ul class="sl">{#each starList.slice(0, 6) as s (s.code)}<li><b>{ITEM.get(s.code)?.nom}</b> {s.facets.map((f) => FACET_LABEL[f]).join(", ")}</li>{/each}{#if starList.length > 6}<li class="more">et {starList.length - 6} autre{starList.length - 6 > 1 ? "s" : ""}</li>{/if}</ul></div></div>
       {:else if play.learn && r.knowledge}
         <div class="rw"><span class="ico star dim"><Icon name="star" size={28} /></span><div><span class="k">Pas de nouvelle étoile</span><small>Une étoile se gagne en répondant juste sans qu'on t'aide : au clavier, sur la carte, ou parmi des propositions qui se ressemblent. La première rencontre avec un département ne compte pas encore.</small></div></div>
       {/if}
@@ -158,11 +162,11 @@
   </section>
 
   <section class="review">
-    <Map {marks} interactive onpick={(c) => (focus = c)} label="Bilan de la partie" />
+    <Map atlas={resAtlas} {marks} interactive onpick={(c) => (focus = c)} label="Bilan de la partie" />
     {#if missed.length}
       <div class="missed">
         <span class="k">À revoir</span>
-        <div class="list">{#each missed as x (x.code)}<button class="chip" class:on={focus === x.code} onclick={() => (focus = x.code)}>{x.code} · {DEPARTEMENTS.find((d) => d.code === x.code)?.nom}</button>{/each}</div>
+        <div class="list">{#each missed as x (x.code)}<button class="chip" class:on={focus === x.code} onclick={() => (focus = x.code)}>{shortCode(x.code)} · {ITEM.get(x.code)?.nom}</button>{/each}</div>
       </div>
     {/if}
     {#if focus}<Fiche code={focus} />{/if}

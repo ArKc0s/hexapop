@@ -3,9 +3,9 @@
 // mêmes pour tous ce jour-là : les réponses restent cachées derrière un avertissement tant que le défi est en cours.
 // Créé par le serveur à la fin du défi, à partir de ce qu'il a lui-même noté : on ne peut pas inventer un résultat.
 import { randomBytes } from "node:crypto";
-import { dep, LEVEL_NAMES, type Answer, type Field, type Level, type Question, type RoundResult } from "@hexa/game";
+import { ATLASES, dep, LEVEL_NAMES, shortCode, type AtlasId, type Answer, type Field, type Level, type Question, type RoundResult } from "@hexa/game";
 import { db, now } from "./db.ts";
-import { dailyNumber, today } from "./daily.ts";
+import { dailyNumber, dayOfKey, today } from "./daily.ts";
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS daily_shares (id TEXT PRIMARY KEY, day TEXT NOT NULL, who TEXT, created_at INTEGER NOT NULL, data TEXT NOT NULL);
@@ -15,7 +15,7 @@ CREATE INDEX IF NOT EXISTS daily_shares_who ON daily_shares (day, who);
 interface ShareField { field: Field; score: number; given: string | string[]; expected: string | string[] }
 interface ShareData {
   name: string; level: Level; number: number; points: number; elapsedMs: number; grid: number[];
-  rank?: number; players?: number;
+  rank?: number; players?: number; atlas?: string;
   rounds: { code: string; hint: Question["hint"]; fields: ShareField[] }[];
 }
 const KEEP_MS = 90 * 86_400_000;
@@ -34,7 +34,8 @@ export function createShare(day: string, who: string | null, d: { name: string; 
       return { field: f, score: r?.score ?? 0, given: (a as Record<string, string | string[] | undefined>)[f] ?? "", expected: r?.expected ?? "" };
     }),
   }));
-  const data: ShareData = { ...d, number: dailyNumber(day), rounds };
+  const atlas = day.includes(":") ? day.slice(0, day.indexOf(":")) : undefined;
+  const data: ShareData = { ...d, number: dailyNumber(dayOfKey(day)), rounds, ...(atlas ? { atlas } : {}) };
   const id = randomBytes(6).toString("base64url");
   db.prepare("INSERT INTO daily_shares (id, day, who, created_at, data) VALUES (?, ?, ?, ?, ?)").run(id, day, who, now(), JSON.stringify(data));
   db.prepare("DELETE FROM daily_shares WHERE created_at < ?").run(now() - KEEP_MS);
@@ -52,9 +53,9 @@ const HINT: Record<Question["hint"], string> = { nom: "On lui donnait le nom", n
 const MARK = ["✗", "~", "✓"];
 const fmtDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const value = (f: Field, v: string | string[]) => {
-  if (Array.isArray(v)) return v.length ? v.map((x) => (f === "limitrophes" ? `${dep(x)?.nom ?? x} (${x})` : x)).join(", ") : "rien";
+  if (Array.isArray(v)) return v.length ? v.map((x) => (f === "limitrophes" ? (x.startsWith("R") ? dep(x)?.nom ?? x : `${dep(x)?.nom ?? x} (${x})`) : x)).join(", ") : "rien";
   if (!v) return "rien";
-  if (f === "carte") { const d = dep(v); return d ? `${d.nom} (${d.code})` : v; }
+  if (f === "carte") { const d = dep(v); return d ? (d.code.startsWith("R") ? d.nom : `${d.nom} (${d.code})`) : v; }
   return v;
 };
 
@@ -64,7 +65,9 @@ export function sharePage(id: string): string | null {
   const row = db.prepare("SELECT day, data FROM daily_shares WHERE id = ?").get(id) as { day: string; data: string } | undefined;
   if (!row) return null;
   const s = JSON.parse(row.data) as ShareData;
-  const live = row.day >= today();
+  const realDay = dayOfKey(row.day);
+  const live = realDay >= today();
+  const atlasName = s.atlas ? ` · ${ATLASES[s.atlas as AtlasId]?.nom ?? s.atlas}` : "";
   const ok = s.grid.filter((g) => g === 2).length, mid = s.grid.filter((g) => g === 1).length, ko = s.grid.filter((g) => g === 0).length;
   const sec = Math.round(s.elapsedMs / 1000);
   const title = `${s.name} : ${s.points.toLocaleString("fr-FR")} points au défi Hexa n° ${s.number}`;
@@ -76,7 +79,7 @@ export function sharePage(id: string): string | null {
       const good = f.score >= 0.999;
       return `<li class="${good ? "ok" : "ko"}"><span class="l">${LABEL[f.field]}</span><span class="v">${good ? esc(value(f.field, f.given)) : `${empty(f.given) ? `<span class="none">pas répondu</span>` : `<s>${esc(value(f.field, f.given))}</s>`} → <b class="fix">${esc(value(f.field, f.expected))}</b>`}</span></li>`;
     }).join("");
-    return `<li class="round g${g}"><div class="rh"><i class="m">${MARK[g]}</i><b>${esc(d?.nom ?? r.code)} (${esc(r.code)})</b><span>${HINT[r.hint]}</span></div><ul>${fields}</ul></li>`;
+    return `<li class="round g${g}"><div class="rh"><i class="m">${MARK[g]}</i><b>${esc(d?.nom ?? r.code)}${r.code.startsWith("R") ? "" : ` (${esc(r.code)})`}</b><span>${HINT[r.hint]}</span></div><ul>${fields}</ul></li>`;
   }).join("");
   return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -118,7 +121,7 @@ summary small { display: block; color: var(--soft); font-weight: 600; }
 <header class="top"><a class="logo" href="/">HEXA</a><nav></nav><a class="play" href="/#defi">Jouer le défi du jour</a></header>
 <main class="res">
   <div class="card">
-    <span class="k">Défi du jour n° ${s.number} · ${LEVEL_NAMES[s.level]} · ${fmtDay(row.day)}</span>
+    <span class="k">Défi du jour n° ${s.number}${atlasName} · ${LEVEL_NAMES[s.level]} · ${fmtDay(realDay)}</span>
     <h1>${esc(s.name)}</h1>
     <div class="score">${s.points.toLocaleString("fr-FR")}</div>
     <span class="k">points · ${sec} s${s.rank ? ` · ${s.rank}${s.rank === 1 ? "er" : "e"} sur ${s.players}` : ""}</span>

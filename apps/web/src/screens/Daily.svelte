@@ -5,7 +5,8 @@
   import { onDestroy } from "svelte";
   import LiveRound from "../lib/LiveRound.svelte";
   import { live } from "../lib/socket.svelte.ts";
-  import { api, session, GUEST_DAILY } from "../lib/api.svelte.ts";
+  import { api, session, guestDailyKey } from "../lib/api.svelte.ts";
+  import { world } from "../lib/world.svelte.ts";
   import SaveCard from "../lib/ui/SaveCard.svelte";
   import PushCard from "../lib/ui/PushCard.svelte";
   import { signup } from "../lib/signup.svelte.ts";
@@ -22,13 +23,18 @@
   let info = $state<DailyInfo | null>(null);
   // Invité : un seul essai par jour sur cet appareil ; le résultat est gardé pour l'afficher et le rattacher.
   interface GuestDaily { day: string; level?: Level; points: number; elapsedMs: number; grid: number[]; claim?: string; name?: string; rank?: number; players?: number; share?: string }
+  // Un défi par atlas : celui de l'atlas affiché.
+  const atlas = world.id;
+  const A = world.atlas;
+  const GUEST_DAILY = guestDailyKey(atlas);
+  const q = atlas === "france" ? "" : `atlas=${atlas}`;
   let guest = $state<GuestDaily | null>((() => { try { return JSON.parse(localStorage.getItem(GUEST_DAILY) ?? "null"); } catch { return null; } })());
   let board = $state<Board | null>(null);
   let started = $state(false);
   let copied = $state(false);
 
   // Niveau : le sien par défaut (d'après « Ta France »), ou en dessous, jamais au-dessus.
-  const maxLevel = LEVEL_OF[playerLevel(profile.data.know ?? {})];
+  const maxLevel = LEVEL_OF[playerLevel(profile.data.know ?? {}, atlas)];
   let level = $state<Level>(maxLevel);
   const LEVEL_DESC: Record<Level, string> = {
     decouverte: "On te donne le nom ou la carte, avec 4 propositions faciles.",
@@ -39,15 +45,15 @@
 
   /** Onglet du classement affiché : par défaut, le niveau auquel on a joué. */
   let boardLevel = $state<Level>(maxLevel);
-  api<DailyInfo>("GET", "/daily").then((d) => { info = d; if (d.mine?.level) boardLevel = d.mine.level; }).catch(() => {});
-  const loadBoard = (l: Level = boardLevel) => api<Board>("GET", `/daily/leaderboard?level=${l}`).then((b) => (board = b)).catch(() => {});
+  api<DailyInfo>("GET", `/daily${q ? "?" + q : ""}`).then((d) => { info = d; if (d.mine?.level) boardLevel = d.mine.level; }).catch(() => {});
+  const loadBoard = (l: Level = boardLevel) => api<Board>("GET", `/daily/leaderboard?level=${l}${q ? "&" + q : ""}`).then((b) => (board = b)).catch(() => {});
   $effect(() => { loadBoard(boardLevel); });
 
   function start() {
     started = true;
     if (!session.me) guestId(true); // classé sous un pseudo généré, gardé par ce navigateur
     boardLevel = level;
-    live.connect(session.me?.pseudo ?? "", () => live.create("daily", { level }));
+    live.connect(session.me?.pseudo ?? "", () => live.create("daily", { level, ...(atlas !== "france" ? { atlas } : {}) }));
   }
   $effect(() => { if (live.daily) { boardLevel = live.daily.level ?? level; loadBoard(boardLevel); } });
   $effect(() => {
@@ -89,7 +95,7 @@
     const r = outcome?.rank ? { rank: outcome.rank, players: outcome.players } : info?.rank ?? (guestToday?.rank ? { rank: guestToday.rank, players: guestToday.players } : null);
     const share = outcome?.share ?? info?.mine?.share ?? guestToday?.share;
     return [
-      `HEXA #${n} · défi du jour · ${LEVEL_NAMES[playedLevel]}`,
+      `HEXA #${n} · défi du jour${atlas !== "france" ? ` ${A.nom}` : ""} · ${LEVEL_NAMES[playedLevel]}`,
       grid.map((g) => EMOJI[g]).join(""),
       [`${ok} juste${ok > 1 ? "s" : ""}`, mid ? `${mid} à moitié` : "", ko ? `${ko} raté${ko > 1 ? "s" : ""}` : ""].filter(Boolean).join(" · "),
       `${pts.toLocaleString("fr-FR")} pts en ${Math.round(ms / 1000)} s${r?.rank ? ` · ${r.rank}${r.rank === 1 ? "er" : "e"} sur ${r.players}` : ""}`,
@@ -142,8 +148,8 @@
   {#if !started && !(info?.played) && !guestToday}
     <section class="intro">
       <Mascot mood="happy" size={70} />
-      <h1 class="title">Défi du jour</h1>
-      <p>Les mêmes 10 départements pour tout le monde, des questions à ton niveau, et un classement par niveau. Plus tu vas vite, plus tu marques. Un seul essai, nouveau défi à minuit.</p>
+      <h1 class="title">Défi du jour{atlas !== "france" ? ` · ${A.nom}` : ""}</h1>
+      <p>Les mêmes {A.dailyRounds} {A.des} pour tout le monde, des questions à ton niveau, et un classement par niveau. Plus tu vas vite, plus tu marques. Un seul essai, nouveau défi à minuit.</p>
       <div class="levels" role="radiogroup" aria-label="Niveau du défi">
         {#each LEVELS as l (l)}
           {@const ok = levelAllowed(l, maxLevel)}
@@ -167,7 +173,7 @@
   {#if outcome || (!started && (info?.played || guestToday))}
     <section class="end">
       <div class="card">
-        <span class="chip lvchip">Défi n° {outcome?.number ?? info?.number} · {LEVEL_NAMES[playedLevel]}</span>
+        <span class="chip lvchip">Défi n° {outcome?.number ?? info?.number}{atlas !== "france" ? ` · ${A.nom}` : ""} · {LEVEL_NAMES[playedLevel]}</span>
         <span class="riso scoreline" data-t={String(outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0)}>{outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0}</span>
         <div class="grid" aria-label="Résultat case par case">{#each grid as g, i (i)}<i class="g{g}"></i>{/each}</div>
         {#if outcome?.rank || info?.rank || guestToday?.rank}

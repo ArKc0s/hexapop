@@ -2,7 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { sameName, sameCode, matchSet, normalize } from "./answer.ts";
 import { makeGame, grade, fieldsFor } from "./round.ts";
-import { dep, DEPARTEMENTS } from "./data.ts";
+import { dep, DEPARTEMENTS, REGION_ITEMS } from "./data.ts";
+import { composeSeance } from "./seance.ts";
+import { medalOf, taFrance } from "./knowledge.ts";
 import { review, pickSession } from "./srs.ts";
 
 test("noms tolérants", () => {
@@ -141,4 +143,33 @@ test("préfecture : variantes acceptées (Cergy, Cergy-Pontoise pour le 95)", ()
   const q = makeGame({ seed: 1, level: "normal", input: "libre", plan: [{ code: "95", hint: "nom", ask: ["prefecture"] }] })[0];
   for (const p of ["Pontoise", "Cergy", "cergy pontoise", "Cergy-Pontoise"]) assert.equal(grade(q, { prefecture: p, elapsedMs: 0 }).accuracy, 1, p);
   assert.equal(grade(q, { prefecture: "Argenteuil", elapsedMs: 0 }).accuracy, 0);
+});
+
+test("atlas Régions : 18 régions, codes à part, séances et questions sans numéro", () => {
+  assert.equal(REGION_ITEMS.length, 18);
+  const bzh = dep("R53");
+  assert.equal(bzh.nom, "Bretagne");
+  assert.equal(bzh.prefecture, "Rennes");
+  assert.deepEqual(bzh.limitrophes, ["R28", "R52"]);
+  assert.equal(bzh.sousPrefectures.length, 4);
+  assert.equal(dep("11").nom, "Aude", "la région 11 ne se mélange pas avec l'Aude");
+  assert.equal(dep("R01").sousPrefectures.length, 0, "outre-mer : pas d'expert « ses départements »");
+  // Séance : seulement des régions, de la métropole d'abord, jamais de numéro demandé.
+  const s = composeSeance({}, { now: Date.now(), seed: 3, start: "29", atlas: "regions" });
+  assert.equal(s.region?.code, "RM");
+  assert.ok(s.plan.length > 0 && s.plan.every((it) => it.code.startsWith("R") && !it.ask.includes("numero")));
+  // Partie libre : les 18, jamais le numéro.
+  const qs = makeGame({ seed: 1, level: "normal", input: "libre", atlas: "regions" });
+  assert.equal(qs.length, 18);
+  assert.ok(qs.every((q) => q.code.startsWith("R") && !q.fields.includes("numero") && q.hint !== "numero"));
+  // Expert « ses départements » : par le nom ou le numéro.
+  const q = { index: 0, code: "R53", hint: "nom" as const, fields: ["sousPrefectures" as const], durationMs: 0 };
+  assert.equal(grade(q, { sousPrefectures: ["29", "Morbihan", "35", "côtes d'armor"], elapsedMs: 0 }).accuracy, 1);
+  // Étoiles et médailles : 2 facettes de base par région.
+  const now = Date.now();
+  const card = { b: 5, d: now + 1e9, s: 1 as const, v: 1 as const };
+  const know = { R53: { carte: card, prefecture: card } };
+  assert.equal(medalOf(know, "R53"), 2, "argent avec 2 étoiles retenues ; l'or demande l'expert");
+  assert.equal(taFrance(know, "regions"), Math.floor((2 / 36) * 100));
+  assert.equal(taFrance(know), 0, "les régions ne comptent pas dans les départements");
 });

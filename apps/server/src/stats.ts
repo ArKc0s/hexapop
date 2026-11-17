@@ -50,7 +50,7 @@ export function report(days: number) {
   const rows = db.prepare("SELECT day, metric, value FROM stats_daily WHERE day >= ? ORDER BY day").all(since) as { day: string; metric: string; value: number }[];
   const live = db.prepare("SELECT day, COUNT(*) AS n, SUM(app) AS app FROM stats_visitors GROUP BY day").all() as { day: string; n: number; app: number }[];
   const accounts = db.prepare("SELECT date(created_at / 1000, 'unixepoch', 'localtime') AS day, COUNT(*) AS n FROM users GROUP BY day").all() as { day: string; n: number }[];
-  const daily = db.prepare("SELECT day, level, COUNT(*) AS n FROM daily_results WHERE finished = 1 AND day >= ? GROUP BY day, level").all(since) as { day: string; level: string; n: number }[];
+  const daily = db.prepare("SELECT day, level, COUNT(*) AS n FROM daily_results WHERE finished = 1 AND day >= ? AND day NOT LIKE '%:%' GROUP BY day, level").all(since) as { day: string; level: string; n: number }[];
   const byDay = new Map<string, Record<string, number | string>>();
   for (let t = from.getTime(); t <= Date.now(); t += 86_400_000) {
     const d = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(new Date(t));

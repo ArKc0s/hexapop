@@ -1,3 +1,4 @@
+import type { AtlasId } from "./atlas.ts";
 // Protocole WebSocket entre clients (web, futur Flutter) et serveur.
 // Le serveur fait foi : il tire les questions, chronomètre et note.
 // Toutes les heures sont en millisecondes « horloge serveur » ; le client corrige
@@ -20,6 +21,8 @@ export interface RoomSettings {
   elimination: boolean;
   /** Handicap : niveau propre à certains joueurs (id joueur -> niveau). Les autres jouent au niveau du salon. */
   levels: Record<string, Level>;
+  /** Atlas joué (défi du jour : un par atlas) ; absent = départements. */
+  atlas?: AtlasId;
 }
 
 export interface PlayerInfo {
@@ -131,6 +134,8 @@ export interface DailyOutcome {
   number: number;
   /** Niveau joué (un classement par niveau). */
   level: Level;
+  /** Atlas du défi (absent = départements). */
+  atlas?: AtlasId;
   /** Invité classé : son pseudo généré (« Mouette du Finistère »). */
   name?: string;
   points: number;
