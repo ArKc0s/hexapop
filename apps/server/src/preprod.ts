@@ -50,7 +50,7 @@ export function preprodHandle(req: IncomingMessage, res: ServerResponse): boolea
   }
   if (cookieOk(req)) return false;
   // Sans cookie : la page de mot de passe (401 sans demande du navigateur, jamais mise en cache par le script hors ligne).
-  if (path.startsWith("/api/")) { res.writeHead(401, { "content-type": "application/json", "cache-control": "no-store" }).end('{"error":"preprod","message":"Préprod : connecte-toi d\\'abord."}'); return true; }
+  if (path.startsWith("/api/")) { res.writeHead(401, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify({ error: "preprod", message: "Préprod : entre d'abord le mot de passe." })); return true; }
   res.writeHead(401, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }).end(req.method === "HEAD" ? undefined : page());
   return true;
 }
