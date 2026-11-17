@@ -26,7 +26,7 @@ export interface Question {
   /** Pour placer sur la carte en mode propositions : 4 départements surlignés, dont le bon. */
   mapChoices?: string[];
   /** Séance Continuer : département jamais vu (« devine »), celui d'où tu viens, ou une révision (hors de la région en cours). */
-  tag?: "new" | "home" | "review";
+  tag?: "new" | "home" | "review" | "expert";
   /** Rappel de fin de séance : sauté si le département a déjà été réussi sans faute plus tôt dans la séance. */
   recall?: boolean;
   /** Propositions faciles (leurres lointains) : la bonne réponse ne compte que comme « vue ». */
@@ -34,7 +34,7 @@ export interface Question {
 }
 
 /** Question imposée (séance composée) : département, indice, ce qu'on demande. */
-export interface PlanItem { code: string; hint: Hint; ask: Field[]; tag?: "new" | "home" | "review"; recall?: boolean; easy?: boolean }
+export interface PlanItem { code: string; hint: Hint; ask: Field[]; tag?: "new" | "home" | "review" | "expert"; recall?: boolean; easy?: boolean }
 
 export interface Answer {
   carte?: string;

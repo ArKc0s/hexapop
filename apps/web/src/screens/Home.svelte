@@ -34,6 +34,7 @@
   /** Ce que contient la prochaine séance, écrit dans le bouton Continuer. */
   const seanceDesc = $derived(
     seance.kind === "revision" ? `Révisions · ${seance.reviews} département${seance.reviews > 1 ? "s" : ""} à revoir, partout en France`
+    : seance.region && seance.expert ? `${seance.region.nom} · expert${seance.experts.length ? ` : ${names(seance.experts)}` : ""}`
     : seance.region ? `${seance.region.nom}${seance.reviews ? ` · ${seance.reviews} à revoir` : ""}${seance.discover.length ? ` · nouveau : ${names(seance.discover)}` : ""}`
     : "");
   /** Toucher la carte : la prochaine séance se fait dans cette région. */
@@ -53,6 +54,7 @@
     if (!p.stats.games) return "Salut ! Moi c'est Hexa. Ta première séance t'attend : 2 minutes, promis.";
     if (seance.kind === "revision") return `${seance.reviews} département${seance.reviews > 1 ? "s" : ""} à revoir sur ta carte : on fait une séance de révisions ?`;
     if (streak > 0 && !playedToday) return `Une séance aujourd'hui pour garder ta série de ${streak} jour${streak > 1 ? "s" : ""} !`;
+    if (seance.expert && seance.region) return `Toute la région ${seance.region.nom} a ses étoiles : place à l'expert (sous-préfectures et voisins), pour l'or !`;
     if (seance.discover.length) return `Au programme : ${names(seance.discover)}.`;
     if (seance.region) return `On continue en ${seance.region.nom} ?`;
     return `Ta France est à ${pct} %. On consolide ?`;
@@ -116,6 +118,7 @@
           <span>Continuer <Icon name="play" size={20} /></span>
           {#if seanceDesc}<small>{seanceDesc}</small>{/if}
         </button>
+        {#if seance.expertRegion}<button class="link more" onclick={() => profile.setFocus(seance.expertRegion!.code)}>Expert ouvert : {seance.expertRegion.nom}, en route vers l'or</button>{/if}
         {#if seance.kind === "region" && seance.elsewhere}<button class="link more" onclick={() => startSeance("revision")}>Plutôt réviser {seance.elsewhere} département{seance.elsewhere > 1 ? "s" : ""} ailleurs</button>{/if}
         {#if p.focus && TOUR.has(p.focus)}<button class="focus" onclick={() => profile.setFocus(null)}>Région choisie : {TOUR.get(p.focus)?.nom} <span aria-label="Annuler">✕</span></button>{/if}
       </div>
@@ -150,6 +153,7 @@
 
       <nav class="menu" aria-label="Plus">
         <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
+        <button onclick={() => nav.go({ name: "hof" })}>Hall of Fame</button>
         <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
       </nav>
     </div>

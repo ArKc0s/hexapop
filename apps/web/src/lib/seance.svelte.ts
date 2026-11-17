@@ -21,7 +21,7 @@ function answerMode(): InputMode {
 
 /** Titre annoncé = ce qu'on joue : une région, ou les révisions. */
 export function seanceTitle(s: Seance): string {
-  return s.kind === "revision" ? "Révisions · partout en France" : s.region ? `Séance · ${s.region.nom}` : "Séance";
+  return s.kind === "revision" ? "Révisions · partout en France" : s.region ? `${s.expert ? "Expert" : "Séance"} · ${s.region.nom}` : "Séance";
 }
 
 export function startSeance(kind?: SeanceKind) {

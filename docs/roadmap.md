@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.7** (étape 5 de la [refonte](conception.md), refonte terminée) : séances expert région par région (sous-préfectures et voisins) et médailles d'or ; Hall of Fame (défi de la semaine et du mois par niveau, Marathon, Légendes).
 - **v1.6** (étape 4 de la [refonte](conception.md)) : défi du jour par niveau (Découverte, Confirmé, Expert) avec les mêmes 10 départements, classement et partage par niveau ; Entre amis : chacun joue à son niveau par défaut (3 niveaux), jamais deux inconnues en Découverte.
 - **v1.5.1** (retours de Léo sur la v1.5) : séances adaptatives (une question par nouveau département, rappel seulement si raté), une séance = un thème annoncé (région ou révisions), plus de carte surlignée en séance, route d'Hexa en deux échelles (tronçons et grands voyages, communs à tous les atlas), objectif du jour en hexagones chiffrés, accueil et pages secondaires sur un même cadre (ordinateur plein écran, colonnes alignées), page À propos à la place du pied de page, Album et Atlas fusionnés (Médailles, Carte, Succès), anciens écrans Révisions / Éclair / Région retirés.
 - **v1.0** : solo (révisions, éclair, région, marathon), défi du jour, multi temps réel (duel, soirée plateau), comptes, RGPD.
@@ -41,7 +42,6 @@ Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement co
 ### Progression
 - **Récompenses cosmétiques** liées aux médailles, à « Ta France » et aux kilomètres parcourus (ex-XP) : accessoires pour la mascotte, thèmes de carte. Visibles par les autres joueurs en multi.
 - **Ligues hebdomadaires** : groupes d'une trentaine de joueurs classés sur les **kilomètres de la semaine**, montée et descente chaque semaine. À lancer quand il y aura assez de joueurs.
-- **Hall of Fame** : défini dans [`conception.md`](conception.md) (défi par niveau, Marathon, Légendes).
 - **Page « Nouveautés »** (notes de version) accessible depuis l'accueil.
 
 ### Les atlas (décidé avec Léo le 2026-11-16)

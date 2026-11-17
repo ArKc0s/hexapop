@@ -173,6 +173,25 @@ test("séance Continuer : découverte, révisions, consolidation, jamais deux in
   const s4 = S.composeSeance(k2, { now, seed: 3, start: "53", focus: "53" });
   assert.equal(s4.region?.code, "53");
   assert.ok(s4.plan.length > 0 && s4.plan.every((it) => TOUR.get("53")!.deps.includes(it.code)));
+  // Expert (étape 5) : Bretagne finie en base, révisions pas dues -> sous-préfectures et voisins, ce qui donne l'or.
+  const later = { ...solid, b: 4, d: now + 9e8 };
+  const kb: Record<string, Record<string, typeof solid>> = {};
+  for (const c of ["22", "29", "35", "56"]) kb[c] = { carte: later, numero: later, prefecture: later };
+  const s5 = S.composeSeance(kb, { now, seed: 5, start: "53", focus: "53" });
+  assert.equal(s5.kind, "region"); assert.ok(s5.expert);
+  assert.ok(s5.experts.length >= 1);
+  const firsts = s5.plan.filter((it) => it.tag === "expert");
+  assert.ok(firsts.every((it) => it.ask.every((f) => f === "sousPrefectures" || f === "limitrophes")));
+  assert.ok(s5.plan.every((it) => TOUR.get("53")!.deps.includes(it.code)), "toujours le thème annoncé");
+  // Sans choix de région : on découvre la suivante, et l'expert de la Bretagne est proposé à côté.
+  const s6 = S.composeSeance(kb, { now, seed: 5, start: "53" });
+  assert.ok(!s6.expert); assert.equal(s6.expertRegion?.code, "53");
+  // Réussir l'expert donne l'or (avec l'argent : boîte >= 4).
+  const { learn, medalOf } = await import("./knowledge.ts");
+  const qx = makeGame({ seed: 1, level: "normal", input: "libre", plan: firsts.slice(0, 1) })[0];
+  const res = { code: qx.code, accuracy: 1, points: 0, elapsedMs: 0, fields: qx.fields.map((f) => ({ field: f, score: 1, given: "", expected: "" })) };
+  const { know } = learn(kb as never, [res as never], [{ hint: qx.hint, fields: qx.fields, aided: [] }], now);
+  assert.equal(medalOf(know, qx.code), 3, "or");
   // Région choisie par le joueur sur la carte.
   assert.equal(S.currentRegion(k, "53", "84")?.code, "84");
   // Rien à revoir ni à découvrir dans une région finie choisie : on retombe sur l'ordre normal.

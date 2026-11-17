@@ -17,8 +17,25 @@
   import SaveCard from "../lib/ui/SaveCard.svelte";
   import { signup } from "../lib/signup.svelte.ts";
   import PushCard from "../lib/ui/PushCard.svelte";
+  import { api, session } from "../lib/api.svelte.ts";
+  import type { InputMode } from "@hexa/game";
 
-  let { play, results, rewards }: { play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards } = $props();
+  let { play, results, rewards, input }: { play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards; input?: InputMode } = $props();
+
+  // Marathon : les 101 en fiche complète (le placer, le numéro, la préfecture), au clavier -> Hall of Fame.
+  // svelte-ignore state_referenced_locally
+  const marathon = play.mode === "marathon" && results.length === 101 && (["carte", "numero", "prefecture"] as const).every((f) => play.config.ask?.includes(f));
+  type HofResult = { record: boolean; best: { accuracy: number; elapsedMs: number }; rank: number; players: number };
+  let hof = $state<HofResult | "guest" | "choix" | "error" | null>(null);
+  const mAccuracy = results.reduce((n, x) => n + x.accuracy, 0) / Math.max(1, results.length);
+  const mElapsed = results.reduce((n, x) => n + x.elapsedMs, 0);
+  const dur = (ms: number) => { const m = Math.floor(ms / 60_000), s = Math.round((ms % 60_000) / 1000); return m ? `${m} min ${String(s).padStart(2, "0")} s` : `${s} s`; };
+  onMount(() => {
+    if (!marathon) return;
+    if (input !== "libre") hof = "choix";
+    else if (!session.me) hof = "guest";
+    else api<HofResult>("POST", "/marathon", { accuracy: mAccuracy, elapsedMs: mElapsed, rounds: results.length }).then((h) => (hof = h)).catch(() => (hof = "error"));
+  });
 
   // svelte-ignore state_referenced_locally
   const r = rewards;
@@ -79,6 +96,20 @@
       {:else if passed.cities.length}<span class="stop">Hexa est arrivé à <b>{passed.cities.join(", ")}</b> !</span>{/if}
       <span class="tabnum">{weekKm.toLocaleString("fr-FR")} km cette semaine · {rank}</span>
     </div>
+
+    {#if marathon && hof}
+      <div class="card hofc">
+        <span class="k">Marathon · Hall of Fame</span>
+        <b class="tabnum">{Math.round(mAccuracy * 100)} % en {dur(mElapsed)}</b>
+        {#if hof === "guest"}<p>Crée un compte pour entrer au Hall of Fame du Marathon.</p>
+        {:else if hof === "choix"}<p>Le Hall of Fame du Marathon se joue au clavier, sans propositions.</p>
+        {:else if hof === "error"}<p>Ton résultat n'a pas pu être enregistré.</p>
+        {:else}
+          <p>{hof.record ? "Nouveau record personnel ! " : `Ton record : ${Math.round(hof.best.accuracy * 100)} % en ${dur(hof.best.elapsedMs)}. `}<b>{hof.rank}{hof.rank === 1 ? "er" : "e"}</b> sur {hof.players}.</p>
+        {/if}
+        <button class="link" onclick={() => nav.go({ name: "hof" })}>Voir le Hall of Fame</button>
+      </div>
+    {/if}
 
     <div class="rewards">
       {#if r.streak.extended}
@@ -158,4 +189,7 @@
   .list { display: flex; flex-wrap: wrap; gap: 6px; }
   @media (max-width: 900px) { .res { grid-template-columns: 1fr; } .review { position: static; } }
   @media (min-width: 901px) { .res { min-height: 100dvh; align-content: center; } }
+  .hofc { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; box-shadow: inset 0 0 0 2px var(--yellow); }
+  .hofc b { font-size: 20px; font-weight: 900; }
+  .hofc p { margin: 0; font-weight: 600; color: var(--soft); }
 </style>

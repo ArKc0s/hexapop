@@ -149,7 +149,7 @@
   {#if board && (outcome || info?.played || guestToday)}
     <section class="boards">
       <div>
-        <h2 class="label">Classement du jour</h2>
+        <h2 class="label">Classement du jour · <button class="link" onclick={() => nav.go({ name: "hof" })}>Hall of Fame</button></h2>
         <div class="seg lvtabs" role="tablist" aria-label="Classement par niveau">
           {#each LEVELS as l (l)}<button role="tab" aria-selected={boardLevel === l} class:on={boardLevel === l} onclick={() => (boardLevel = l)}>{LEVEL_NAMES[l]}{board.counts?.[l] ? ` · ${board.counts[l]}` : ""}</button>{/each}
         </div>

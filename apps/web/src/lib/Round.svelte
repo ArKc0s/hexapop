@@ -28,6 +28,10 @@
   }
   let { q, result = null, startedAt, onsubmit, action, children, history = {}, combo = 0, answerMode, onmode }: Props = $props();
   /** Propositions affichées pour un champ (aucune en mode clavier). */
+  /** Première rencontre (département nouveau, ou ses facettes expert) : se tromper ne coûte rien, la correction apprend. */
+  const fresh = $derived(q.tag === "new" || q.tag === "expert");
+  /** Le choix clavier / propositions n'a de sens que s'il y a autre chose que des sous-préfectures ou des voisins (toujours au clavier). */
+  const canSwitch = $derived(q.fields.some((f) => f !== "sousPrefectures" && f !== "limitrophes"));
   const usesChoices = $derived(answerMode ? answerMode === "choix" : !!q.choices);
   const choicesOf = (f: ChoiceField) => (usesChoices ? q.choices?.[f] : undefined);
   const candidates = $derived(usesChoices && !result ? q.mapChoices : undefined);
@@ -38,14 +42,14 @@
   const feedback = $derived.by(() => {
     if (!result) return null;
     if (result.accuracy >= 0.999) return { mood: combo >= 5 ? "wow" : "happy", text: combo >= 3 ? `Combo ×${combo} ! ${PRAISE[combo % PRAISE.length]}` : PRAISE[q.index % PRAISE.length] } as const;
-    if (q.tag === "new") return { mood: "think", text: `Maintenant tu sais ! On y revient en fin de séance.` } as const;
+    if (fresh) return { mood: "think", text: `Maintenant tu sais ! On y revient en fin de séance.` } as const;
     if (result.accuracy > 0) return { mood: "think", text: `Presque ! ${Math.round(result.accuracy * 100)} % de bon, la correction est juste au-dessus.` } as const;
     return { mood: "sad", text: `Raté : ${d.nom} (${d.code}). Tu le retiendras !` } as const;
   });
   $effect(() => {
     if (!result) return;
     if (result.accuracy >= 0.999) sound.play(combo >= 3 ? "combo" : "ok", combo);
-    else sound.play(result.accuracy > 0 || q.tag === "new" ? "partial" : "ko");
+    else sound.play(result.accuracy > 0 || fresh ? "partial" : "ko");
   });
 
   const d = $derived(dep(q.code));
@@ -222,8 +226,8 @@
       <span class="secs tabnum">{result ? "" : Math.ceil(remaining / 1000) + " s"}</span>
     </div>
 
-    <div class="clue" class:has-sw={!!(answerMode && onmode && !result)}>
-      {#if answerMode && onmode && !result}
+    <div class="clue" class:has-sw={!!(answerMode && onmode && !result && canSwitch)}>
+      {#if answerMode && onmode && !result && canSwitch}
         <button class="modesw" onclick={() => onmode(answerMode === "choix" ? "libre" : "choix")} aria-label={answerMode === "choix" ? "Répondre au clavier" : "Répondre avec des propositions"}>
           {answerMode === "choix" ? "Au clavier" : "Propositions"}
         </button>
@@ -235,7 +239,7 @@
         <span class="kicker">{rev}Le département de</span>
         <h2 class="qname">{d.prefecture}</h2>
       {:else if q.hint === "nom"}
-        <span class="kicker">{q.tag === "new" ? "Nouveau · devine !" : q.tag === "home" ? "Chez toi" : q.tag === "review" ? "À revoir" : "Trouve"}</span>
+        <span class="kicker">{q.tag === "new" ? "Nouveau · devine !" : q.tag === "expert" ? "Expert · tu les connais ?" : q.tag === "home" ? "Chez toi" : q.tag === "review" ? "À revoir" : "Trouve"}</span>
         <h2 class="qname">{d.nom}</h2>
       {:else}
         <span class="kicker">{rev}Il clignote sur la carte</span>
@@ -322,12 +326,12 @@
       {@render children?.()}
     {/if}
 
-    <div class="actions" class:v-ok={result && result.accuracy >= 0.999} class:v-mid={result && result.accuracy < 0.999 && (result.accuracy > 0 || q.tag === "new")} class:v-ko={result && result.accuracy === 0 && q.tag !== "new"}>
+    <div class="actions" class:v-ok={result && result.accuracy >= 0.999} class:v-mid={result && result.accuracy < 0.999 && (result.accuracy > 0 || fresh)} class:v-ko={result && result.accuracy === 0 && !fresh}>
       {#if result && feedback}
         <!-- Mobile : verdict toujours visible dans la barre du bas, sans faire défiler -->
         <div class="verdict" aria-live="polite">
           <Mascot mood={feedback.mood} size={40} />
-          <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : q.tag === "new" ? "Maintenant tu sais" : "Raté"}</b></span>
+          <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : fresh ? "Maintenant tu sais" : "Raté"}</b></span>
           <span class="vp tabnum">+{result.points}</span>
         </div>
         <ul class="recap" aria-label="Correction">

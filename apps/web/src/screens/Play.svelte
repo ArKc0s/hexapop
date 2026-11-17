@@ -45,8 +45,9 @@
   }
   function finish() {
     if (play.learn) progress.record(results);
-    const rewards = profile.record({ mode: play.mode, level: play.config.level, input: play.config.switchable ? (usedChoices ? "choix" : "libre") : play.config.input, results, region: play.region, now: Date.now(), learn: play.learn, rounds });
-    nav.go({ name: "results", play, questions, results, rewards });
+    const input = play.config.switchable ? (usedChoices ? "choix" : "libre") : play.config.input;
+    const rewards = profile.record({ mode: play.mode, level: play.config.level, input, results, region: play.region, now: Date.now(), learn: play.learn, rounds });
+    nav.go({ name: "results", play, questions, results, rewards, input });
   }
   function next() {
     // Rappel de fin de séance inutile pour un département déjà réussi sans faute : on ne redemande pas ce que tu sais.

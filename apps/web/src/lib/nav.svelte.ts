@@ -1,4 +1,4 @@
-import type { GameConfig, GameMode, RoundResult, Question, Rewards } from "@hexa/game";
+import type { GameConfig, GameMode, InputMode, RoundResult, Question, Rewards } from "@hexa/game";
 
 export type AlbumTab = "medailles" | "carte" | "succes";
 export interface PlayScreen { name: "play"; config: GameConfig; title: string; learn: boolean; mode: GameMode; region?: string }
@@ -6,7 +6,8 @@ export type Screen =
   | { name: "home" }
   | { name: "training" }
   | PlayScreen
-  | { name: "results"; play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards }
+  | { name: "results"; play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards; /** Réponses utilisées (Marathon : le Hall of Fame se joue au clavier). */ input?: InputMode }
+  | { name: "hof" }
   | { name: "album"; tab?: AlbumTab }
   | { name: "account"; view?: "login" | "register" | "forgot" | "reset" | "verify" | "profile"; token?: string; then?: Screen; notice?: string; oauthError?: string }
   | { name: "daily" }
@@ -16,7 +17,7 @@ export type Screen =
   | { name: "legal"; doc: "apropos" | "mentions" | "confidentialite" | "cgu" }
   | { name: "rappels" };
 
-const SIMPLE: Partial<Record<Screen["name"], string>> = { training: "#entrainement", album: "#album", daily: "#defi", rappels: "#rappels" };
+const SIMPLE: Partial<Record<Screen["name"], string>> = { training: "#entrainement", album: "#album", daily: "#defi", rappels: "#rappels", hof: "#hall-of-fame" };
 const LEGAL = { apropos: "#a-propos", mentions: "#mentions-legales", confidentialite: "#confidentialite", cgu: "#cgu" };
 
 class Nav {

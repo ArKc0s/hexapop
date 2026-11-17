@@ -385,3 +385,23 @@ test("salon : chacun joue à son niveau par défaut (handicap), modifiable", { t
   assert.ok(qb.fields.length >= qa.fields.length);
   a.ws.close(); b.ws.close();
 });
+
+test("Hall of Fame : Marathon (record gardé), défi de la semaine par niveau, légendes", async () => {
+  const r = await post("/api/auth/register", { email: "hof@example.com", pseudo: "Marathonien", password: "motdepasse", home: "75" });
+  const { token } = await r.json();
+  assert.equal((await post("/api/marathon", { accuracy: 0.9, elapsedMs: 600_000, rounds: 101 })).status, 401, "compte requis");
+  assert.equal((await post("/api/marathon", { accuracy: 0.9, elapsedMs: 5_000, rounds: 101 }, token)).status, 400, "trop rapide pour être vrai");
+  let m = await (await post("/api/marathon", { accuracy: 0.9, elapsedMs: 600_000, rounds: 101 }, token)).json();
+  assert.equal(m.record, true);
+  m = await (await post("/api/marathon", { accuracy: 0.8, elapsedMs: 300_000, rounds: 101 }, token)).json();
+  assert.equal(m.record, false, "on garde le meilleur");
+  assert.equal(m.best.accuracy, 0.9);
+  // Légende : profil avec « Album complet » (toute la France en bronze).
+  const put = await fetch(BASE + "/api/profile", { method: "PUT", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ profile: { v: 1, xp: 10, badges: { "album-101": Date.parse("2026-11-01") } } }) });
+  assert.equal(put.status, 200);
+  const hof = await (await fetch(BASE + "/api/hof")).json();
+  assert.equal(hof.marathon[0].name, "Marathonien");
+  assert.ok(hof.daily.week.normal.some((p: { name: string }) => p.name === "Daily"), "le défi de la semaine compte les points du jour");
+  assert.ok(Array.isArray(hof.daily.week.decouverte));
+  assert.ok(hof.legends.france.some((p: { name: string }) => p.name === "Marathonien"));
+});

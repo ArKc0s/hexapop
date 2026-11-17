@@ -12,6 +12,7 @@
   import Legal from "./screens/Legal.svelte";
   import Training from "./screens/Training.svelte";
   import Album from "./screens/Album.svelte";
+  import HallOfFame from "./screens/HallOfFame.svelte";
   import Reminders from "./screens/Reminders.svelte";
   import { push } from "./lib/push.svelte.ts";
   import PushPrompt from "./lib/ui/PushPrompt.svelte";
@@ -31,6 +32,7 @@
 {:else if nav.screen.name === "results"}{#key nav.screen}<Results {...nav.screen} />{/key}
 {:else if nav.screen.name === "training"}<Training />
 {:else if nav.screen.name === "album"}<Album tab={nav.screen.tab} />
+{:else if nav.screen.name === "hof"}<HallOfFame />
 {:else if nav.screen.name === "rappels"}<Reminders />
 {:else if nav.screen.name === "account"}{#key nav.screen}<Account {...nav.screen} />{/key}
 {:else if nav.screen.name === "daily"}<Daily />

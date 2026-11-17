@@ -9,6 +9,7 @@ import {
 import { resetMail, sendMail, verifyMail } from "./mail.ts";
 import { dailyNumber, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
 import { stats } from "./rooms.ts";
+import { hallOfFame, saveMarathon } from "./hof.ts";
 import { DEFAULT_PREFS, cleanPrefs, pushEnabled, validEndpoint, vapidPublicKey } from "./push.ts";
 import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
 
@@ -208,7 +209,8 @@ const routes: Record<string, Handler> = {
     const u = need(user, 401, "auth_required", "Non connecté.");
     const row = db.prepare("SELECT id, email, pseudo, email_verified, home_dep, created_at, last_seen_at FROM users WHERE id = ?").get(u.id) as Record<string, unknown>;
     const progressRow = db.prepare("SELECT data, updated_at FROM progress WHERE user_id = ?").get(u.id) as { data: string; updated_at: number } | undefined;
-    const daily = db.prepare("SELECT day, points, accuracy, elapsed_ms, grid, finished, created_at FROM daily_results WHERE user_id = ? ORDER BY day").all(u.id);
+    const daily = db.prepare("SELECT day, level, points, accuracy, elapsed_ms, grid, finished, created_at FROM daily_results WHERE user_id = ? ORDER BY day").all(u.id);
+    const marathon = db.prepare("SELECT accuracy, elapsed_ms, created_at FROM marathon_results WHERE user_id = ?").get(u.id) ?? null;
     const profileRow = db.prepare("SELECT data FROM profiles WHERE user_id = ?").get(u.id) as { data: string } | undefined;
     const sessions = db.prepare("SELECT COUNT(*) AS n, MAX(expires_at) AS until FROM sessions WHERE user_id = ?").get(u.id);
     const iso = (v: unknown) => (typeof v === "number" ? new Date(v).toISOString() : v);
@@ -220,6 +222,7 @@ const routes: Record<string, Handler> = {
       linkedAccounts: db.prepare("SELECT provider, email, created_at FROM oauth_identities WHERE user_id = ?").all(u.id),
       notificationDevices: db.prepare("SELECT prefs, last_played_day, created_at FROM push_subs WHERE user_id = ?").all(u.id),
       dailyResults: daily,
+      marathonRecord: marathon,
       activeSessions: sessions,
     }, { "content-disposition": `attachment; filename="hexa-${u.pseudo}-donnees.json"` });
   },
@@ -316,6 +319,19 @@ const routes: Record<string, Handler> = {
     need(r !== "expired", 410, "claim_expired", "Ce résultat ne peut plus être rattaché (il date d'un autre jour).");
     need(r !== "already", 409, "daily_done", "Ton compte a déjà un résultat pour le défi d'aujourd'hui.");
     json(res, 200, { ok: true, rank: r });
+  },
+
+  "GET /api/hof": (_req, res) => json(res, 200, hallOfFame()),
+
+  /** Marathon (les 101 en fiche complète, au clavier) : garde le meilleur résultat du compte. */
+  "POST /api/marathon": async (req, res, user) => {
+    const u = need(user, 401, "auth_required", "Connecte-toi pour entrer au Hall of Fame.");
+    const b = await body(req);
+    const accuracy = Number(b.accuracy), elapsedMs = Math.round(Number(b.elapsedMs)), rounds = Number(b.rounds);
+    need(rounds === 101 && Number.isFinite(accuracy) && accuracy >= 0 && accuracy <= 1, 400, "bad_request", "Résultat invalide.");
+    // Au moins une seconde par département, au plus six heures.
+    need(Number.isFinite(elapsedMs) && elapsedMs >= 101_000 && elapsedMs <= 6 * 3_600_000, 400, "bad_request", "Durée invalide.");
+    json(res, 200, saveMarathon(u.id, Math.round(accuracy * 1000) / 1000, elapsedMs));
   },
 
   "GET /api/daily/leaderboard": (req, res) => {
