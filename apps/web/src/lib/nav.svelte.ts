@@ -4,7 +4,6 @@ export type SoloMode = "apprendre" | "eclair" | "marathon" | "region";
 export interface PlayScreen { name: "play"; config: GameConfig; title: string; learn: boolean; mode: GameMode; region?: string }
 export type Screen =
   | { name: "home" }
-  | { name: "tour"; region?: string }
   | { name: "training" }
   | { name: "setup"; mode: SoloMode }
   | PlayScreen
@@ -19,7 +18,7 @@ export type Screen =
   | { name: "legal"; doc: "mentions" | "confidentialite" | "cgu" }
   | { name: "rappels" };
 
-const SIMPLE: Partial<Record<Screen["name"], string>> = { tour: "#tour", training: "#entrainement", album: "#album", atlas: "#atlas", daily: "#defi", rappels: "#rappels" };
+const SIMPLE: Partial<Record<Screen["name"], string>> = { training: "#entrainement", album: "#album", atlas: "#atlas", daily: "#defi", rappels: "#rappels" };
 const LEGAL = { mentions: "#mentions-legales", confidentialite: "#confidentialite", cgu: "#cgu" };
 
 class Nav {

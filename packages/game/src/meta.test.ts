@@ -125,3 +125,51 @@ test("étoiles : sans aide, avec aide, médailles, fusion et reprise des anciens
   const s = sanitizeProfile({ know: { "29": { carte: { b: 99, d: -1, s: 7 }, nope: { b: 1 } }, XX: {} } });
   assert.deepEqual(s.know, { "29": { carte: { b: 6, d: 0, s: 1, v: 0 } } });
 });
+
+test("séance Continuer : découverte, révisions, consolidation, jamais deux inconnues", async () => {
+  const S = await import("./seance.ts");
+  const { makeGame } = await import("./round.ts");
+  const now = T("2026-11-17");
+  // Nouveau joueur du Finistère : sa région (Bretagne), 3 départements montrés puis demandés facette par facette.
+  const s0 = S.composeSeance({}, { now, seed: 1, start: "53" });
+  assert.equal(s0.region?.code, "53");
+  assert.equal(s0.discover.length, 3);
+  assert.equal(s0.plan.length, 12);
+  assert.ok(s0.plan.slice(0, 9).every((it) => it.teach && it.easy && it.hint === "nom" && it.ask.length === 1));
+  // Rappel en fin de séance : fiche complète sans aide facile, qui donne les premières étoiles.
+  assert.ok(s0.plan.slice(9).every((it) => !it.teach && !it.easy && it.ask.length === 3 && s0.discover.includes(it.code)));
+  const qs = makeGame({ seed: 2, level: "normal", input: "choix", switchable: true, plan: s0.plan });
+  assert.ok(qs.slice(0, 9).every((q) => q.teach && q.easy && q.durationMs === 0));
+  assert.ok(qs.filter((q) => q.fields[0] === "carte").every((q) => q.mapChoices!.length === 4));
+  // Joueur avancé : révisions échues d'abord, puis la région suivante (pas finie).
+  const solid = { b: 2, d: now - 1, s: 1 as const, v: 1 as const };
+  const k: Record<string, Record<string, typeof solid>> = {};
+  for (const c of ["22", "29", "35", "56"]) k[c] = { carte: solid, numero: solid, prefecture: solid };
+  const s1 = S.composeSeance(k, { now, seed: 3, start: "53" });
+  assert.ok(s1.reviews >= 1 && s1.reviews <= 5);
+  assert.notEqual(s1.region?.code, "53", "Bretagne finie : on passe à une voisine");
+  assert.ok(TOUR.get("53")!.neighbors.includes(s1.region!.code));
+  // Un département revient une seule fois, sauf ceux qu'on découvre (montrés facette par facette).
+  const others = s1.plan.filter((x) => !s1.discover.includes(x.code)).map((x) => x.code);
+  assert.equal(new Set(others).size, others.length);
+  for (const c of s1.discover) assert.equal(s1.plan.filter((x) => x.code === c).length, 4);
+  assert.ok(s1.plan.length <= 12);
+  // Région choisie par le joueur sur la carte.
+  assert.equal(S.currentRegion(k, "53", "84")?.code, "84");
+  // Rien à revoir ni à découvrir dans une région finie choisie : on retombe sur l'ordre normal.
+  assert.notEqual(S.currentRegion(k, "53", "53")?.code, "53");
+});
+
+test("kilomètres de la semaine, parties du jour, quêtes retirées", () => {
+  let { profile, rewards } = applyGame(emptyProfile(), report({ results: [res("29", 1)], now: T("2026-11-17") }));
+  assert.equal(profile.week?.km, rewards.xp);
+  assert.equal(profile.today?.games, 1);
+  assert.deepEqual(rewards.questsDone, []);
+  ({ profile } = applyGame(profile, report({ results: [res("29", 1)], now: T("2026-11-17", 18) })));
+  assert.equal(profile.today?.games, 2);
+  ({ profile, rewards } = applyGame(profile, report({ results: [res("29", 1)], now: T("2026-11-24") })));
+  assert.equal(profile.week?.km, rewards.xp, "nouvelle semaine");
+  assert.equal(profile.today?.games, 1);
+  const s = sanitizeProfile({ home: "29", focus: "53", week: { id: "2026-11-16", km: 12 }, today: { day: "nope", games: 3 } });
+  assert.equal(s.home, "29"); assert.equal(s.focus, "53"); assert.equal(s.week?.km, 12); assert.equal(s.today, undefined);
+});

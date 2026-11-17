@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { DEPARTEMENTS, MAX_STARS, PLAYER_LEVELS, dayKey, fadingCodes, knownStars, levelInfo, liveStreak, medalCount, medalOf, nextTourRegion, playerLevel, questsFor, starsOf, taFrance, titleFor, totalStars } from "@hexa/game";
+  import { DEP, DEPARTEMENTS, MAX_STARS, PLAYER_LEVELS, TOUR, dayKey, fadingCodes, knownStars, liveStreak, medalCount, medalOf, playerLevel, starsOf, taFrance, titleFor, tourRegionOf } from "@hexa/game";
+  import Welcome from "../lib/ui/Welcome.svelte";
+  import { previewSeance, startSeance } from "../lib/seance.svelte.ts";
   import Map from "../lib/Map.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
   import Icon from "../lib/ui/Icon.svelte";
@@ -12,14 +14,27 @@
 
   const all = DEPARTEMENTS.map((d) => d.code);
   const p = $derived(profile.data);
-  const lvl = $derived(levelInfo(p.xp));
   const know = $derived(p.know ?? {});
   const rank = $derived(titleFor(know).name);
   const streak = $derived(liveStreak(p, Date.now()));
   const playedToday = $derived(p.streak.last === dayKey(Date.now()));
-  const quests = $derived(questsFor(dayKey(Date.now())).map((q) => ({ ...q, done: Math.min(q.target, p.quests.day === dayKey(Date.now()) ? (p.quests.progress[q.id] ?? 0) : 0) })));
-  const questsLeft = $derived(quests.filter((q) => q.done < q.target).length);
-  const next = $derived(nextTourRegion(p));
+  // Premier lancement : « Tu viens d'où ? »
+  const welcomed = (() => { try { return !!localStorage.getItem("hexa.welcomed"); } catch { return true; } })();
+  const showWelcome = $derived(!welcomed && !p.home && p.stats.games === 0);
+  // Prochaine séance (aperçu) et objectif personnel facultatif.
+  const seance = $derived(previewSeance());
+  const km = $derived(p.xp);
+  const todayGames = $derived(p.today?.day === dayKey(Date.now()) ? p.today.games : 0);
+  let goal = $state((() => { try { return Number(localStorage.getItem("hexa.goal")) || 0; } catch { return 0; } })());
+  function setGoal(g: number) { goal = g; try { localStorage.setItem("hexa.goal", String(g)); } catch { /* */ } }
+  const goalDone = $derived(goal > 0 && todayGames >= goal);
+  const names = (codes: string[]) => codes.map((c) => DEP.get(c)?.nom).join(", ");
+  /** Toucher la carte : la prochaine séance se fait dans cette région. */
+  function focusOn(code: string) {
+    const r = tourRegionOf(code);
+    profile.setFocus(p.focus === r.code ? null : r.code);
+    sound.play("tap");
+  }
   // « Ta France » : les étoiles (placer, numéro, préfecture) de chaque département, puis ses médailles.
   const fading = $derived(fadingCodes(know, Date.now()));
   const pct = $derived(taFrance(know));
@@ -29,24 +44,23 @@
   const MEDAL_FILL = ["", "#e6b98e", "#b4bfcd", "#f5c518"];
   const fills = $derived(Object.fromEntries(all.flatMap((c) => {
     const m = medalOf(know, c), s = starsOf(know, c);
-    if (!s) return [];
+    if (!s) return know[c] && Object.values(know[c]).some((x) => x?.v) ? [[c, "#eef3f8"]] : [];
     if (fading.includes(c)) return [[c, "var(--tint-ko)"]];
     return [[c, m ? MEDAL_FILL[m] : STAR_FILL[s]]];
   })));
 
   const hello = $derived.by(() => {
-    if (!p.stats.games) return "Salut ! Moi c'est Hexa. On fait le tour de France ensemble ?";
-    if (fading.length >= 5) return `${fading.length} départements commencent à s'effacer de ta carte. Une petite révision ?`;
-    if (streak > 0 && !playedToday) return `Une partie aujourd'hui pour garder ta série de ${streak} jour${streak > 1 ? "s" : ""} !`;
-    if (questsLeft) return `Encore ${questsLeft} quête${questsLeft > 1 ? "s" : ""} du jour à boucler.`;
-    if (next) return `Prochaine étape : ${next.nom}.`;
-    return "Toutes les quêtes du jour sont faites. Respect.";
+    if (!p.stats.games) return "Salut ! Moi c'est Hexa. Ta première séance t'attend : 2 minutes, promis.";
+    if (fading.length >= 3) return `${fading.length} départements pâlissent sur ta carte : ta séance commence par eux.`;
+    if (streak > 0 && !playedToday) return `Une séance aujourd'hui pour garder ta série de ${streak} jour${streak > 1 ? "s" : ""} !`;
+    if (seance.discover.length) return `Au programme : ${names(seance.discover)}.`;
+    if (seance.region) return `On continue en ${seance.region.nom} ?`;
+    return `Ta France est à ${pct} %. On consolide ?`;
   });
 
   function play() {
     sound.play("tap");
-    if (!p.tourStart || !next) nav.go({ name: "tour" });
-    else nav.go({ name: "tour", region: next.code });
+    startSeance();
   }
 
   // Compte à rebours jusqu'au prochain défi (minuit à Paris)
@@ -61,12 +75,15 @@
   });
 </script>
 
+{#if showWelcome}
+<Welcome />
+{:else}
 <main class="home">
   <section class="left">
     <div class="top">
       <h1 class="riso logo" data-t="HEXA">HEXA</h1>
-      <span class="chip" title="Série de jours joués"><Icon name="flame" /> {streak}</span>
-      <span class="lvl" title="Niveau {lvl.level}"><span class="ring" style="--p:{lvl.ratio * 100}"><span>{lvl.level}</span></span><span class="rk">{rank}</span></span>
+      <span class="chip" class:gold={goalDone} title={goalDone ? "Objectif du jour atteint !" : "Série de jours joués"}><Icon name="flame" /> {streak}</span>
+      <span class="chip km tabnum" title="Kilomètres parcourus">{km.toLocaleString("fr-FR")} km</span>
     </div>
     <!-- Sur mobile, compte et son restent en haut de l'écran -->
     <div class="acc mob">
@@ -94,8 +111,9 @@
     {/if}
 
     <div class="next">
-      <button class="btn big wide" onclick={play}>Jouer <Icon name="play" size={20} /></button>
-      <small>{!p.tourStart ? "Tour de France · choisis ta région de départ" : next ? `Tour de France · ${next.nom} · ${p.stars[next.code] ?? 0}/3 étoiles` : "Tour de France terminé ! Place à l'entraînement."}</small>
+      <button class="btn big wide" onclick={play}>Continuer <Icon name="play" size={20} /></button>
+      <small>Séance de 2 min{seance.reviews ? ` · ${seance.reviews} à revoir` : ""}{seance.discover.length ? ` · nouveau : ${names(seance.discover)}` : seance.region ? ` · ${seance.region.nom}` : ""}</small>
+      {#if p.focus && TOUR.has(p.focus)}<button class="focus" onclick={() => profile.setFocus(null)}>Région choisie : {TOUR.get(p.focus)?.nom} <span aria-label="Annuler">✕</span></button>{/if}
     </div>
 
     <div class="row2">
@@ -103,18 +121,13 @@
       <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel, équipe ou soirée</small></button>
     </div>
 
-    <div class="card quests">
-      <span class="k">Quêtes du jour · +50 XP chacune</span>
-      {#each quests as q (q.id)}
-        <div class="q" class:done={q.done >= q.target}>
-          <span>{q.label}</span><em class="tabnum">{q.done >= q.target ? "✓" : `${q.done}/${q.target}`}</em>
-          <div class="bar"><i style="width:{(q.done / q.target) * 100}%"></i></div>
-        </div>
-      {/each}
+    <div class="goal">
+      <span class="k">Objectif perso</span>
+      <div class="seg">{#each [0, 1, 3, 5] as g (g)}<button class:on={goal === g} onclick={() => setGoal(g)}>{g ? `${g} / jour` : "Aucun"}</button>{/each}</div>
+      {#if goal}<span class="gp tabnum" class:ok={goalDone}>{goalDone ? "Atteint !" : `${todayGames}/${goal} aujourd'hui`}</span>{/if}
     </div>
 
     <nav class="menu" aria-label="Autres modes">
-      <button onclick={() => nav.go({ name: "tour" })}>Tour de France <span>{totalStars(p)} ★</span></button>
       <button onclick={() => nav.go({ name: "training" })}>Entraînement</button>
       <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
       <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
@@ -134,9 +147,10 @@
         <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
       </div>
     </div>
-    <Map {fills} interactive={false} label="Ta France : maîtrise de chaque département" />
+    <Map {fills} marks={p.focus && TOUR.has(p.focus) ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label="Ta France : touche une région pour y faire ta prochaine séance" />
+    <p class="tip">Touche une région pour y faire ta prochaine séance.</p>
     <div class="legend">
-      <span><i style="background:#b6d6f1"></i>1-2 étoiles</span><span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
+      <span><i style="background:#eef3f8; box-shadow: inset 0 0 0 1px #c8d4e0"></i>découvert</span><span><i style="background:#b6d6f1"></i>1-2 étoiles</span><span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
       <span><i style="background:var(--tint-ko)"></i>à réviser</span>
       {#if fading.length}<button class="link" onclick={() => nav.go({ name: "setup", mode: "apprendre" })}>Réviser ({fading.length})</button>{/if}
     </div>
@@ -151,26 +165,26 @@
     <span>Sans publicité ni traceur.</span>
   </footer>
 </main>
+{/if}
 
 <style>
   .home { max-width: 1280px; margin: 0 auto; padding: 22px 24px 28px; display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); gap: 10px 48px; }
   .left { display: flex; flex-direction: column; gap: 16px; }
   .top { display: flex; align-items: center; gap: 8px; }
   .logo { font-size: 44px; margin: 0 auto 0 0; }
-  .lvl { display: inline-flex; align-items: center; gap: 8px; background: #fff; border-radius: 999px; padding: 4px 12px 4px 4px; font-weight: 800; font-size: 14px; }
-  .ring { width: 30px; height: 30px; border-radius: 50%; background: conic-gradient(var(--green) calc(var(--p) * 1%), #e9e2d3 0); display: grid; place-items: center; }
-  .ring span { width: 22px; height: 22px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 12px; }
+  .chip.gold { background: var(--yellow); box-shadow: 0 3px 0 var(--yellow-d); }
+  .focus { align-self: flex-start; border: 0; background: var(--ink); color: #fff; font-weight: 800; font-size: 13px; padding: 5px 11px; border-radius: 999px; margin-top: 6px; cursor: pointer; }
+  .goal { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+  .goal .seg button { padding: 6px 10px; font-size: 13.5px; }
+  .gp { font-weight: 800; font-size: 13.5px; color: var(--soft); }
+  .gp.ok { color: var(--green-d); }
+  .tip { margin: 0; font-size: 13px; color: var(--soft); font-weight: 700; text-align: right; }
   .hello { display: flex; gap: 12px; align-items: flex-start; }
   .hello .bubble { flex: 1; }
   .next { display: flex; flex-direction: column; gap: 2px; }
   .next small { color: var(--soft); font-weight: 700; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row2 .btn { flex-direction: column; gap: 3px; padding: 13px 10px; }
-  .quests { display: flex; flex-direction: column; gap: 10px; }
-  .q { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; font-weight: 700; font-size: 14.5px; }
-  .q .bar { grid-column: 1 / -1; height: 9px; }
-  .q em { font-style: normal; color: var(--soft); font-size: 13px; font-weight: 800; }
-  .q.done { color: var(--green-d); }
   .menu { display: flex; flex-wrap: wrap; gap: 6px 18px; }
   .menu button { background: none; border: 0; padding: 4px 0; cursor: pointer; font-weight: 800; font-size: 15.5px; color: var(--ink); }
   .menu button:hover { color: var(--blue); }
@@ -197,8 +211,6 @@
     .acc.desk { display: none; }
     .home { grid-template-columns: 1fr; padding: 14px 16px 30px; }
     .logo { font-size: 36px; }
-    .rk { display: none; }
-    .lvl { padding-right: 4px; }
   }
   @media (min-width: 861px) { .home { min-height: 100dvh; align-content: center; } }
 </style>

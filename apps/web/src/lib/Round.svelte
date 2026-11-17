@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dep, DEPARTEMENTS, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
+  import { dep, DEPARTEMENTS, REGION, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
   import Map, { type Mark } from "./Map.svelte";
   import Fiche from "./Fiche.svelte";
   import { onDestroy, type Snippet } from "svelte";
@@ -62,7 +62,11 @@
   let nearError = $state("");
   /** Valider sans avoir placé le département : on prévient une fois avant d'envoyer. */
   let nudge = $state(false);
-  const needsPlacing = $derived(!result && !submitted && has("carte") && !sel);
+  // Première rencontre : on montre d'abord la réponse (« À retenir »), puis on pose la question.
+  // svelte-ignore state_referenced_locally
+  let taught = $state(!q.teach);
+  const teaching = $derived(!taught && !result);
+  const needsPlacing = $derived(!teaching && !result && !submitted && has("carte") && !sel);
 
   // La carte ne sert qu'à placer le département ; les voisins se tapent (nom ou numéro).
   const mapTarget = $derived(has("carte") ? "carte" : null);
@@ -185,7 +189,9 @@
   const mapHelp = $derived(result ? "" : mapTarget !== "carte" ? "" : sel ? `Placé ! Tu peux changer en ${coarse ? "touchant" : "cliquant"} un autre département.` : coarse ? "Touche la région, puis le département. Pince pour zoomer." : "Clique le département sur la carte.");
 </script>
 
-<div class="round" class:review={!!result} class:placing={!result && mapTarget === "carte" && !sel} class:nudge={nudge && needsPlacing}>
+<svelte:window onkeydown={(e) => { if (teaching && e.key === "Enter") { e.preventDefault(); taught = true; } }} />
+
+<div class="round" class:review={!!result} class:placing={!teaching && !result && mapTarget === "carte" && !sel} class:nudge={nudge && needsPlacing}>
   <div class="mapwrap">
     {#if mobile && !result && timed}
       <div class="timer top" aria-label="Temps restant">
@@ -202,11 +208,11 @@
           </div>
         {/key}
         <span class="help sub">{candidates ? "Choisis parmi les 4 départements surlignés" : coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
-      {:else}
+      {:else if !teaching}
         <span class="help">{mapHelp}</span>
       {/if}
     </div>
-    <Map {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} {candidates} />
+    <Map marks={teaching ? { ...history, [q.code]: "hint" } : marks} interactive={!teaching && !result && !!mapTarget} zoomable onpick={pick} candidates={teaching ? undefined : candidates} />
   </div>
 
   <section class="panel">
@@ -215,6 +221,17 @@
       <span class="secs tabnum">{result ? "" : Math.ceil(remaining / 1000) + " s"}</span>
     </div>
 
+    {#if teaching}
+      <div class="teach">
+        <span class="kicker">À retenir</span>
+        <h2 class="qname">{d.nom}</h2>
+        <dl>
+          <div class:hl={q.fields.includes("carte")}><dt>Sur la carte</dt><dd>{d.outreMer ? "outre-mer" : `en ${REGION.get(d.region)?.nom ?? ""}`}, il clignote</dd></div>
+          <div class:hl={q.fields.includes("numero")}><dt>Numéro</dt><dd class="tabnum">{d.code}</dd></div>
+          <div class:hl={q.fields.includes("prefecture")}><dt>Préfecture</dt><dd>{d.prefecture}</dd></div>
+        </dl>
+      </div>
+    {:else}
     <div class="clue" class:has-sw={!!(answerMode && onmode && !result)}>
       {#if answerMode && onmode && !result}
         <button class="modesw" onclick={() => onmode(answerMode === "choix" ? "libre" : "choix")} aria-label={answerMode === "choix" ? "Répondre au clavier" : "Répondre avec des propositions"}>
@@ -236,7 +253,8 @@
       {/if}
     </div>
 
-    <div class="fields">
+    {/if}
+    <div class="fields" class:hidden={teaching}>
       {#if has("carte")}
         {@const r = fieldResult("carte")}
         <div class="f carte" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
@@ -334,7 +352,9 @@
           {/each}
         </ul>
       {/if}
-      {#if !result}
+      {#if teaching}
+        <button class="btn big blue" onclick={() => (taught = true)}>C'est retenu <kbd>↵</kbd></button>
+      {:else if !result}
         <button class="btn big" onclick={() => submit()} disabled={submitted}>{submitted ? "Envoyé" : nudge && needsPlacing ? "Valider sans placer" : "Valider"} <kbd>↵</kbd></button>
       {:else}
         {@render action?.()}
@@ -347,6 +367,12 @@
   .round { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr); gap: 22px; align-items: start; }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
   .clue { position: relative; }
+  .teach { display: flex; flex-direction: column; gap: 6px; }
+  .teach dl { margin: 6px 0 0; display: flex; flex-direction: column; gap: 6px; }
+  .teach dl > div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; background: var(--bg); border-radius: 12px; padding: 8px 12px; }
+  .teach dt { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
+  .teach dd { margin: 0; font-weight: 900; font-size: 17px; text-align: right; }
+  .teach .hl { background: #fff4c2; box-shadow: inset 0 0 0 2px var(--yellow); }
   .clue.has-sw { padding-right: 118px; }
   .modesw { position: absolute; right: 0; top: 0; border: 0; background: var(--bg); color: var(--ink); font-weight: 800; font-size: 13px; padding: 6px 11px; border-radius: 999px; cursor: pointer; box-shadow: 0 2px 0 var(--line); z-index: 1; }
   .modesw:active { transform: translateY(2px); box-shadow: none; }
@@ -447,7 +473,6 @@
     .verdict { display: flex; align-items: center; gap: 10px; width: 100%; }
     .vt { flex: 1; display: flex; flex-direction: column; line-height: 1.15; }
     .vt b { font-weight: 900; font-size: 18px; }
-    .vt small { font-weight: 700; font-size: 13px; opacity: .85; }
     .vp { font-family: var(--f-pop); font-size: 26px; }
     /* Correction : une petite fiche blanche, une ligne par question (pastille ✓/✗, intitulé, bonne réponse) */
     .recap { list-style: none; margin: 0; padding: 4px 12px; width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 3px 0 rgba(28, 26, 55, .1); display: flex; flex-direction: column; }

@@ -3,7 +3,7 @@
   import { tourRegionOf, OUTRE_MER } from "@hexa/game";
   import { MAP, IDF_SOURCE, IDF_TARGET, zoomTransform } from "./map.ts";
 
-  export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near" | "done-ok" | "done-ko";
+  export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near" | "done-ok" | "done-ko" | "focus";
   interface Props {
     marks?: Record<string, Mark>;
     fills?: Record<string, string>;
@@ -271,6 +271,8 @@
   .regions path { fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; pointer-events: none; }
   .zoom use { stroke-width: .8; stroke: #8a806c; }
   .interactive .deps use { cursor: pointer; }
+  /* Région choisie pour la prochaine séance (accueil) : simple contour, la couleur reste celle de la maîtrise */
+  .deps use.focus { stroke: var(--ink); stroke-width: 2.2; stroke-dasharray: 5 3; }
   /* Propositions sur la carte : 4 départements surlignés, les autres en retrait */
   .choosing .deps use:not(.cand) { cursor: default; fill: #f4efe4; }
   .deps use.cand { fill: #fff1a8; stroke: var(--ink); stroke-width: 1.8; }

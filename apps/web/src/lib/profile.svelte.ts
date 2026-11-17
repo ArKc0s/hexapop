@@ -1,4 +1,4 @@
-// Profil de jeu (XP, série, quêtes, étoiles, album, badges) : stocké dans le navigateur,
+// Profil de jeu (kilomètres, série, étoiles et médailles, badges) : stocké dans le navigateur,
 // fusionné avec le compte quand on est connecté.
 import { applyGame, emptyProfile, migrateKnowledge, sanitizeProfile, type GameReport, type Profile, type Progress, type Rewards } from "@hexa/game";
 
@@ -33,6 +33,20 @@ class ProfileStore {
     this.save();
     for (const fn of this.listeners) fn();
     return rewards;
+  }
+
+  /** « Tu viens d'où ? » (null : passé). */
+  setHome(code: string | null) {
+    this.data = { ...this.data, home: code ?? undefined };
+    this.save();
+    for (const fn of this.listeners) fn();
+  }
+
+  /** Région choisie sur la carte de l'accueil pour la prochaine séance (null : retour à l'ordre normal). */
+  setFocus(region: string | null) {
+    this.data = { ...this.data, focus: region ?? undefined };
+    this.save();
+    for (const fn of this.listeners) fn();
   }
 
   setTourStart(region: string) {

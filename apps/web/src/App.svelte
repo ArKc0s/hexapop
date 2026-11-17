@@ -12,7 +12,6 @@
   import Live from "./screens/Live.svelte";
   import Stage from "./screens/Stage.svelte";
   import Legal from "./screens/Legal.svelte";
-  import Tour from "./screens/Tour.svelte";
   import Training from "./screens/Training.svelte";
   import Album from "./screens/Album.svelte";
   import Reminders from "./screens/Reminders.svelte";
@@ -33,7 +32,6 @@
 {:else if nav.screen.name === "setup"}<Setup mode={nav.screen.mode} />
 {:else if nav.screen.name === "play"}{#key nav.screen}<Play config={nav.screen.config} title={nav.screen.title} learn={nav.screen.learn} mode={nav.screen.mode} region={nav.screen.region} />{/key}
 {:else if nav.screen.name === "results"}{#key nav.screen}<Results {...nav.screen} />{/key}
-{:else if nav.screen.name === "tour"}{#key nav.screen}<Tour region={nav.screen.region} />{/key}
 {:else if nav.screen.name === "training"}<Training />
 {:else if nav.screen.name === "album"}<Album tab={nav.screen.tab} />
 {:else if nav.screen.name === "rappels"}<Reminders />

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { BADGE, TOUR, levelInfo, nextTourRegion, questsFor, dayKey, QUEST_POOL, randomSeed, type Question, type RoundResult, type Rewards } from "@hexa/game";
+  import { BADGE, TOUR, nextTourRegion, randomSeed, type Question, type RoundResult, type Rewards } from "@hexa/game";
+  import { startSeance } from "../lib/seance.svelte.ts";
   import Map, { type Mark } from "../lib/Map.svelte";
   import Fiche from "../lib/Fiche.svelte";
   import Stars from "../lib/ui/Stars.svelte";
@@ -25,8 +26,6 @@
   const marks: Record<string, Mark> = Object.fromEntries(results.map((x) => [x.code, x.accuracy >= 0.999 ? "done-ok" : "done-ko"]));
   let focus = $state<string | null>(missed[0]?.code ?? null);
 
-  const before = levelInfo(r.xpBefore), after = levelInfo(r.xpBefore + r.xp);
-  const levelUp = r.levelAfter > r.levelBefore;
   const rank = titleFor(profile.data.know ?? {}).name;
   // Étoiles gagnées, regroupées par département (« Finistère : placer, numéro »).
   const FACET_LABEL: Record<Facet, string> = { carte: "placer", numero: "numéro", prefecture: "préfecture", sousPrefectures: "sous-préfectures", limitrophes: "voisins" };
@@ -37,20 +36,17 @@
   })();
   const newStars = r.knowledge?.stars.length ?? 0;
   const pctNow = taFrance(profile.data.know ?? {});
-  let xpWidth = $state(before.ratio * 100);
   // Quitter l'écran avant l'invitation l'annule (elle ne doit jamais surgir pendant la partie suivante).
   let offerTimer: ReturnType<typeof setTimeout> | undefined;
   onDestroy(() => clearTimeout(offerTimer));
   onMount(() => {
-    setTimeout(() => { xpWidth = levelUp ? 100 : after.ratio * 100; sound.play(levelUp ? "level" : "tick"); }, 700);
-    if (levelUp) setTimeout(() => (xpWidth = after.ratio * 100), 1500);
+    setTimeout(() => sound.play("tick"), 700);
     if (r.stars && r.stars.after > r.stars.before) setTimeout(() => sound.play("star"), 300);
     // Invité : on laisse voir les récompenses, puis on propose de les garder.
     offerTimer = setTimeout(() => signup.offer({ kind: "solo", xp: r.xp, stars: newStars, firstGame: profile.data.stats.games <= 1 }), 1000);
   });
 
-  const quests = questsFor(dayKey(Date.now()));
-  const questLabel = (id: string) => QUEST_POOL.find((q) => q.id === id)?.label ?? id;
+  const weekKm = profile.data.week?.km ?? r.xp;
   const regionName = r.stars ? TOUR.get(r.stars.region)?.nom : null;
   const next = play.mode === "tour" ? nextTourRegion(profile.data) : null;
 
@@ -73,10 +69,9 @@
     <span class="riso score" data-t={total.toLocaleString("fr-FR")}>{total.toLocaleString("fr-FR")}</span>
     <p class="sub">{perfect} sur {results.length} sans faute{r.bestCombo >= 2 ? ` · meilleur combo ×${r.bestCombo}` : ""}</p>
 
-    <div class="xp">
-      <div class="xprow"><b>Niveau {levelUp ? r.levelAfter : r.levelBefore} · {rank}</b><b class="gain">+{r.xp} XP</b></div>
-      <div class="bar big"><i style="width:{xpWidth}%"></i></div>
-      {#if levelUp}<p class="lvl">Niveau {r.levelAfter} atteint !</p>{/if}
+    <div class="km">
+      <b class="gain tabnum">+{r.xp.toLocaleString("fr-FR")} km</b>
+      <span class="tabnum">{profile.data.xp.toLocaleString("fr-FR")} km parcourus · {weekKm.toLocaleString("fr-FR")} cette semaine · {rank}</span>
     </div>
 
     <div class="rewards">
@@ -86,9 +81,6 @@
       {#each r.newBadges as id (id)}
         <div class="rw"><span class="ico badge"><Icon name="trophy" size={26} /></span><div><span class="k">Badge débloqué</span><b>{BADGE.get(id)?.nom}</b><small>{BADGE.get(id)?.desc}</small></div></div>
       {/each}
-      {#each r.questsDone as id (id)}
-        <div class="rw"><span class="ico quest"><Icon name="check" size={24} /></span><div><span class="k">Quête du jour · +50 XP</span><b>{questLabel(id)}</b></div></div>
-      {/each}
       {#if r.knowledge?.medals.length}
         <div class="rw plates"><div><span class="k">{r.knowledge.medals.length === 1 ? "Nouvelle médaille" : `${r.knowledge.medals.length} nouvelles médailles`}</span>
           <div class="pl">{#each r.knowledge.medals.slice(0, 8) as m (m.code)}<span class="md"><Vignette code={m.code} tier={m.medal} size="s" /><small>{MEDAL_NAMES[m.medal]}</small></span>{/each}{#if r.knowledge.medals.length > 8}<span class="more">+{r.knowledge.medals.length - 8}</span>{/if}</div></div></div>
@@ -97,18 +89,13 @@
         <div class="rw"><span class="ico star"><Icon name="star" size={28} /></span><div><span class="k">+{newStars} étoile{newStars > 1 ? "s" : ""} · Ta France {pctNow} %</span>
           <ul class="sl">{#each starList.slice(0, 6) as s (s.code)}<li><b>{DEP.get(s.code)?.nom}</b> {s.facets.map((f) => FACET_LABEL[f]).join(", ")}</li>{/each}{#if starList.length > 6}<li class="more">et {starList.length - 6} autre{starList.length - 6 > 1 ? "s" : ""}</li>{/if}</ul></div></div>
       {:else if play.learn && r.knowledge}
-        <div class="rw"><span class="ico star dim"><Icon name="star" size={28} /></span><div><span class="k">Pas de nouvelle étoile</span><small>Une étoile se gagne en répondant juste sans aide : au clavier, ou sur la carte entière.</small></div></div>
+        <div class="rw"><span class="ico star dim"><Icon name="star" size={28} /></span><div><span class="k">Pas de nouvelle étoile</span><small>Une étoile se gagne en répondant juste sans qu'on t'aide : au clavier, sur la carte, ou parmi des propositions qui se ressemblent. La première rencontre avec un département ne compte pas encore.</small></div></div>
       {/if}
     </div>
 
     <div class="cta">
-      {#if play.mode === "tour"}
-        {#if (r.stars?.after ?? 0) < 1}
-          <button class="btn big" onclick={() => replay()}>Réessayer {regionName}</button>
-        {:else if next && next.code !== play.region}
-          <button class="btn big" onclick={() => nav.go({ name: "tour", region: next.code })}>Région suivante : {next.nom}</button>
-        {/if}
-        <button class="btn white big" onclick={() => nav.go({ name: "tour", region: play.region })}>Retour au Tour</button>
+      {#if play.mode === "seance"}
+        <button class="btn big" onclick={() => startSeance()}>Séance suivante</button>
       {:else}
         {#if missed.length}<button class="btn big" onclick={() => replay(missed.map((x) => x.code))}>Rejouer les {missed.length} ratés</button>{/if}
         <button class="btn white big" onclick={() => replay()}>Rejouer</button>
@@ -117,7 +104,6 @@
     </div>
     <SaveCard then={{ name: "home" }} />
     <PushCard />
-    <p class="quests k">Quêtes du jour : {quests.filter((q) => (profile.data.quests.progress[q.id] ?? 0) >= q.target).length}/3</p>
   </section>
 
   <section class="review">
@@ -138,12 +124,10 @@
   .head { display: flex; align-items: center; gap: 12px; }
   .score { font-size: clamp(64px, 9vw, 96px); }
   .sub { color: var(--soft); font-weight: 700; }
-  .xp { width: min(460px, 100%); display: flex; flex-direction: column; gap: 6px; text-align: left; }
-  .xprow { display: flex; justify-content: space-between; }
+  .km { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .km .gain { font-size: 22px; font-weight: 900; }
+  .km span { color: var(--soft); font-weight: 700; font-size: 14px; }
   .gain { color: var(--green-d); }
-  .bar.big { height: 16px; }
-  .bar.big i { background: linear-gradient(90deg, var(--green), #5fd6a4); transition: width 1.2s cubic-bezier(.2, .8, .2, 1); }
-  .lvl { font-weight: 900; color: var(--green-d); animation: pop-in .4s cubic-bezier(.2, 1.6, .4, 1); }
   .rewards { width: min(460px, 100%); display: flex; flex-direction: column; gap: 8px; }
   .rw { background: #fff; border-radius: 18px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; text-align: left; box-shadow: 0 4px 0 var(--line); animation: pop-in .4s cubic-bezier(.2, 1.4, .4, 1) both; }
   .rw:nth-child(2) { animation-delay: .1s; } .rw:nth-child(3) { animation-delay: .2s; } .rw:nth-child(4) { animation-delay: .3s; }
@@ -152,7 +136,6 @@
   .ico { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; flex: none; }
   .flame { background: #ffe8d6; }
   .badge { background: var(--yellow); box-shadow: 0 3px 0 var(--yellow-d); color: var(--ink); }
-  .quest { background: var(--green); color: #fff; box-shadow: 0 3px 0 var(--green-d); }
   .pl { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .md { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
   .md small { font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }

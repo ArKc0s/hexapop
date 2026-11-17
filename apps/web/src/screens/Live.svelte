@@ -95,7 +95,7 @@
           <li class:me={p.id === live.you}><span class="tabnum pos">{p.level === "expert" ? "E" : "N"}</span><span>{p.name}</span><b class="tabnum">{p.score} pts</b></li>
         {/each}
       </ol>
-      {#if rewards}<p class="xp">+{rewards.xp} XP</p>{/if}
+      {#if rewards}<p class="xp">+{rewards.xp} km</p>{/if}
       <SaveCard />
       <div class="cta">
         {#if me?.host}<button class="btn big" onclick={() => live.send({ t: "rematch" })}>Rejouer ensemble</button>{:else}<span class="hint">L'hôte peut relancer une partie.</span>{/if}
@@ -111,7 +111,7 @@
           <li class:me={p.id === live.you}><span class="tabnum pos">{i + 1}</span><span>{p.name}{p.home ? ` · ${p.home}` : ""}</span><b class="tabnum">{p.hp !== undefined ? `${p.hp} PV` : `${p.score} pts`}</b></li>
         {/each}
       </ol>
-      {#if rewards}<p class="xp">+{rewards.xp} XP{rewards.newBadges.length ? " · nouveau badge !" : ""}</p>{/if}
+      {#if rewards}<p class="xp">+{rewards.xp} km{rewards.newBadges.length ? " · nouveau badge !" : ""}</p>{/if}
       <SaveCard />
       <div class="cta">
         {#if me?.host}<button class="btn big" onclick={() => live.send({ t: "rematch" })}>Revanche</button>{:else}<span class="hint">L'hôte peut lancer une revanche.</span>{/if}

@@ -37,6 +37,14 @@ export interface Profile {
   badges: Record<string, number>;
   /** Connaissance par département et par facette (étoiles, médailles). Absente = profil d'avant la v1.4, à reprendre. */
   know?: Knowledge;
+  /** Département d'origine (« Tu viens d'où ? ») : la séance commence par sa région. */
+  home?: string;
+  /** Région choisie sur la carte de l'accueil pour la séance (sinon la suivante dans l'ordre de découverte). */
+  focus?: string;
+  /** Kilomètres (ex-XP) de la semaine en cours, pour les ligues et entre amis. */
+  week?: { id: string; km: number };
+  /** Parties du jour, pour l'objectif personnel facultatif. */
+  today?: { day: string; games: number };
   stats: { games: number; rounds: number; perfectRounds: number; bestCombo: number; dailyPlayed: number; duelsWon: number; marathons: number };
 }
 
@@ -65,6 +73,11 @@ export function mergeProfiles(a: Profile, b: Profile): Profile {
   for (const k of new Set([...Object.keys(a.tiers), ...Object.keys(b.tiers)])) if (DEP.has(k)) p.tiers[k] = Math.max(a.tiers[k] ?? 0, b.tiers[k] ?? 0);
   p.badges = { ...b.badges, ...a.badges };
   if (a.know || b.know) p.know = mergeKnowledge(a.know ?? {}, b.know ?? {});
+  p.home = a.home ?? b.home;
+  p.focus = a.focus ?? b.focus;
+  const later = <T extends { id?: string; day?: string }>(x?: T, y?: T, key: "id" | "day" = "id") => (!x ? y : !y ? x : (x[key] ?? "") >= (y[key] ?? "") ? x : y);
+  if (a.week || b.week) p.week = a.week && b.week && a.week.id === b.week.id ? { id: a.week.id, km: Math.max(a.week.km, b.week.km) } : later(a.week, b.week);
+  if (a.today || b.today) p.today = a.today && b.today && a.today.day === b.today.day ? { day: a.today.day, games: Math.max(a.today.games, b.today.games) } : later(a.today, b.today, "day");
   for (const k of Object.keys(p.stats) as (keyof Profile["stats"])[]) p.stats[k] = Math.max(a.stats[k] ?? 0, b.stats[k] ?? 0);
   return p;
 }
@@ -91,6 +104,10 @@ export function sanitizeProfile(raw: unknown): Profile {
   for (const [k, v] of Object.entries(r.badges ?? {})) if (BADGES.some((b) => b.id === k)) p.badges[k] = num(v, 1e13);
   const know = sanitizeKnowledge(r.know);
   if (know) p.know = know;
+  if (typeof r.home === "string" && DEP.has(r.home)) p.home = r.home;
+  if (typeof r.focus === "string" && TOUR_REGIONS.some((t) => t.code === r.focus)) p.focus = r.focus;
+  if (r.week && day(r.week.id)) p.week = { id: r.week.id, km: num(r.week.km, 1e8) };
+  if (r.today && day(r.today.day)) p.today = { day: r.today.day, games: num(r.today.games, 1e4) };
   for (const k of Object.keys(p.stats) as (keyof Profile["stats"])[]) p.stats[k] = num(r.stats?.[k], 1e7);
   return p;
 }
@@ -169,7 +186,7 @@ export function nextTourRegion(p: Profile): TourRegion | null {
 }
 
 // ---------- quêtes ----------
-export type GameMode = "apprendre" | "eclair" | "region" | "marathon" | "tour" | "daily" | "multi";
+export type GameMode = "apprendre" | "eclair" | "region" | "marathon" | "tour" | "daily" | "multi" | "seance";
 export interface GameReport {
   mode: GameMode;
   level: Level;
@@ -229,8 +246,8 @@ export const BADGES: BadgeDef[] = [
   { id: "album-101", nom: "Album complet", desc: "Les 101 départements en bronze", test: (_c, p) => medalCount(p, 1) >= 101 },
   { id: "argent-101", nom: "Tout en argent", desc: "Les 101 départements au moins en argent", test: (_c, p) => medalCount(p, 2) >= 101 },
   { id: "or-101", nom: "Tout en or", desc: "Les 101 départements en or", test: (_c, p) => medalCount(p, 3) >= 101 },
-  { id: "region-3", nom: "Chez soi", desc: "3 étoiles dans une région", test: (_c, p) => Object.values(p.stars).some((s) => s >= 3) },
-  { id: "tour-complet", nom: "Tour de France", desc: "Au moins une étoile dans toutes les régions", test: (_c, p) => TOUR_REGIONS.every((r) => (p.stars[r.code] ?? 0) > 0) },
+  { id: "region-3", nom: "Chez soi", desc: "Une région entière en bronze", test: (_c, p) => TOUR_REGIONS.some((r) => r.deps.every((c) => medal(p, c) >= 1)) },
+  { id: "tour-complet", nom: "Tour de France", desc: "Au moins une étoile dans chaque région", test: (_c, p) => TOUR_REGIONS.every((r) => r.deps.some((c) => (p.know?.[c] ? Object.values(p.know[c]).some((x) => x?.s) : false))) },
   { id: "serie-7", nom: "Une semaine", desc: "Jouer 7 jours d'affilée", test: (_c, p) => p.streak.count >= 7 },
   { id: "serie-30", nom: "Un mois", desc: "Jouer 30 jours d'affilée", test: (_c, p) => p.streak.count >= 30 },
   { id: "defi-7", nom: "Habitué du défi", desc: "Jouer 7 défis du jour", test: (_c, p) => p.stats.dailyPlayed >= 7 },
@@ -320,21 +337,15 @@ export function applyGame(prev: Profile, report: GameReport): { profile: Profile
   if (report.mode === "marathon" && report.results.length >= 101) p.stats.marathons += 1;
   if (report.won) p.stats.duelsWon += 1;
 
-  // Quêtes du jour
-  if (p.quests.day !== today) p.quests = { day: today, progress: {} };
+  // Les quêtes du jour sont retirées (v1.5) : la série et l'objectif personnel portent le rendez-vous quotidien.
   const ctx: Ctx = { report, perfect, bestCombo, starsGained };
   const questsDone: string[] = [];
-  for (const q of questsFor(today)) {
-    const before = p.quests.progress[q.id] ?? 0;
-    if (before >= q.target) continue;
-    const m = q.measure(ctx);
-    const after = Math.min(q.target, q.mode === "max" ? Math.max(before, m) : before + m);
-    p.quests.progress[q.id] = after;
-    if (after >= q.target) { questsDone.push(q.id); xp += QUEST_XP; }
-  }
+  p.today = p.today?.day === today ? { day: today, games: p.today.games + 1 } : { day: today, games: 1 };
 
   const xpBefore = p.xp;
   p.xp += xp;
+  // Kilomètres de la semaine (ex-XP) : base des futures ligues.
+  p.week = p.week?.id === week ? { id: week, km: p.week.km + xp } : { id: week, km: xp };
 
   // Badges (après mise à jour du profil)
   const newBadges = BADGES.filter((b) => !p.badges[b.id] && b.test(ctx, p)).map((b) => b.id);

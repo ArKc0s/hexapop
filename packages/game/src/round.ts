@@ -21,7 +21,14 @@ export interface Question {
   choices?: Partial<Record<ChoiceField, string[]>>;
   /** Pour placer sur la carte en mode propositions : 4 départements surlignés, dont le bon. */
   mapChoices?: string[];
+  /** Première rencontre : on montre la réponse avant de demander (séance Continuer). */
+  teach?: boolean;
+  /** Propositions faciles (leurres lointains) : la bonne réponse ne compte que comme « vue ». */
+  easy?: boolean;
 }
+
+/** Question imposée (séance composée) : département, indice, ce qu'on demande. */
+export interface PlanItem { code: string; hint: Hint; ask: Field[]; teach?: boolean; easy?: boolean }
 
 export interface Answer {
   carte?: string;
@@ -64,6 +71,8 @@ export interface GameConfig {
   durationMs?: number;
   /** Prépare toujours les propositions, pour basculer clavier / propositions en cours de partie. */
   switchable?: boolean;
+  /** Séance composée : les questions dans cet ordre (remplace codes, rounds, hints, ask). */
+  plan?: PlanItem[];
 }
 
 export const POINTS_PER_FIELD = 100;
@@ -91,6 +100,11 @@ function distractors(d: Departement, r: Rng): Departement[] {
   return [...near.slice(0, 2), ...region.slice(0, 1), ...rest].slice(0, 3);
 }
 
+/** Leurres lointains (autres régions, pas de voisin) : pour la première rencontre. */
+function easyDistractors(d: Departement, r: Rng): Departement[] {
+  return shuffle(DEPARTEMENTS.filter((x) => x.region !== d.region && !d.limitrophes.includes(x.code) && x.outreMer === d.outreMer), r).slice(0, 3);
+}
+
 function makeChoices(d: Departement, fields: Field[], others: Departement[], r: Rng): Question["choices"] {
   const out: Question["choices"] = {};
   const pick = (f: ChoiceField, get: (x: Departement) => string) => {
@@ -109,6 +123,21 @@ export function playable(hints: Hint[], ask: Field[]): boolean {
 
 export function makeGame(cfg: GameConfig): Question[] {
   const r = rng(cfg.seed);
+  if (cfg.plan) {
+    const duration = cfg.durationMs ?? 0;
+    return cfg.plan.filter((it) => DEP.has(it.code)).map((it, index) => {
+      const d = dep(it.code);
+      let fields = fieldsFor(d, it.hint, cfg.level, it.ask);
+      if (!fields.length) fields = fieldsFor(d, it.hint, cfg.level, ["carte", "numero", "prefecture"]);
+      const q: Question = { index, code: it.code, hint: it.hint, fields, durationMs: duration };
+      if (it.teach) q.teach = true;
+      if (it.easy) q.easy = true;
+      const others = it.easy ? easyDistractors(d, r) : distractors(d, r);
+      q.choices = makeChoices(d, fields, others, r);
+      if (fields.includes("carte")) q.mapChoices = shuffle([d.code, ...others.map((x) => x.code)], r);
+      return q;
+    });
+  }
   const pool = cfg.codes ?? DEPARTEMENTS.map((d) => d.code);
   const codes = shuffle(pool, r).slice(0, cfg.rounds ?? pool.length);
   const hints = cfg.hints ?? ["nom", "numero", "carte"];

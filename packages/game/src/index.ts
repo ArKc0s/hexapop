@@ -6,3 +6,4 @@ export * from "./srs.ts";
 export * from "./protocol.ts";
 export * from "./meta.ts";
 export * from "./knowledge.ts";
+export * from "./seance.ts";

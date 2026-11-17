@@ -36,7 +36,8 @@
   const rounds: RoundPlay[] = [];
   function submit(a: Answer) {
     if (answerMode === "choix") usedChoices = true;
-    const helped = play.config.switchable ? answerMode === "choix" : play.config.input === "choix";
+    // Seules les propositions faciles (première rencontre) ne comptent que comme « vues » ; les autres font gagner l'étoile.
+    const helped = (play.config.switchable ? answerMode === "choix" : play.config.input === "choix") && !!q.easy;
     const aided = helped ? q.fields.filter((f: Field) => (f === "carte" ? !!q.mapChoices : !!q.choices?.[f as "nom"])) : [];
     rounds.push({ hint: q.hint, fields: q.fields, aided });
     result = grade(q, a);
@@ -58,7 +59,7 @@
   }
   function quit() {
     if (results.length && play.learn) progress.record(results);
-    nav.go(play.mode === "tour" ? { name: "tour", region: play.region } : { name: "home" });
+    nav.go({ name: "home" });
   }
 </script>
 

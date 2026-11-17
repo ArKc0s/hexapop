@@ -12,7 +12,7 @@
   const daily = $derived(r?.kind === "daily");
   const gains = $derived.by(() => {
     if (!r) return "";
-    const parts = [r.xp ? `+${r.xp} XP` : "", r.stars ? `${r.stars} étoile${r.stars > 1 ? "s" : ""}` : ""].filter(Boolean);
+    const parts = [r.xp ? `+${r.xp} km` : "", r.stars ? `${r.stars} étoile${r.stars > 1 ? "s" : ""}` : ""].filter(Boolean);
     return parts.join(" et ");
   });
   function go(view: "register" | "login") {
