@@ -83,8 +83,12 @@
   const headline = r.stars && r.stars.after > r.stars.before ? (r.stars.after === 3 ? "Région maîtrisée !" : "Nouvelle étoile !")
     : perfect === results.length ? "Sans faute !" : perfect >= results.length / 2 ? "Belle partie !" : "Ça rentre petit à petit.";
 
+  /** « Rejouer les ratés » : seulement ceux-là, en gardant la configuration de départ.
+   *  « Rejouer » : toujours la partie de départ (pas la dernière série de ratés). */
+  const origin = play.origin ?? play.config;
   function replay(codes?: string[]) {
-    nav.go({ ...play, config: { ...play.config, seed: randomSeed(), ...(codes ? { codes, rounds: undefined } : {}) } });
+    if (codes) nav.go({ ...play, origin, config: { ...origin, seed: randomSeed(), codes, rounds: undefined } });
+    else nav.go({ ...play, origin: undefined, config: { ...origin, seed: randomSeed() } });
   }
 </script>
 
@@ -144,8 +148,9 @@
         <button class="btn big" onclick={() => startSeance()}>Séance suivante</button>
       {:else}
         {#if missed.length}<button class="btn big" onclick={() => replay(missed.map((x) => x.code))}>Rejouer les {missed.length} ratés</button>{/if}
-        <button class="btn white big" onclick={() => replay()}>Rejouer</button>
+        <button class="btn white big" onclick={() => replay()}>{play.origin ? "Nouvelle partie" : "Rejouer"}</button>
       {/if}
+      {#if play.mode === "eclair" || play.mode === "region" || play.mode === "marathon"}<button class="link" onclick={() => nav.go({ name: "training" })}>Changer les réglages</button>{/if}
       <button class="link" onclick={() => nav.go({ name: "home" })}>Accueil</button>
     </div>
     <SaveCard then={{ name: "home" }} />

@@ -4,6 +4,13 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
+    id: 10, version: "1.14.1", date: "2026-11-17", title: "Entraînement : rejouer sans tout reconfigurer",
+    items: [
+      "Après « Rejouer les ratés », le bouton « Nouvelle partie » relance ton entraînement complet, et plus la dernière série de ratés (merci Mathis !).",
+      "« Changer les réglages » ramène directement aux réglages de l'Entraînement depuis le bilan.",
+    ],
+  },
+  {
     id: 9, version: "1.14", date: "2026-11-17", title: "Les kilomètres à chaque réponse",
     items: [
       "En solo, chaque réponse affiche les kilomètres qu'elle fait gagner à Hexa (combo compris).",

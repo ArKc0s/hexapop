@@ -41,7 +41,7 @@
 {#key nav.screen}
 <svelte:boundary onerror={(e) => console.error("[écran]", e)}>
 {#if nav.screen.name === "home"}<Home />
-{:else if nav.screen.name === "play"}{#key nav.screen}<Play config={nav.screen.config} title={nav.screen.title} learn={nav.screen.learn} mode={nav.screen.mode} region={nav.screen.region} />{/key}
+{:else if nav.screen.name === "play"}{#key nav.screen}<Play config={nav.screen.config} title={nav.screen.title} learn={nav.screen.learn} mode={nav.screen.mode} region={nav.screen.region} origin={nav.screen.origin} />{/key}
 {:else if nav.screen.name === "results"}{#key nav.screen}<Results {...nav.screen} />{/key}
 {:else if nav.screen.name === "training"}<Training preset={nav.screen.preset} />
 {:else if nav.screen.name === "album"}<Album tab={nav.screen.tab} />
