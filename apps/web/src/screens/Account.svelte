@@ -94,6 +94,8 @@
       </form>
     </div>
     <div class="links"><button onclick={() => (current = "register")}>Créer un compte</button><button onclick={() => (current = "forgot")}>Mot de passe oublié</button></div>
+    <!-- Sans compte, les rappels restent réglables (ils sont propres à l'appareil) -->
+    <div class="links"><button onclick={() => nav.go({ name: "rappels" })}>Rappels sur cet appareil, sans compte</button></div>
   {:else if current === "register"}
     <p class="fine">Un compte garde ta progression sur tous tes appareils et t'inscrit aux classements.</p>
     <div class="card box">

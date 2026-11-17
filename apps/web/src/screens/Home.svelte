@@ -30,6 +30,11 @@
   function setGoal(g: number) { goal = g; try { localStorage.setItem("hexa.goal", String(g)); } catch { /* */ } }
   const goalDone = $derived(goal > 0 && todayGames >= goal);
   const names = (codes: string[]) => codes.map((c) => DEP.get(c)?.nom).join(", ");
+  /** Ce que contient la prochaine séance, écrit dans le bouton Continuer. */
+  const seanceDesc = $derived(
+    seance.kind === "revision" ? `Révisions · ${seance.reviews} département${seance.reviews > 1 ? "s" : ""} à revoir, partout en France`
+    : seance.region ? `${seance.region.nom}${seance.reviews ? ` · ${seance.reviews} à revoir` : ""}${seance.discover.length ? ` · nouveau : ${names(seance.discover)}` : ""}`
+    : "");
   /** Toucher la carte : la prochaine séance se fait dans cette région. */
   function focusOn(code: string) {
     const r = tourRegionOf(code);
@@ -87,7 +92,7 @@
       <!-- Sur mobile, compte et son sur la même ligne que le logo et la série -->
       <div class="acc mob">
         {#if session.me}
-          <button class="back" onclick={() => nav.go({ name: "account", view: "profile" })}>{session.me.pseudo}</button>
+          <button class="back me" title="Ton profil, tes réglages et tes rappels" aria-label="{session.me.pseudo} : profil et réglages" onclick={() => nav.go({ name: "account", view: "profile" })}><Icon name="gear" size={15} /><span>{session.me.pseudo}</span></button>
         {:else if session.online}
           <button class="back" onclick={() => nav.go({ name: "account", view: "login" })}>Connexion</button>
         {/if}
@@ -111,18 +116,15 @@
       </div>
     {/if}
 
-    <div class="next">
-      <button class="btn big wide" onclick={play}>Continuer <Icon name="play" size={20} /></button>
-      {#if seance.kind === "revision"}
-        <small><b>Révisions</b> · {seance.reviews} département{seance.reviews > 1 ? "s" : ""} à revoir, partout en France</small>
-      {:else if seance.region}
-        <small><b>{seance.region.nom}</b>{seance.reviews ? ` · ${seance.reviews} à revoir` : ""}{seance.discover.length ? ` · nouveau : ${names(seance.discover)}` : ""}</small>
-        {#if seance.elsewhere}<button class="link more" onclick={() => startSeance("revision")}>Plutôt réviser {seance.elsewhere} département{seance.elsewhere > 1 ? "s" : ""} ailleurs</button>{/if}
-      {/if}
-      {#if p.focus && TOUR.has(p.focus)}<button class="focus" onclick={() => profile.setFocus(null)}>Région choisie : {TOUR.get(p.focus)?.nom} <span aria-label="Annuler">✕</span></button>{/if}
-    </div>
-
-    <div class="modes">
+    <div class="actions">
+      <div class="next">
+        <button class="btn big wide go" onclick={play}>
+          <span>Continuer <Icon name="play" size={20} /></span>
+          {#if seanceDesc}<small>{seanceDesc}</small>{/if}
+        </button>
+        {#if seance.kind === "region" && seance.elsewhere}<button class="link more" onclick={() => startSeance("revision")}>Plutôt réviser {seance.elsewhere} département{seance.elsewhere > 1 ? "s" : ""} ailleurs</button>{/if}
+        {#if p.focus && TOUR.has(p.focus)}<button class="focus" onclick={() => profile.setFocus(null)}>Région choisie : {TOUR.get(p.focus)?.nom} <span aria-label="Annuler">✕</span></button>{/if}
+      </div>
       <div class="row2">
         <button class="btn pink" disabled={!session.online} onclick={() => nav.go({ name: "daily" })}>Défi du jour<small>nouveau dans {countdown}</small></button>
         <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel, équipe ou soirée</small></button>
@@ -138,7 +140,7 @@
       <div class="goal">
         <div class="gh">
           <span class="k">Objectif du jour</span>
-          <span class="gp tabnum" class:ok={goalDone}>{goal ? (goalDone ? `Atteint ! ${todayGames}/${goal}` : `${todayGames}/${goal} partie${goal > 1 ? "s" : ""}`) : "Aucun, et c'est très bien aussi"}</span>
+          <span class="gp tabnum" class:ok={goalDone}>{goal ? (goalDone ? `Atteint ! ${todayGames}/${goal}` : `${todayGames}/${goal} partie${goal > 1 ? "s" : ""}`) : "Aucun"}</span>
         </div>
         <!-- Un seul contrôle : chaque hexagone est une partie. On touche le 3e pour viser 3 parties ; ils se remplissent quand on joue. -->
         <div class="pips" role="group" aria-label="Parties par jour visées">
@@ -146,16 +148,15 @@
             <button class="pip" class:aim={n <= goal} class:done={n <= todayGames} aria-pressed={goal === n}
               aria-label={goal === n ? `Objectif : ${n} partie${n > 1 ? "s" : ""} par jour (toucher pour retirer)` : `Viser ${n} partie${n > 1 ? "s" : ""} par jour`}
               title={goal === n ? "Toucher à nouveau pour retirer l'objectif" : `${n} partie${n > 1 ? "s" : ""} par jour`}
-              onclick={() => setGoal(goal === n ? 0 : n)}><i></i></button>
+              onclick={() => setGoal(goal === n ? 0 : n)}><i></i><b class="tabnum">{n}</b></button>
           {/each}
-          {#if !goal}<span class="ph">Touche un hexagone pour viser autant de parties par jour</span>{/if}
+          <span class="ph">{goal ? "Touche un autre chiffre pour changer, le même pour retirer" : "Combien de parties par jour ? Choisis entre 1 et 5"}</span>
         </div>
       </div>
 
       <nav class="menu" aria-label="Plus">
         <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
         <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
-        <button onclick={() => nav.go({ name: "rappels" })}>Rappels</button>
         <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
       </nav>
     </div>
@@ -166,7 +167,7 @@
       <div><span class="k">Ta France</span><div class="pct tabnum">{pct} %</div><span class="sub tabnum">{stars}/{MAX_STARS} étoiles · niveau {level}</span></div>
       <div class="acc desk">
         {#if session.me}
-          <button class="back" onclick={() => nav.go({ name: "account", view: "profile" })}>{session.me.pseudo}</button>
+          <button class="back me" title="Ton profil, tes réglages et tes rappels" aria-label="{session.me.pseudo} : profil et réglages" onclick={() => nav.go({ name: "account", view: "profile" })}><Icon name="gear" size={15} /><span>{session.me.pseudo}</span></button>
         {:else if session.online}
           <button class="back" onclick={() => nav.go({ name: "account", view: "login" })}>Se connecter</button>
         {/if}
@@ -203,7 +204,6 @@
   .logo { font-size: 44px; margin: 0 auto 0 0; }
   .chip.gold { background: var(--yellow); box-shadow: 0 3px 0 var(--yellow-d); }
   .focus { align-self: flex-start; border: 0; background: var(--ink); color: #fff; font-weight: 800; font-size: 13px; padding: 5px 11px; border-radius: 999px; margin-top: 6px; cursor: pointer; }
-  .modes { display: flex; flex-direction: column; gap: 12px; }
   .train { justify-content: space-between; text-align: left; padding: 12px 18px; }
   .train > span:first-child { display: flex; flex-direction: column; gap: 2px; }
   .train b { font-weight: 900; font-size: 18px; }
@@ -215,10 +215,12 @@
   .gh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .gp { font-weight: 800; font-size: 13.5px; color: var(--soft); }
   .pips { display: flex; align-items: center; gap: 6px; }
-  .pip { border: 0; padding: 0; background: none; cursor: pointer; width: 34px; height: 38px; position: relative; flex: none; }
+  .pip { border: 0; padding: 0; background: none; cursor: pointer; width: 34px; height: 38px; position: relative; flex: none; display: grid; place-items: center; }
   .pip::before, .pip i { content: ""; position: absolute; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
   .pip::before { inset: 0; background: var(--line); }
   .pip i { inset: 3px; background: var(--bg); transition: background .2s; }
+  .pip b { position: relative; font-weight: 900; font-size: 14px; color: var(--soft); }
+  .pip.aim b, .pip.done b { color: var(--ink); }
   .pip.aim::before { background: var(--ink); }
   .pip.aim i { background: #fff; }
   .pip.done i { background: var(--yellow); }
@@ -231,10 +233,15 @@
   .tip { margin: 0; font-size: 13px; color: var(--soft); font-weight: 700; text-align: right; }
   .hello { display: flex; gap: 12px; align-items: flex-start; }
   .hello .bubble { flex: 1; }
-  .next { display: flex; flex-direction: column; gap: 2px; }
-  .next small { color: var(--soft); font-weight: 700; }
-  .next small b { color: var(--ink); }
-  .next .more { align-self: flex-start; font-size: 14px; margin-top: 4px; }
+  /* Un seul espacement entre tous les boutons d'action */
+  .actions { display: flex; flex-direction: column; gap: 12px; }
+  .next { display: flex; flex-direction: column; gap: 8px; }
+  .go { flex-direction: column; gap: 4px; padding: 14px 22px 13px; }
+  .go > span { display: inline-flex; align-items: center; gap: 10px; }
+  .go small { font-size: 13.5px; font-weight: 700; opacity: .75; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .next .more { align-self: flex-start; font-size: 14px; }
+  .me { display: inline-flex; align-items: center; gap: 6px; }
+  .me span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row2 .btn { flex-direction: column; gap: 3px; padding: 13px 10px; }
   .menu { display: flex; flex-wrap: wrap; gap: 6px 18px; border-top: 2px solid var(--line); padding-top: 10px; }
