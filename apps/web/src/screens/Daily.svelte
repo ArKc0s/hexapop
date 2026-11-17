@@ -151,6 +151,7 @@
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   
   .grow { margin-right: auto; }
+  header > .chip { height: 38px; padding: 0 14px; box-shadow: 0 3px 0 var(--line); }
   .score { font-family: var(--f-ui); font-weight: 600; font-size: 18px; }
   .intro { max-width: 640px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding: 30px 0; }
   .intro h1 { font-size: clamp(40px, 7vw, 64px); text-transform: uppercase; }

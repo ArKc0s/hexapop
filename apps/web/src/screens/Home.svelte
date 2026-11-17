@@ -202,6 +202,8 @@
   .left { display: flex; flex-direction: column; gap: 16px; }
   .top { display: flex; align-items: center; gap: 8px; }
   .logo { font-size: 44px; margin: 0 auto 0 0; }
+  /* La flamme a la même forme que les boutons voisins (pseudo, son) */
+  .top > .chip { height: 38px; padding: 0 14px; box-shadow: 0 3px 0 var(--line); }
   .chip.gold { background: var(--yellow); box-shadow: 0 3px 0 var(--yellow-d); }
   .focus { align-self: flex-start; border: 0; background: var(--ink); color: #fff; font-weight: 800; font-size: 13px; padding: 5px 11px; border-radius: 999px; margin-top: 6px; cursor: pointer; }
   .train { justify-content: space-between; text-align: left; padding: 12px 18px; }
@@ -256,7 +258,7 @@
   .pct { font-family: var(--f-pop); font-size: 44px; line-height: 1; }
   .rhead .sub { display: block; margin-top: 4px; font-size: 13px; font-weight: 700; color: var(--soft); }
   .acc { display: flex; gap: 8px; align-items: center; }
-  .snd { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; }
+  .snd { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 999px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; }
   .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 13px; font-weight: 700; color: var(--soft); justify-content: flex-end; }
   .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
   .menu .soft { color: var(--soft); font-weight: 700; margin-left: auto; }

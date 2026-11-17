@@ -208,7 +208,7 @@
   .fl { display: flex; align-items: center; gap: 6px; background: #fff; border-radius: 999px; padding: 4px 12px 4px 6px; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .3); animation: pop-in .3s cubic-bezier(.2, 1.6, .4, 1); }
   .fl b { font-size: 24px; }
   .fl small { font-weight: 800; }
-  .snd { position: fixed; right: 14px; top: 12px; border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; z-index: 5; }
+  .snd { position: fixed; right: 14px; top: 12px; border: 0; background: #fff; width: 38px; height: 38px; border-radius: 999px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; z-index: 5; }
   @media (max-width: 700px) {
     .shell .who { display: none; }
     .av { display: none; }

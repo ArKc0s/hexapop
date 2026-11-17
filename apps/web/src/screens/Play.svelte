@@ -104,7 +104,7 @@
   .long { flex: 1; height: 10px; background: #e3dccc; border-radius: 999px; overflow: hidden; }
   .long span { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
   .combo { font-family: var(--f-pop); font-size: 20px; color: #fff; background: var(--pink); padding: 5px 11px; border-radius: 12px; box-shadow: 0 4px 0 var(--pink-d); transform: rotate(-3deg); animation: pop-in .35s cubic-bezier(.2, 1.6, .4, 1); }
-  .snd { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; }
+  .snd { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 999px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; }
   /* Ordinateur : en-tête et partie forment un seul bloc, centré dans la fenêtre (comme l'accueil). Le haut est fixe
      (pas centré sur le contenu), sinon tout sauterait quand la correction allonge le panneau. */
   @media (min-width: 901px) { .play { min-height: 100dvh; gap: 18px; padding-top: max(24px, calc((100dvh - 840px) / 2)); } }

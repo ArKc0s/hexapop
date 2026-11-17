@@ -15,5 +15,5 @@
 {/if}
 
 <style>
-  .fs { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; color: var(--ink); flex: none; }
+  .fs { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 999px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; color: var(--ink); flex: none; }
 </style>
