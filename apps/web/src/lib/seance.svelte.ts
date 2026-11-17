@@ -11,7 +11,7 @@ export function startRegion(): string {
 
 /** Aperçu de la prochaine séance (pour l'accueil), sans la lancer. */
 export function previewSeance(): Seance {
-  return composeSeance(profile.data.know ?? {}, { now: Date.now(), seed: 1, start: startRegion(), focus: profile.data.focus });
+  return composeSeance(profile.data.know ?? {}, { now: Date.now(), seed: 1, start: startRegion(), focus: profile.data.focus, home: profile.data.home });
 }
 
 function answerMode(): InputMode {
@@ -21,7 +21,7 @@ function answerMode(): InputMode {
 
 export function startSeance() {
   const seed = randomSeed();
-  const s = composeSeance(profile.data.know ?? {}, { now: Date.now(), seed, start: startRegion(), focus: profile.data.focus });
+  const s = composeSeance(profile.data.know ?? {}, { now: Date.now(), seed, start: startRegion(), focus: profile.data.focus, home: profile.data.home });
   if (!s.plan.length) return nav.go({ name: "training" });
   const config: GameConfig = { seed, level: "normal", input: answerMode(), plan: s.plan, durationMs: 0, switchable: true };
   nav.go({ name: "play", mode: "seance", config, title: s.region ? `Séance · ${s.region.nom}` : "Séance", learn: true });

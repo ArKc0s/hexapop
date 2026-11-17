@@ -34,10 +34,10 @@ export function currentRegion(k: Knowledge, start: string, focus?: string | null
   return regionOrder(start).find((r) => r.deps.some((c) => unfinished(k, c))) ?? null;
 }
 
-export interface SeanceOpts { now: number; seed: number; start: string; focus?: string | null; size?: number }
+export interface SeanceOpts { now: number; seed: number; start: string; focus?: string | null; home?: string | null; size?: number }
 export interface Seance { plan: PlanItem[]; region: TourRegion | null; reviews: number; discover: string[] }
 
-/** Compose une séance d'environ 10 questions. */
+/** Compose une séance de 12 questions au plus. */
 export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   const r = rng(o.seed);
   const size = o.size ?? SEANCE_SIZE;
@@ -68,21 +68,28 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   if (region) {
     const deps = shuffle(region.deps.filter((c) => unfinished(k, c) && !used.has(c)), r);
     const started = deps.filter((c) => BASE_FACETS.some((f) => seen(k, c, f)));
-    const fresh = deps.filter((c) => !started.includes(c));
+    let fresh = deps.filter((c) => !started.includes(c));
     const room = () => size - plan.length - recall.length;
-    // Départements commencés : fiche complète si les 3 facettes ont été vues, sinon la facette suivante.
+    // Départements commencés : fiche complète si les 3 facettes ont été vues, sinon ce qui reste à voir.
     const steps: PlanItem[] = [];
     for (const c of started) {
-      const unseen = BASE_FACETS.filter((f) => !seen(k, c, f));
+      const unseen = BASE_FACETS.filter((f) => !seen(k, c, f)) as Field[];
       if (!unseen.length) steps.push({ code: c, hint: pick<Hint>(["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"] });
-      else steps.push({ code: c, hint: "nom", ask: [unseen[0] as Field], teach: true, easy: true });
+      else steps.push({ code: c, hint: "nom", ask: unseen, easy: true });
     }
     for (const it of steps.slice(0, Math.max(0, room() - 3))) add(it);
-    // Découverte : 2 ou 3 départements, chacun montré puis demandé, facette par facette (carte, numéro, préfecture),
-    // puis un rappel en fin de séance, sans aide facile : c'est lui qui donne les premières étoiles.
-    const nNew = Math.min(fresh.length, reviews ? 2 : 3, Math.floor(room() / 4));
+    // Chez toi : tu le connais sûrement. Demandé d'emblée, sans aide facile : s'il est su, ce sont 3 étoiles tout de suite.
+    if (o.home && fresh.includes(o.home) && room() >= 4) {
+      add({ code: o.home, hint: "nom", ask: ["carte", "numero", "prefecture"], tag: "home" });
+      fresh = fresh.filter((c) => c !== o.home);
+    }
+    // Découverte : rien n'est montré avant. On devine avec des leurres lointains, la correction apprend
+    // (deviner avant de voir aide à retenir). D'abord la carte, puis numéro et préfecture ensemble,
+    // et un rappel en fin de séance, sans aide facile : c'est lui qui donne les premières étoiles.
+    const nNew = Math.min(fresh.length, reviews ? 2 : 3, Math.floor(room() / 3));
     const news = fresh.slice(0, nNew);
-    for (const f of BASE_FACETS) for (const c of news) add({ code: c, hint: "nom", ask: [f as Field], teach: true, easy: true });
+    for (const c of news) add({ code: c, hint: "nom", ask: ["carte"], tag: "new", easy: true });
+    for (const c of news) add({ code: c, hint: "nom", ask: ["numero", "prefecture"], tag: "new", easy: true });
     discover.push(...news);
     recall.push(...news.map((c): PlanItem => ({ code: c, hint: "nom", ask: ["carte", "numero", "prefecture"] })));
     for (const it of steps) if (room() > 0 && !used.has(it.code)) add(it);

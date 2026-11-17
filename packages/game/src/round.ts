@@ -21,14 +21,14 @@ export interface Question {
   choices?: Partial<Record<ChoiceField, string[]>>;
   /** Pour placer sur la carte en mode propositions : 4 départements surlignés, dont le bon. */
   mapChoices?: string[];
-  /** Première rencontre : on montre la réponse avant de demander (séance Continuer). */
-  teach?: boolean;
+  /** Séance Continuer : département jamais vu (« devine », la correction t'apprend) ou celui d'où tu viens. */
+  tag?: "new" | "home";
   /** Propositions faciles (leurres lointains) : la bonne réponse ne compte que comme « vue ». */
   easy?: boolean;
 }
 
 /** Question imposée (séance composée) : département, indice, ce qu'on demande. */
-export interface PlanItem { code: string; hint: Hint; ask: Field[]; teach?: boolean; easy?: boolean }
+export interface PlanItem { code: string; hint: Hint; ask: Field[]; tag?: "new" | "home"; easy?: boolean }
 
 export interface Answer {
   carte?: string;
@@ -130,7 +130,7 @@ export function makeGame(cfg: GameConfig): Question[] {
       let fields = fieldsFor(d, it.hint, cfg.level, it.ask);
       if (!fields.length) fields = fieldsFor(d, it.hint, cfg.level, ["carte", "numero", "prefecture"]);
       const q: Question = { index, code: it.code, hint: it.hint, fields, durationMs: duration };
-      if (it.teach) q.teach = true;
+      if (it.tag) q.tag = it.tag;
       if (it.easy) q.easy = true;
       const others = it.easy ? easyDistractors(d, r) : distractors(d, r);
       q.choices = makeChoices(d, fields, others, r);

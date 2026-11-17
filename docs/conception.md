@@ -92,7 +92,9 @@ Concrètement : on découvre le Finistère en questions simples, puis il revient
 - Les deux formats font progresser. Pour que les propositions restent un vrai test, **elles deviennent plus piégeuses à mesure qu'on progresse** : au début, 4 réponses très différentes ; ensuite, 4 départements de la même région, des numéros proches, des préfectures voisines.
 
 ### 3.3 Première rencontre
-Une facette jamais vue est **d'abord montrée** (« À retenir : le Finistère, c'est le 29 », 2 secondes), puis demandée en propositions faciles. Impossible d'échouer sur un département qu'on n'a jamais vu.
+Un département jamais vu est **deviné, pas montré** : « Nouveau · devine ! », en propositions faciles (leurres lointains), d'abord sur la carte, puis numéro et préfecture ensemble. Se tromper ne coûte rien (« Maintenant tu sais »), c'est la correction qui apprend : deviner avant de voir aide à retenir, et c'est moins abrutissant que de montrer la réponse pour la redemander aussitôt. Le rappel en fin de séance, sans aide facile, donne les étoiles. Le département d'où vient le joueur est demandé d'emblée en fiche complète (« Chez toi ») : il le connaît sûrement, ce sont 3 étoiles tout de suite.
+
+*2026-11-17 : la première version montrait chaque facette avant de la demander (carte « À retenir »). Retour de Léo sur un compte neuf : « super long et bateau, on nous donne la réponse et on nous demande juste après ». Remplacée par « devine d'abord ».*
 
 ### 3.4 Correction et chrono
 - **Correction immédiate** : la fiche de correction actuelle (✓ / ✗ par champ, bonne réponse, carte).
@@ -215,7 +217,7 @@ Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcen
 
 **Première minute**
 1. Ouverture : pas de compte, pas de menu. La mascotte : « Tu viens d'où ? » → il touche son département sur la carte (ou « passer »).
-2. Première séance tout de suite : les 3 ou 4 départements autour de chez lui, montrés puis demandés en questions simples à propositions. Impossible d'échouer franchement.
+2. Première séance tout de suite : son département d'abord (« Chez toi », sûrement su), puis 3 départements autour à deviner en propositions faciles, et un rappel en fin de séance. 10 questions, environ 12 étoiles.
 3. Fin de séance : « 4 étoiles ! Ta France : 1 % », sa région commence à se colorer, la série démarre.
 
 **Après la première séance** : la proposition de sauvegarder (compte), puis d'activer les rappels (« on te dit quand tes étoiles pâlissent »).
@@ -242,7 +244,7 @@ Personne ne doit perdre ce qu'il a gagné :
 
 1. **Entraînement** avec les réglages « on te donne / on te demande », les deux formats (question simple, fiche complète), propositions ou clavier changeable en cours de partie, carte à 4 départements surlignés. À côté de l'existant : on teste en vrai sans rien casser. *(Répond directement au retour du testeur.)* ✅ **Livré le 2026-11-16** (raccourcis, on te donne / on te demande dont l'indice préfecture, zone, longueur, sans chrono, bascule propositions / clavier, 4 départements surlignés). Pas encore fait : la carte « À retenir » de première rencontre et les propositions de plus en plus piégeuses, qui dépendent des étoiles (étape 2).
 2. **Les étoiles par facette, « Ta France » et les 3 niveaux**, avec la migration des profils. ✅ **Livré le 2026-11-16** : étoiles par facette (sans aide = étoile, avec aide = « vue »), médailles bronze / argent / or (ternies si à réviser), « Ta France » sur 303, titres et niveau Découverte / Confirmé / Expert affichés, reprise automatique des anciens profils, Album et fin de partie aux médailles, badges de collection sur les médailles. Les niveaux ne modifient pas encore le défi (étape 4) ; l'XP et ses niveaux restent jusqu'à l'étape 3 (kilomètres).
-3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif personnel facultatif. On retire alors le Tour de France (remplacé par Continuer), les quêtes et les niveaux d'XP ; l'XP devient des kilomètres et les vignettes des médailles. ✅ **Livré le 2026-11-17** : séance composée (révisions échues, puis découverte de la région en cours avec « À retenir » et propositions faciles, rappel en fin de séance, consolidation), accueil avec Continuer et choix de région sur la carte, « Tu viens d'où ? », kilomètres (total et semaine), objectif perso facultatif, retrait du Tour de France, des quêtes et des niveaux d'XP. Les propositions normales (leurres voisins) font gagner l'étoile ; seules les faciles comptent comme « vu ». Reste à faire : fusion Album / Atlas.
+3. **Continuer** (séance composée automatiquement) + **nouvel accueil** + premier lancement « Tu viens d'où ? » + objectif personnel facultatif. On retire alors le Tour de France (remplacé par Continuer), les quêtes et les niveaux d'XP ; l'XP devient des kilomètres et les vignettes des médailles. ✅ **Livré le 2026-11-17** : séance composée (révisions échues, puis découverte de la région en cours en « devine d'abord » avec propositions faciles, rappel en fin de séance, consolidation), accueil avec Continuer et choix de région sur la carte, « Tu viens d'où ? », kilomètres (total et semaine), objectif perso facultatif, retrait du Tour de France, des quêtes et des niveaux d'XP. Les propositions normales (leurres voisins) font gagner l'étoile ; seules les faciles comptent comme « vu ». Reste à faire : fusion Album / Atlas.
 4. **Défi du jour par niveau** (classements séparés) et **Entre amis** à la nouvelle règle, handicap par niveau.
 5. **Facettes expert** et médailles d'or, puis **Hall of Fame**.
 

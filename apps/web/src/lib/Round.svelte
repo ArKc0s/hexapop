@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dep, DEPARTEMENTS, REGION, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
+  import { dep, DEPARTEMENTS, normalize, sameCode, sameName, type Answer, type ChoiceField, type Field, type InputMode, type Question, type RoundResult } from "@hexa/game";
   import Map, { type Mark } from "./Map.svelte";
   import Fiche from "./Fiche.svelte";
   import { onDestroy, type Snippet } from "svelte";
@@ -39,12 +39,13 @@
     if (!result) return null;
     if (result.accuracy >= 0.999) return { mood: combo >= 5 ? "wow" : "happy", text: combo >= 3 ? `Combo ×${combo} ! ${PRAISE[combo % PRAISE.length]}` : PRAISE[q.index % PRAISE.length] } as const;
     if (result.accuracy > 0) return { mood: "think", text: `Presque ! ${Math.round(result.accuracy * 100)} % de bon, la correction est juste au-dessus.` } as const;
+    if (q.tag === "new") return { mood: "think", text: `Maintenant tu sais ! On y revient en fin de séance.` } as const;
     return { mood: "sad", text: `Raté : ${d.nom} (${d.code}). Tu le retiendras !` } as const;
   });
   $effect(() => {
     if (!result) return;
     if (result.accuracy >= 0.999) sound.play(combo >= 3 ? "combo" : "ok", combo);
-    else sound.play(result.accuracy > 0 ? "partial" : "ko");
+    else sound.play(result.accuracy > 0 || q.tag === "new" ? "partial" : "ko");
   });
 
   const d = $derived(dep(q.code));
@@ -64,9 +65,7 @@
   let nudge = $state(false);
   // Première rencontre : on montre d'abord la réponse (« À retenir »), puis on pose la question.
   // svelte-ignore state_referenced_locally
-  let taught = $state(!q.teach);
-  const teaching = $derived(!taught && !result);
-  const needsPlacing = $derived(!teaching && !result && !submitted && has("carte") && !sel);
+  const needsPlacing = $derived(!result && !submitted && has("carte") && !sel);
 
   // La carte ne sert qu'à placer le département ; les voisins se tapent (nom ou numéro).
   const mapTarget = $derived(has("carte") ? "carte" : null);
@@ -189,9 +188,8 @@
   const mapHelp = $derived(result ? "" : mapTarget !== "carte" ? "" : sel ? `Placé ! Tu peux changer en ${coarse ? "touchant" : "cliquant"} un autre département.` : coarse ? "Touche la région, puis le département. Pince pour zoomer." : "Clique le département sur la carte.");
 </script>
 
-<svelte:window onkeydown={(e) => { if (teaching && e.key === "Enter") { e.preventDefault(); taught = true; } }} />
 
-<div class="round" class:review={!!result} class:placing={!teaching && !result && mapTarget === "carte" && !sel} class:nudge={nudge && needsPlacing}>
+<div class="round" class:review={!!result} class:placing={!result && mapTarget === "carte" && !sel} class:nudge={nudge && needsPlacing}>
   <div class="mapwrap">
     {#if mobile && !result && timed}
       <div class="timer top" aria-label="Temps restant">
@@ -208,11 +206,11 @@
           </div>
         {/key}
         <span class="help sub">{candidates ? "Choisis parmi les 4 départements surlignés" : coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
-      {:else if !teaching}
+      {:else}
         <span class="help">{mapHelp}</span>
       {/if}
     </div>
-    <Map marks={teaching ? { ...history, [q.code]: "hint" } : marks} interactive={!teaching && !result && !!mapTarget} zoomable onpick={pick} candidates={teaching ? undefined : candidates} />
+    <Map {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} {candidates} />
   </div>
 
   <section class="panel">
@@ -221,17 +219,6 @@
       <span class="secs tabnum">{result ? "" : Math.ceil(remaining / 1000) + " s"}</span>
     </div>
 
-    {#if teaching}
-      <div class="teach">
-        <span class="kicker">À retenir</span>
-        <h2 class="qname">{d.nom}</h2>
-        <dl>
-          <div class:hl={q.fields.includes("carte")}><dt>Sur la carte</dt><dd>{d.outreMer ? "outre-mer" : `en ${REGION.get(d.region)?.nom ?? ""}`}, il clignote</dd></div>
-          <div class:hl={q.fields.includes("numero")}><dt>Numéro</dt><dd class="tabnum">{d.code}</dd></div>
-          <div class:hl={q.fields.includes("prefecture")}><dt>Préfecture</dt><dd>{d.prefecture}</dd></div>
-        </dl>
-      </div>
-    {:else}
     <div class="clue" class:has-sw={!!(answerMode && onmode && !result)}>
       {#if answerMode && onmode && !result}
         <button class="modesw" onclick={() => onmode(answerMode === "choix" ? "libre" : "choix")} aria-label={answerMode === "choix" ? "Répondre au clavier" : "Répondre avec des propositions"}>
@@ -245,7 +232,7 @@
         <span class="kicker">Le département de</span>
         <h2 class="qname">{d.prefecture}</h2>
       {:else if q.hint === "nom"}
-        <span class="kicker">Trouve</span>
+        <span class="kicker">{q.tag === "new" ? "Nouveau · devine !" : q.tag === "home" ? "Chez toi" : "Trouve"}</span>
         <h2 class="qname">{d.nom}</h2>
       {:else}
         <span class="kicker">Il clignote sur la carte</span>
@@ -253,8 +240,7 @@
       {/if}
     </div>
 
-    {/if}
-    <div class="fields" class:hidden={teaching}>
+    <div class="fields">
       {#if has("carte")}
         {@const r = fieldResult("carte")}
         <div class="f carte" class:ok={r?.score === 1} class:ko={r && r.score < 1}>
@@ -333,12 +319,12 @@
       {@render children?.()}
     {/if}
 
-    <div class="actions" class:v-ok={result && result.accuracy >= 0.999} class:v-mid={result && result.accuracy > 0 && result.accuracy < 0.999} class:v-ko={result && result.accuracy === 0}>
+    <div class="actions" class:v-ok={result && result.accuracy >= 0.999} class:v-mid={result && result.accuracy < 0.999 && (result.accuracy > 0 || q.tag === "new")} class:v-ko={result && result.accuracy === 0 && q.tag !== "new"}>
       {#if result && feedback}
         <!-- Mobile : verdict toujours visible dans la barre du bas, sans faire défiler -->
         <div class="verdict" aria-live="polite">
           <Mascot mood={feedback.mood} size={40} />
-          <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : "Raté"}</b></span>
+          <span class="vt"><b>{result.accuracy >= 0.999 ? (combo >= 3 ? `Combo ×${combo} !` : "Parfait !") : result.accuracy > 0 ? `Presque · ${Math.round(result.accuracy * 100)} %` : q.tag === "new" ? "Maintenant tu sais" : "Raté"}</b></span>
           <span class="vp tabnum">+{result.points}</span>
         </div>
         <ul class="recap" aria-label="Correction">
@@ -352,9 +338,7 @@
           {/each}
         </ul>
       {/if}
-      {#if teaching}
-        <button class="btn big blue" onclick={() => (taught = true)}>C'est retenu <kbd>↵</kbd></button>
-      {:else if !result}
+      {#if !result}
         <button class="btn big" onclick={() => submit()} disabled={submitted}>{submitted ? "Envoyé" : nudge && needsPlacing ? "Valider sans placer" : "Valider"} <kbd>↵</kbd></button>
       {:else}
         {@render action?.()}
@@ -367,12 +351,6 @@
   .round { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr); gap: 22px; align-items: start; }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
   .clue { position: relative; }
-  .teach { display: flex; flex-direction: column; gap: 6px; }
-  .teach dl { margin: 6px 0 0; display: flex; flex-direction: column; gap: 6px; }
-  .teach dl > div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; background: var(--bg); border-radius: 12px; padding: 8px 12px; }
-  .teach dt { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
-  .teach dd { margin: 0; font-weight: 900; font-size: 17px; text-align: right; }
-  .teach .hl { background: #fff4c2; box-shadow: inset 0 0 0 2px var(--yellow); }
   .clue.has-sw { padding-right: 118px; }
   .modesw { position: absolute; right: 0; top: 0; border: 0; background: var(--bg); color: var(--ink); font-weight: 800; font-size: 13px; padding: 6px 11px; border-radius: 999px; cursor: pointer; box-shadow: 0 2px 0 var(--line); z-index: 1; }
   .modesw:active { transform: translateY(2px); box-shadow: none; }

@@ -130,17 +130,23 @@ test("séance Continuer : découverte, révisions, consolidation, jamais deux in
   const S = await import("./seance.ts");
   const { makeGame } = await import("./round.ts");
   const now = T("2026-11-17");
-  // Nouveau joueur du Finistère : sa région (Bretagne), 3 départements montrés puis demandés facette par facette.
+  // Nouveau joueur sans région : la Bretagne, 3 départements à deviner (carte, puis numéro + préfecture), rien de montré avant.
   const s0 = S.composeSeance({}, { now, seed: 1, start: "53" });
   assert.equal(s0.region?.code, "53");
   assert.equal(s0.discover.length, 3);
-  assert.equal(s0.plan.length, 12);
-  assert.ok(s0.plan.slice(0, 9).every((it) => it.teach && it.easy && it.hint === "nom" && it.ask.length === 1));
+  assert.equal(s0.plan.length, 9);
+  assert.ok(s0.plan.slice(0, 3).every((it) => it.tag === "new" && it.easy && it.hint === "nom" && it.ask.join() === "carte"));
+  assert.ok(s0.plan.slice(3, 6).every((it) => it.tag === "new" && it.easy && it.ask.join() === "numero,prefecture"));
   // Rappel en fin de séance : fiche complète sans aide facile, qui donne les premières étoiles.
-  assert.ok(s0.plan.slice(9).every((it) => !it.teach && !it.easy && it.ask.length === 3 && s0.discover.includes(it.code)));
+  assert.ok(s0.plan.slice(6).every((it) => !it.tag && !it.easy && it.ask.length === 3 && s0.discover.includes(it.code)));
   const qs = makeGame({ seed: 2, level: "normal", input: "choix", switchable: true, plan: s0.plan });
-  assert.ok(qs.slice(0, 9).every((q) => q.teach && q.easy && q.durationMs === 0));
+  assert.ok(qs.slice(0, 6).every((q) => q.tag === "new" && q.easy && q.durationMs === 0));
   assert.ok(qs.filter((q) => q.fields[0] === "carte").every((q) => q.mapChoices!.length === 4));
+  // Joueur du Finistère : son département d'abord, demandé directement (il le connaît sûrement), puis 3 à découvrir.
+  const sh = S.composeSeance({}, { now, seed: 1, start: "53", home: "29" });
+  assert.deepEqual(sh.plan[0], { code: "29", hint: "nom", ask: ["carte", "numero", "prefecture"], tag: "home" });
+  assert.equal(sh.plan.length, 10);
+  assert.ok(!sh.discover.includes("29"));
   // Joueur avancé : révisions échues d'abord, puis la région suivante (pas finie).
   const solid = { b: 2, d: now - 1, s: 1 as const, v: 1 as const };
   const k: Record<string, Record<string, typeof solid>> = {};
@@ -149,10 +155,10 @@ test("séance Continuer : découverte, révisions, consolidation, jamais deux in
   assert.ok(s1.reviews >= 1 && s1.reviews <= 5);
   assert.notEqual(s1.region?.code, "53", "Bretagne finie : on passe à une voisine");
   assert.ok(TOUR.get("53")!.neighbors.includes(s1.region!.code));
-  // Un département revient une seule fois, sauf ceux qu'on découvre (montrés facette par facette).
+  // Un département revient une seule fois, sauf ceux qu'on découvre (carte, numéro + préfecture, rappel).
   const others = s1.plan.filter((x) => !s1.discover.includes(x.code)).map((x) => x.code);
   assert.equal(new Set(others).size, others.length);
-  for (const c of s1.discover) assert.equal(s1.plan.filter((x) => x.code === c).length, 4);
+  for (const c of s1.discover) assert.equal(s1.plan.filter((x) => x.code === c).length, 3);
   assert.ok(s1.plan.length <= 12);
   // Région choisie par le joueur sur la carte.
   assert.equal(S.currentRegion(k, "53", "84")?.code, "84");
