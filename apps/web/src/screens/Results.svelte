@@ -62,7 +62,7 @@
   }
 </script>
 
-<main class="res">
+<main class="res page">
   <section class="hero">
     {#if r.stars}
       <Stars n={r.stars.after} size={58} animate />
@@ -125,7 +125,7 @@
 </main>
 
 <style>
-  .res { max-width: 1240px; margin: 0 auto; padding: 24px 20px 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .res { --w: 1240px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
   .hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 10px 0; }
   .head { display: flex; align-items: center; gap: 12px; }
   .score { font-size: clamp(64px, 9vw, 96px); }

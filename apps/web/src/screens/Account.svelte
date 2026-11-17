@@ -74,7 +74,7 @@
   {/if}
 {/snippet}
 
-<main class="acc">
+<main class="acc page">
   <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
   <h1 class="title">{current === "register" ? "Créer un compte" : current === "profile" ? "Ton compte" : current === "forgot" || current === "reset" ? "Mot de passe" : "Connexion"}</h1>
 
@@ -201,7 +201,7 @@
 </main>
 
 <style>
-  .acc { max-width: 520px; margin: 0 auto; padding: 24px 20px 60px; display: flex; flex-direction: column; gap: 14px; }
+  .acc { --w: 520px; display: flex; flex-direction: column; gap: 14px; }
   .back { align-self: flex-start; }
   h1 { text-transform: uppercase; }
   .box { display: flex; flex-direction: column; gap: 8px; }

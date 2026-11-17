@@ -15,7 +15,7 @@
   const list = $derived(DEPARTEMENTS.filter((d) => !region || d.region === region));
 </script>
 
-<main class="atlas">
+<main class="atlas page">
   <section class="side">
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
     <h1 class="title">ATLAS</h1>
@@ -33,7 +33,7 @@
 </main>
 
 <style>
-  .atlas { max-width: 1320px; margin: 0 auto; padding: 24px 20px 48px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 28px; align-items: start; }
+  .atlas { --w: 1320px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 28px; align-items: start; }
   .side { display: flex; flex-direction: column; gap: 14px; }
   .back { align-self: flex-start; }
   h1 { font-size: 56px; margin: 0; }

@@ -33,7 +33,7 @@
   }
 </script>
 
-<main class="setup">
+<main class="setup page">
   <button class="back" onclick={() => nav.go({ name: "training" })}>← Entraînement</button>
   <h1 class="title">{TITLES[mode][0]}</h1>
   <p class="lead">{TITLES[mode][1]}</p>
@@ -63,7 +63,7 @@
 </main>
 
 <style>
-  .setup { max-width: 640px; margin: 0 auto; padding: 24px 20px 60px; display: flex; flex-direction: column; gap: 22px; }
+  .setup { --w: 640px; display: flex; flex-direction: column; gap: 22px; }
   .back { align-self: flex-start; }
   h1 { padding-top: 6px; }
   .lead { margin: -8px 0 0; font-size: 17px; max-width: 52ch; }

@@ -20,7 +20,7 @@
   const fmt = (t: number) => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 </script>
 
-<main class="album">
+<main class="album page">
   <header>
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
     <div class="seg"><button class:on={cur === "plaques"} onclick={() => (cur = "plaques")}>Vignettes</button><button class:on={cur === "badges"} onclick={() => (cur = "badges")}>Badges</button></div>
@@ -67,11 +67,12 @@
 </main>
 
 <style>
-  .album { max-width: 1100px; margin: 0 auto; padding: 18px 20px 48px; display: flex; flex-direction: column; gap: 16px; }
+  .album { --w: 1100px; display: flex; flex-direction: column; gap: 16px; }
   header { display: flex; justify-content: space-between; align-items: center; }
   .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
   .top p { color: var(--soft); font-weight: 600; max-width: 46ch; }
-  .big { font-size: 48px; }
+  .top > div { display: flex; flex-direction: column; gap: 4px; }
+  .big { font-size: 48px; line-height: 1; }
   .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
   section { display: flex; flex-direction: column; gap: 10px; }
   h2 { font-size: 19px; font-weight: 900; }

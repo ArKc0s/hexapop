@@ -42,7 +42,7 @@
   function leave() { live.leave(); nav.go({ name: "home" }); }
 </script>
 
-<main class="lobby">
+<main class="lobby page">
   <button class="back" onclick={leave}>← Accueil</button>
 
   {#if !room}
@@ -140,7 +140,7 @@
 </main>
 
 <style>
-  .lobby { max-width: 820px; margin: 0 auto; padding: 24px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
+  .lobby { --w: 680px; display: flex; flex-direction: column; gap: 16px; }
   .back { align-self: flex-start; }
   h1 { font-size: clamp(40px, 7vw, 60px); text-transform: uppercase; }
   .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
@@ -154,7 +154,7 @@
   
   @media (max-width: 600px) { .choices { grid-template-columns: 1fr; } }
   .hint { margin: -6px 0 0; font-size: 14px; color: var(--soft); }
-  .lobby { max-width: 680px; }
+
   .room { display: flex; flex-direction: column; gap: 14px; }
   .codecard { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
   .bigcode { font-size: clamp(64px, 12vw, 104px); letter-spacing: .08em; }

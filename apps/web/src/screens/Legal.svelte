@@ -7,7 +7,7 @@
   const TITLES: Record<Doc, string> = { apropos: "À propos", mentions: "Mentions légales", confidentialite: "Confidentialité", cgu: "Conditions d'utilisation" };
 </script>
 
-<main class="legal">
+<main class="legal page">
   <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
   <nav class="tabs" aria-label="Documents légaux">
     {#each Object.entries(TITLES) as [k, t] (k)}
@@ -131,7 +131,7 @@
 </main>
 
 <style>
-  .legal { max-width: 760px; margin: 0 auto; padding: 24px 20px 64px; display: flex; flex-direction: column; gap: 12px; }
+  .legal { --w: 760px; display: flex; flex-direction: column; gap: 12px; }
   .back { align-self: flex-start; }
   .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
   h1 { font-size: clamp(34px, 6vw, 48px); text-transform: uppercase; margin-top: 8px; }

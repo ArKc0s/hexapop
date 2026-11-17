@@ -94,7 +94,7 @@
   }
 </script>
 
-<main class="training">
+<main class="training page">
   <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
   <div class="head">
     <Mascot mood="think" size={58} />
@@ -171,7 +171,7 @@
 </main>
 
 <style>
-  .training { max-width: 760px; margin: 0 auto; padding: 20px 20px 48px; display: flex; flex-direction: column; gap: 16px; }
+  .training { --w: 760px; display: flex; flex-direction: column; gap: 16px; }
   .back { align-self: flex-start; }
   .head { display: flex; gap: 14px; align-items: center; }
   .head p { color: var(--soft); font-weight: 600; }

@@ -71,7 +71,7 @@
   }
 </script>
 
-<main class="daily" class:shell={started && !live.daily && !!live.question}>
+<main class="daily" class:shell={started && !live.daily && !!live.question} class:page={!(started && !live.daily && !!live.question)}>
   <header>
     <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
     <span class="riso logo" data-t="HEXA">HEXA</span>
@@ -143,12 +143,16 @@
 </main>
 
 <style>
-  .daily { max-width: 1320px; margin: 0 auto; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 18px; }
+  .daily { --w: 640px; display: flex; flex-direction: column; gap: 18px; }
+  /* En partie : le cadre de jeu (pleine largeur) ; hors partie : le cadre commun des pages (.page). */
+  /* Fin du défi : les deux classements côte à côte demandent plus de largeur */
+  .daily.page:has(.boards) { --w: 900px; }
+  .daily:not(.page) { max-width: 1320px; margin: 0 auto; padding: 12px 16px 24px; }
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   
   .logo { font-size: 22px; margin-right: auto; color: var(--blue); }
   .score { font-family: var(--f-ui); font-weight: 600; font-size: 18px; }
-  .intro { max-width: 640px; display: flex; flex-direction: column; gap: 14px; padding-top: 30px; }
+  .intro { max-width: 640px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding: 30px 0; }
   .intro h1 { font-size: clamp(40px, 7vw, 64px); text-transform: uppercase; }
   .intro p { margin: 0; font-size: 17px; }
   .hint { font-size: 14px !important; }
@@ -173,7 +177,7 @@
   .lb li.empty { display: block; color: var(--soft); font-weight: 600; }
   @media (max-width: 700px) { .boards { grid-template-columns: 1fr; } }
   @media (max-width: 600px) { header { gap: 8px; flex-wrap: nowrap; } header .chip:not(.warn) { display: none; } }
-  @media (min-width: 901px) { .daily { min-height: 100dvh; } .daily > :global(.round), .daily > .intro { flex: 1; align-content: center; } .daily > .end { margin-top: auto; } .daily > .boards { margin-bottom: auto; } .daily > .intro { justify-content: center; padding-top: 0; } }
+  @media (min-width: 901px) { .daily:not(.page) { min-height: 100dvh; } .daily > :global(.round) { flex: 1; align-content: center; } }
   .xp { font-weight: 800; color: var(--green-d); }
   .card { box-shadow: 0 6px 0 var(--line) !important; border: 0 !important; background: #fff !important; border-radius: 28px !important; }
   .lb li.me { background: #fff4c2 !important; }
