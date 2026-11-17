@@ -1,6 +1,8 @@
 <script lang="ts">
   import { nav, screenFromHash } from "./lib/nav.svelte.ts";
   import { bugUrl } from "./lib/version.ts";
+  import UpdateBanner from "./lib/ui/UpdateBanner.svelte";
+  import { updater } from "./lib/update.svelte.ts";
   import { session } from "./lib/api.svelte.ts";
   import Home from "./screens/Home.svelte";
   import Play from "./screens/Play.svelte";
@@ -28,6 +30,7 @@
   $effect(() => { document.body.classList.toggle("on-home", nav.screen.name === "home"); });
   session.load();
   push.init();
+  updater.start();
 </script>
 
 <!-- Filet de sécurité : un écran qui plante affiche un message au lieu de laisser un bouton qui ne fait rien. -->
@@ -58,6 +61,7 @@
 {/key}
 
 <PushPrompt />
+<UpdateBanner />
 <SignupPrompt />
 
 <style>

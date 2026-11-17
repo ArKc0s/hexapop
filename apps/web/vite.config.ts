@@ -12,13 +12,19 @@ const commit = (() => {
   try { return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); } catch { return ""; }
 })();
 
+const built = new Date().toISOString();
+
 export default defineConfig({
   base: "./",
-  plugins: [svelte()],
+  plugins: [
+    svelte(),
+    // version.json : l'appli ouverte le relit de temps en temps pour savoir qu'une mise à jour est en ligne.
+    { name: "hexa-version", apply: "build", generateBundle() { this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify({ version, commit, built }) }); } },
+  ],
   define: {
     __HEXA_VERSION__: JSON.stringify(version),
     __HEXA_COMMIT__: JSON.stringify(commit),
-    __HEXA_BUILT__: JSON.stringify(new Date().toISOString()),
+    __HEXA_BUILT__: JSON.stringify(built),
   },
   server: {
     port: 5173,
