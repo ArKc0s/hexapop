@@ -19,6 +19,10 @@ n'envoie plus de notifications, puis s'arrête seule (au plus 3 h). Le solo n'es
   quelques secondes : refusée s'il y a des joueurs, sauf `FORCE=1`.
 - Si l'ancienne version finit encore les parties de la mise à jour précédente, le script attend qu'on le relance.
 
+## Numéro de version
+Affiché en bas de « À propos » (`1.8.0 · commit · date`) et joint aux signalements de bug. Le commit et la date sont automatiques ;
+le numéro se change à la main dans `package.json` (racine) quand une nouvelle version mérite une entrée dans la roadmap.
+
 ## Voir l'état
 ```sh
 ssh infra 'curl -s 127.0.0.1:8786/state'   # version active, versions en vidange, salons de chacune
