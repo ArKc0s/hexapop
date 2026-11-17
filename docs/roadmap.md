@@ -16,19 +16,23 @@ Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 - **v1.3** (étape 1 de la [refonte](conception.md)) : nouvel Entraînement configurable (raccourcis, on te donne / on te demande, zone, longueur), sans chrono, propositions ou clavier changeable en pleine partie, placement en propositions parmi 4 départements surlignés. Avant : connexion Google, appli installable et notifications, incitation à créer un compte, écran de jeu mobile sans défilement, correction lisible, rappel « place-le sur la carte ».
 - **v1.2** : handicap par joueur en salon (points normalisés sur le pourcentage), mode « En équipe » (3 vies communes, étoiles d'équipe), mobile : une question à la fois en 4 propositions et chrono fixé en haut.
 
-## Chantiers de game design (prioritaires)
+## Chantiers de game design ✅ (refonte terminée le 2026-11-17, v1.3 à v1.7)
 
 Constat de Léo (2026-11-16) : « c'est bien, mais pas assez intuitif et ça part dans tous les sens ». Les fonctionnalités se sont empilées au fil des idées (Tour, entraînement, révisions, vignettes, badges, quêtes, niveaux, rangs, série, défi, salons…) sans vision d'ensemble. Avant d'ajouter quoi que ce soit, deux chantiers de conception, à mener sur papier (puis maquette) :
 
 ➡️ Proposition en cours de validation : [`conception.md`](conception.md) (chantiers 1 et 2 traités ensemble).
 Embarqué dans cette refonte (retour testeur du 2026-11-16) : **entraînement configurable** (choisir ce qu'on te donne et ce qu'on te demande) et **plus jamais deux inconnues dans une question** (« place le 87 » est impossible pour un débutant). Livré avec l'Entraînement, étape 1.
 
-### 1. Le système de progression
+### 1. Le système de progression ✅
+**Fait** : étoiles par département, « Ta France », médailles bronze / argent / or, kilomètres et grands voyages, série seule (voir [`conception.md`](conception.md)).
+
 - **Problème** : trop de compteurs parallèles qui mesurent des choses voisines (XP et niveaux, rangs par maîtrise, étoiles du Tour, vignettes bronze/argent/or, % de « Ta France », badges, série). Le joueur ne sait pas lequel compte ni ce qu'il doit faire ensuite.
 - **À définir** : une boucle unique et lisible (« je joue → j'apprends → ça se voit → je débloque »), un seul indicateur principal de maîtrise, le rôle exact de chaque récompense (ce qu'elle mesure, ce qu'elle débloque), ce qu'on supprime ou fusionne.
 - **Livrable** : une page de règles de progression (une phrase par système), puis l'interface qui en découle.
 
-### 2. Les mécaniques et les modes de jeu
+### 2. Les mécaniques et les modes de jeu ✅
+**Fait** : Continuer (séances composées), Défi du jour par niveau, Entre amis, Entraînement configurable ; « Tu viens d'où ? » au premier lancement.
+
 - **Problème** : beaucoup de portes d'entrée (Tour, révisions, éclair, région, marathon, défi, duel, équipe, soirée, battle royale) et des règles différentes selon les modes (indice, champs demandés, chrono, notation). Un nouveau joueur ne sait pas par où commencer.
 - **À définir** : le parcours du nouveau joueur (première minute, première séance, premier retour le lendemain), le nombre de modes vraiment utiles et leur promesse en une phrase, des règles communes (un tour se joue toujours de la même façon), ce qui relève du solo, du multi, du défi.
 - **Livrable** : une carte des modes, la règle d'un tour, le parcours du nouveau joueur ; tests avec des débutants (dont la copine de Léo !) avant de recoder.
