@@ -352,6 +352,11 @@
 
 <style>
   .round { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr); gap: 22px; align-items: start; }
+  /* Ordinateur : les deux colonnes ont la même hauteur (haut et bas alignés), le bouton reste en bas du panneau */
+  @media (min-width: 901px) {
+    .round { align-items: stretch; }
+    .panel .actions { margin-top: auto; }
+  }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
   .clue { position: relative; }
   .clue.has-sw { padding-right: 118px; }

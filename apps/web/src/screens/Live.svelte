@@ -219,7 +219,7 @@
     .snd { display: none; }
     .live { padding-bottom: 24px; }
   }
-  @media (min-width: 901px) { .live { min-height: 100dvh; } .live > :global(.round) { flex: 1; align-content: center; } }
+  @media (min-width: 901px) { .live { min-height: 100dvh; padding-top: max(24px, calc((100dvh - 840px) / 2)); } }
   .hearts { display: inline-flex; gap: 3px; font-size: 24px; color: var(--pink); }
   .hearts .lost { color: #e2dacb; }
   .teammsg { font-weight: 800; color: var(--green-d); }
