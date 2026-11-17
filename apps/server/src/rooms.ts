@@ -13,6 +13,7 @@ import {
 import { now } from "./db.ts";
 import { life } from "./life.ts";
 import { bump } from "./stats.ts";
+import { createShare } from "./share.ts";
 import { dailyConfig, dailyNumber, gridOf, guestDisplayName, newClaim, rankOf, saveDaily, saveGuestDaily, startDaily, startGuestDaily, today } from "./daily.ts";
 
 /** Délai entre l'annonce d'une question et le départ du chrono, pour que tout le monde la reçoive. */
@@ -45,6 +46,8 @@ interface Seat {
   /** Invité classé au défi (gardé même si la connexion tombe avant la fin). */
   guestId: string | null;
   results: (RoundResult | undefined)[];
+  /** Réponses données (défi du jour : pour la page de résultat partagée). */
+  answers?: (Answer | undefined)[];
 }
 
 const rooms = new Map<string, Room>();
@@ -296,7 +299,9 @@ export class Room {
     if (t > this.endsAt + GRACE_MS) return;
     const q = this.qFor(c.playerId, index);
     const elapsedMs = Math.min(q.durationMs, Math.max(0, t - this.startsAt - c.rttMs / 2));
-    const r = grade(q, { ...sanitizeAnswer(raw), elapsedMs });
+    const given = sanitizeAnswer(raw);
+    const r = grade(q, { ...given, elapsedMs });
+    if (this.kind === "daily") (seat.answers ??= [])[index] = { ...given, elapsedMs };
     // En salon, points normalisés : un joueur en expert ne marque pas plus pour ses questions en plus.
     if (this.kind !== "daily") r.points = roomPoints(r.accuracy, r.elapsedMs, q.durationMs);
     seat.results[index] = r;
@@ -414,6 +419,13 @@ export class Room {
         const g = saveGuestDaily(this.day, guestId, points, accuracy, elapsedMs, grid);
         if (g) { daily.saved = true; daily.rank = g.rank; daily.players = g.players; daily.name = guestDisplayName(guestId, seat?.info.home ?? null); }
       }
+      // Page de résultat à partager (hexapop.app/d/…), avec les réponses données.
+      try {
+        const who = seat?.userId ? `u${seat.userId}` : guestId ? `g${guestId}` : null;
+        const name = seat?.userId ? seat.info.name : daily.name ?? "Un joueur";
+        const qs = seat ? this.questions.map((_, i) => this.qFor(seat.info.id, i)) : this.questions;
+        daily.share = createShare(this.day, who, { name, level: this.settings.level, points, elapsedMs, grid, rank: daily.rank, players: daily.players }, qs, seat?.answers ?? [], results);
+      } catch (e) { console.error("[partage]", e); }
       if (!seat?.userId) daily.claim = newClaim({ day: this.day, level: this.settings.level, points, accuracy, elapsedMs, grid, guestId: guestId ?? undefined });
       this.broadcast({ t: "end", ranking, daily });
     } else if (this.kind === "coop") {

@@ -61,6 +61,14 @@ export async function dailyCardBlob(d: DailyCard): Promise<Blob | null> {
     const [fill, edge] = d.grid[i] === 2 ? [C.green, C.greenD] : d.grid[i] === 1 ? [C.yellow, C.yellowD] : [C.pink, C.pinkD];
     rr(x, X, Y + 8, size, size, 24); x.fillStyle = edge; x.fill();
     rr(x, X, Y, size, size, 24); x.fillStyle = fill; x.fill();
+    // Le symbole dans la case : ✓ juste, ~ à moitié, ✗ raté (une couleur seule ne dit rien à qui n'a jamais joué)
+    const cx = X + size / 2, cy = Y + size / 2, u = size * 0.2;
+    x.strokeStyle = d.grid[i] === 1 ? C.ink : "#fff"; x.lineWidth = size * 0.11; x.lineCap = "round"; x.lineJoin = "round";
+    x.beginPath();
+    if (d.grid[i] === 2) { x.moveTo(cx - u * 1.2, cy + u * 0.05); x.lineTo(cx - u * 0.3, cy + u); x.lineTo(cx + u * 1.3, cy - u * 0.9); }
+    else if (d.grid[i] === 1) { x.moveTo(cx - u * 1.2, cy + u * 0.25); x.bezierCurveTo(cx - u * 0.6, cy - u * 0.9, cx + u * 0.6, cy + u * 0.9, cx + u * 1.2, cy - u * 0.25); }
+    else { x.moveTo(cx - u, cy - u); x.lineTo(cx + u, cy + u); x.moveTo(cx + u, cy - u); x.lineTo(cx - u, cy + u); }
+    x.stroke();
   }
 
   // Rang, mascotte et adresse

@@ -17,11 +17,11 @@
   import { LEVELS, LEVEL_NAMES, LEVEL_OF, PLAYER_LEVELS, levelAllowed, playerLevel, type Level, type Rewards } from "@hexa/game";
 
   interface Board { day: string; number: number; level: Level; counts: Partial<Record<Level, number>>; top: { name: string; home: string | null; points: number; elapsedMs: number; grid: string; guest?: number }[]; departements: { code: string; nom: string; players: number; avg: number }[] }
-  interface DailyInfo { day: string; number: number; played: boolean; mine: { level: Level; points: number; elapsedMs: number; grid: string; finished: number } | null; rank: { rank: number; players: number } | null }
+  interface DailyInfo { day: string; number: number; played: boolean; mine: { level: Level; points: number; elapsedMs: number; grid: string; finished: number; share?: string | null } | null; rank: { rank: number; players: number } | null }
 
   let info = $state<DailyInfo | null>(null);
   // Invité : un seul essai par jour sur cet appareil ; le résultat est gardé pour l'afficher et le rattacher.
-  interface GuestDaily { day: string; level?: Level; points: number; elapsedMs: number; grid: number[]; claim?: string; name?: string; rank?: number; players?: number }
+  interface GuestDaily { day: string; level?: Level; points: number; elapsedMs: number; grid: number[]; claim?: string; name?: string; rank?: number; players?: number; share?: string }
   let guest = $state<GuestDaily | null>((() => { try { return JSON.parse(localStorage.getItem(GUEST_DAILY) ?? "null"); } catch { return null; } })());
   let board = $state<Board | null>(null);
   let started = $state(false);
@@ -53,7 +53,7 @@
   $effect(() => {
     const o = live.daily;
     if (!o || session.me || (guest && guest.day === o.day)) return;
-    guest = { day: o.day, level: o.level, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim, name: o.name, rank: o.rank, players: o.players };
+    guest = { day: o.day, level: o.level, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim, name: o.name, rank: o.rank, players: o.players, share: o.share };
     offerTimer = setTimeout(() => signup.offer({ kind: "daily", guestName: o.name, games: profile.data.stats.games }), 1000);
     try { localStorage.setItem(GUEST_DAILY, JSON.stringify(guest)); } catch { /* rien */ }
   });
@@ -77,14 +77,24 @@
   onDestroy(() => { clearTimeout(offerTimer); if (live.room?.kind === "daily") live.leave(); });
 
   const total = $derived(live.room?.players[0]?.score ?? 0);
-  const EMOJI = ["🟪", "🟨", "🟩"];
+  // ✅ juste, 🟧 à moitié, ❌ raté : lisible par quelqu'un qui n'a jamais joué (avec le décompte en toutes lettres).
+  const EMOJI = ["❌", "🟧", "✅"];
   const outcome = $derived(live.daily);
   const grid = $derived(outcome ? outcome.grid : info?.mine?.grid ? [...info.mine.grid].map(Number) : guestToday ? guestToday.grid : []);
   const shareText = $derived.by(() => {
     const pts = outcome?.points ?? info?.mine?.points ?? guestToday?.points ?? 0;
     const ms = outcome?.elapsedMs ?? info?.mine?.elapsedMs ?? guestToday?.elapsedMs ?? 0;
     const n = outcome?.number ?? info?.number;
-    return `HEXA #${n} · défi du jour · ${LEVEL_NAMES[playedLevel]}\n${grid.map((g) => EMOJI[g]).join("")}\n${pts.toLocaleString("fr-FR")} pts · ${Math.round(ms / 1000)} s\n${location.origin}`;
+    const ok = grid.filter((g) => g === 2).length, mid = grid.filter((g) => g === 1).length, ko = grid.filter((g) => g === 0).length;
+    const r = outcome?.rank ? { rank: outcome.rank, players: outcome.players } : info?.rank ?? (guestToday?.rank ? { rank: guestToday.rank, players: guestToday.players } : null);
+    const share = outcome?.share ?? info?.mine?.share ?? guestToday?.share;
+    return [
+      `HEXA #${n} · défi du jour · ${LEVEL_NAMES[playedLevel]}`,
+      grid.map((g) => EMOJI[g]).join(""),
+      [`${ok} juste${ok > 1 ? "s" : ""}`, mid ? `${mid} à moitié` : "", ko ? `${ko} raté${ko > 1 ? "s" : ""}` : ""].filter(Boolean).join(" · "),
+      `${pts.toLocaleString("fr-FR")} pts en ${Math.round(ms / 1000)} s${r?.rank ? ` · ${r.rank}${r.rank === 1 ? "er" : "e"} sur ${r.players}` : ""}`,
+      share ? `Mes réponses : ${location.origin}/d/${share}` : `À toi : ${location.origin}`,
+    ].join("\n");
   });
 
   const coarse = typeof window !== "undefined" && matchMedia("(pointer: coarse)").matches;
@@ -170,6 +180,7 @@
         {#if rewards}<p class="xp">+{rewards.xp} km</p>{/if}
         <button class="btn pink big" onclick={share}>{copied ? "Copié !" : coarse ? "Partager" : "Copier le résultat"}</button>
         {#if !coarse}<button class="link" onclick={download}>Télécharger l'image à poster</button>{/if}
+        {#if outcome?.share ?? info?.mine?.share ?? guestToday?.share}<a class="link" href="/d/{outcome?.share ?? info?.mine?.share ?? guestToday?.share}" target="_blank" rel="noopener">Voir ma page de résultat (ce que voient tes amis)</a>{/if}
       </div>
     </section>
   {/if}

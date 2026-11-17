@@ -13,6 +13,7 @@ import { life } from "./life.ts";
 import { hallOfFame, saveMarathon } from "./hof.ts";
 import { CLIENT_EVENTS, bump, report, visit } from "./stats.ts";
 import { liveReport, ping } from "./live.ts";
+import { shareOf } from "./share.ts";
 import { timingSafeEqual } from "node:crypto";
 import { DEFAULT_PREFS, cleanPrefs, pushEnabled, validEndpoint, vapidPublicKey } from "./push.ts";
 import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
@@ -319,7 +320,7 @@ const routes: Record<string, Handler> = {
   "GET /api/daily": (_req, res, user) => {
     const day = today();
     const mine = user ? db.prepare("SELECT level, points, accuracy, elapsed_ms AS elapsedMs, grid, finished FROM daily_results WHERE day = ? AND user_id = ?").get(day, user.id) : null;
-    json(res, 200, { day, number: dailyNumber(day), played: !!mine, mine: mine ?? null, rank: user ? rankOf(day, user.id) : null });
+    json(res, 200, { day, number: dailyNumber(day), played: !!mine, mine: mine ? { ...mine, share: shareOf(day, `u${user!.id}`) } : null, rank: user ? rankOf(day, user.id) : null });
   },
 
   /** Un invité vient de créer son compte ou de se connecter : ses défis passent sous son pseudo. */

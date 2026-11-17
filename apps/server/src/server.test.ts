@@ -457,6 +457,11 @@ test("invités au classement du défi : pseudo généré, un essai par navigateu
   }
   const end = await c.wait("end");
   assert.equal(end.daily?.saved, true, "invité classé");
+  // Page de résultat partagée : score, grille, réponses données (repliées : le défi est en cours).
+  assert.ok(end.daily?.share, "lien de partage");
+  const page = await (await fetch(BASE + "/d/" + end.daily!.share)).text();
+  assert.ok(page.includes(end.daily!.name!) && page.includes("Voir ses réponses") && page.includes("dévoile"), "page du résultat");
+  assert.equal((await fetch(BASE + "/d/inconnu123")).status, 404);
   assert.match(end.daily?.name ?? "", / du Finistère$/);
   assert.ok((end.daily?.rank ?? 0) >= 1);
   c.ws.close();

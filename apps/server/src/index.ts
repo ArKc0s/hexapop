@@ -12,6 +12,7 @@ import { accountLevel, higherLevel, isGuestId } from "./daily.ts";
 import { startPushScheduler } from "./push.ts";
 import { life } from "./life.ts";
 import { busyRooms, roomCodes, stats } from "./rooms.ts";
+import { sharePage } from "./share.ts";
 import { peak } from "./stats.ts";
 // Pic de joueurs connectés en même temps, par jour (statistiques).
 setInterval(() => { const n = stats().players; if (n > 0 && !life.draining) peak("joueurs_max", n); }, 30_000).unref();
@@ -71,6 +72,12 @@ const server = createServer((req, res) => {
   const url = req.url ?? "/";
   if (url.startsWith("/api/internal/")) return internal(req, res);
   if (url.startsWith("/api/")) return void handleApi(req, res);
+  // Résultat partagé du défi du jour (voir share.ts).
+  const shared = /^\/d\/([\w-]{6,16})$/.exec(url.split("?")[0]);
+  if (shared && (req.method === "GET" || req.method === "HEAD")) {
+    const html = sharePage(shared[1]);
+    if (html) { res.writeHead(200, { ...SECURITY_HEADERS, "content-type": TYPES[".html"], "cache-control": "no-cache" }).end(req.method === "HEAD" ? undefined : html); return; }
+  }
   if (config.webDir && (req.method === "GET" || req.method === "HEAD")) return serveStatic(url, res);
   res.writeHead(404).end();
 });

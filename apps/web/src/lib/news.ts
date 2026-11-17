@@ -4,6 +4,14 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
+    id: 12, version: "1.15", date: "2026-11-17", title: "Montre tes réponses (ou cache-les)",
+    items: [
+      "Partager ton défi du jour donne un lien vers ta page de résultat : ton score, ta grille, et toutes tes réponses, question par question (idée de Mathis).",
+      "Pour ne rien gâcher, tes amis voient d'abord ton score : les réponses sont repliées tant que le défi du jour est en cours.",
+      "Le partage parle à tout le monde : ✅ juste, 🟧 à moitié, ❌ raté, avec le décompte en toutes lettres. Et l'image affiche ✓, ~ et ✗ dans les cases.",
+    ],
+  },
+  {
     id: 11, version: "1.14.2", date: "2026-11-17", title: "Rejouer sans tout reconfigurer, correction en bleu",
     items: [
       "Après « Rejouer les ratés », le bouton « Nouvelle partie » relance ton entraînement complet, et plus la dernière série de ratés (merci Mathis !).",

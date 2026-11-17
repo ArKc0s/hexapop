@@ -142,6 +142,8 @@ export interface DailyOutcome {
   rank?: number;
   players?: number;
   saved: boolean;
+  /** Page de résultat à partager : hexapop.app/d/<share>. */
+  share?: string;
   /** Joué en invité : jeton à usage unique pour rattacher ce résultat au compte après connexion. */
   claim?: string;
 }

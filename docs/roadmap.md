@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.15** : page de résultat partagée du défi (hexapop.app/d/…, réponses repliées tant que le défi est en cours, 90 jours) ; partage lisible par tous (✅ 🟧 ❌ et décompte, symboles dans l'image) ; correction en bleu (v1.14.2) ; « Nouvelle partie » après « Rejouer les ratés » (v1.14.1).
 - **v1.14** : page Nouveautés (point rose sur l'accueil quand il y a du neuf) ; kilomètres affichés à chaque réponse en solo ; image de partage du défi du jour ; image d'aperçu propre à chaque fiche département et région ; IndexNow après chaque déploiement ; salons : arrivées et départs regroupés (moins de trafic en soirée nombreuse).
 - **v1.13** : création de compte repensée (aux bons moments : 1re partie, médaille, série, grand voyage, défi du jour ; sinon de plus en plus espacé ; jamais deux fois par jour ; « Ne plus me proposer » après deux refus ; ce qu'on risque de perdre affiché, rappel discret dans la bulle d'Hexa) ; stats en direct dans Grafana (présents par écran, salons en cours, courbe à la minute).
 - **v1.12** : pause en partie solo (la question est cachée, le temps ne compte pas, pause automatique si l'appli passe en arrière-plan) ; confirmation avant de quitter une partie, le défi du jour ou une partie entre amis ; couleurs de correction : vert = juste, rose = faux, bleu = la bonne réponse qu'on n'a pas trouvée (v1.14.2), jaune réservé à la question ; légende de la carte à la correction ; sous-préfectures et voisins corrigés un par un (justes, faux, ce qui manquait).
