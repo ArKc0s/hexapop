@@ -52,7 +52,7 @@
 
   const hello = $derived.by(() => {
     if (!p.stats.games) return "Salut ! Moi c'est Hexa. Ta première séance t'attend : 2 minutes, promis.";
-    if (fading.length >= 3) return `${fading.length} départements pâlissent sur ta carte : ta séance commence par eux.`;
+    if (seance.kind === "revision") return `${seance.reviews} département${seance.reviews > 1 ? "s" : ""} à revoir sur ta carte : on fait une séance de révisions ?`;
     if (streak > 0 && !playedToday) return `Une séance aujourd'hui pour garder ta série de ${streak} jour${streak > 1 ? "s" : ""} !`;
     if (seance.discover.length) return `Au programme : ${names(seance.discover)}.`;
     if (seance.region) return `On continue en ${seance.region.nom} ?`;
@@ -113,7 +113,12 @@
 
     <div class="next">
       <button class="btn big wide" onclick={play}>Continuer <Icon name="play" size={20} /></button>
-      <small>Séance de 2 min{seance.reviews ? ` · ${seance.reviews} à revoir` : ""}{seance.discover.length ? ` · nouveau : ${names(seance.discover)}` : seance.region ? ` · ${seance.region.nom}` : ""}</small>
+      {#if seance.kind === "revision"}
+        <small><b>Révisions</b> · {seance.reviews} département{seance.reviews > 1 ? "s" : ""} à revoir, partout en France</small>
+      {:else if seance.region}
+        <small><b>{seance.region.nom}</b>{seance.reviews ? ` · ${seance.reviews} à revoir` : ""}{seance.discover.length ? ` · nouveau : ${names(seance.discover)}` : ""}</small>
+        {#if seance.elsewhere}<button class="link more" onclick={() => startSeance("revision")}>Plutôt réviser {seance.elsewhere} département{seance.elsewhere > 1 ? "s" : ""} ailleurs</button>{/if}
+      {/if}
       {#if p.focus && TOUR.has(p.focus)}<button class="focus" onclick={() => profile.setFocus(null)}>Région choisie : {TOUR.get(p.focus)?.nom} <span aria-label="Annuler">✕</span></button>{/if}
     </div>
 
@@ -184,6 +189,8 @@
   .hello .bubble { flex: 1; }
   .next { display: flex; flex-direction: column; gap: 2px; }
   .next small { color: var(--soft); font-weight: 700; }
+  .next small b { color: var(--ink); }
+  .next .more { align-self: flex-start; font-size: 14px; margin-top: 4px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row2 .btn { flex-direction: column; gap: 3px; padding: 13px 10px; }
   .menu { display: flex; flex-wrap: wrap; gap: 6px 18px; }

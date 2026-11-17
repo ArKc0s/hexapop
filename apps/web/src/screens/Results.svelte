@@ -1,6 +1,6 @@
 <script lang="ts">
   import RoadBar from "../lib/ui/RoadBar.svelte";
-  import { stopsPassed } from "@hexa/game";
+  import { citiesReached } from "@hexa/game";
   import { onMount, onDestroy } from "svelte";
   import { BADGE, TOUR, nextTourRegion, randomSeed, type Question, type RoundResult, type Rewards } from "@hexa/game";
   import { startSeance } from "../lib/seance.svelte.ts";
@@ -49,7 +49,7 @@
   });
 
   const weekKm = profile.data.week?.km ?? r.xp;
-  const passed = stopsPassed(profile.data.xp - r.xp, profile.data.xp);
+  const passed = citiesReached(profile.data.xp - r.xp, profile.data.xp);
   const regionName = r.stars ? TOUR.get(r.stars.region)?.nom : null;
   const next = play.mode === "tour" ? nextTourRegion(profile.data) : null;
 
@@ -75,7 +75,7 @@
     <div class="km">
       <b class="gain tabnum">+{r.xp.toLocaleString("fr-FR")} km</b>
       <RoadBar km={profile.data.xp} gain={r.xp} />
-      {#each passed as s (s.km)}<span class="stop">Étape franchie : <b>{s.trip}</b> !</span>{/each}
+      {#if passed.length}<span class="stop">Hexa est arrivé à <b>{passed.join(", ")}</b> !</span>{/if}
       <span class="tabnum">{weekKm.toLocaleString("fr-FR")} km cette semaine · {rank}</span>
     </div>
 

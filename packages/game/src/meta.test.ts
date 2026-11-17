@@ -146,19 +146,33 @@ test("séance Continuer : découverte, révisions, consolidation, jamais deux in
   assert.deepEqual(sh.plan[0], { code: "29", hint: "nom", ask: ["carte", "numero", "prefecture"], tag: "home" });
   assert.equal(sh.plan.length, 7);
   assert.ok(!sh.discover.includes("29"));
-  // Joueur avancé : révisions échues d'abord, puis la région suivante (pas finie).
+  // Bretagne finie, 4 départements à revoir : Continuer propose une séance de révisions, annoncée comme telle.
   const solid = { b: 2, d: now - 1, s: 1 as const, v: 1 as const };
   const k: Record<string, Record<string, typeof solid>> = {};
   for (const c of ["22", "29", "35", "56"]) k[c] = { carte: solid, numero: solid, prefecture: solid };
   const s1 = S.composeSeance(k, { now, seed: 3, start: "53" });
-  assert.ok(s1.reviews >= 1 && s1.reviews <= 5);
-  assert.notEqual(s1.region?.code, "53", "Bretagne finie : on passe à une voisine");
-  assert.ok(TOUR.get("53")!.neighbors.includes(s1.region!.code));
-  // Un département revient une seule fois, sauf ceux qu'on découvre (question puis rappel).
-  const others = s1.plan.filter((x) => !s1.discover.includes(x.code)).map((x) => x.code);
-  assert.equal(new Set(others).size, others.length);
-  for (const c of s1.discover) assert.equal(s1.plan.filter((x) => x.code === c).length, 2);
-  assert.ok(s1.plan.length <= 12);
+  assert.equal(s1.kind, "revision");
+  assert.equal(s1.plan.length, 4);
+  assert.ok(s1.plan.every((it) => it.tag === "review"));
+  // Région choisie sur la carte : uniquement elle, même avec des révisions ailleurs (proposées à part).
+  const s2 = S.composeSeance(k, { now, seed: 3, start: "53", focus: "75" });
+  assert.equal(s2.kind, "region");
+  assert.equal(s2.region?.code, "75");
+  assert.ok(s2.plan.every((it) => TOUR.get("75")!.deps.includes(it.code)), "rien hors de la région annoncée");
+  assert.equal(s2.elsewhere, 4);
+  for (const c of s2.discover) assert.equal(s2.plan.filter((x) => x.code === c).length, 2);
+  assert.ok(s2.plan.length <= 12);
+  // Peu de révisions ailleurs : la région en cours (voisine de la Bretagne), sans rien d'autre dedans.
+  const k2 = { ...k, "29": { carte: { ...solid, d: now + 1e9 }, numero: { ...solid, d: now + 1e9 }, prefecture: { ...solid, d: now + 1e9 } }, "22": { carte: { ...solid, d: now + 1e9 }, numero: { ...solid, d: now + 1e9 }, prefecture: { ...solid, d: now + 1e9 } } };
+  const s3 = S.composeSeance(k2, { now, seed: 3, start: "53" });
+  assert.equal(s3.kind, "region");
+  assert.ok(TOUR.get("53")!.neighbors.includes(s3.region!.code));
+  assert.ok(s3.plan.every((it) => s3.region!.deps.includes(it.code)));
+  assert.equal(s3.elsewhere, 2);
+  // Région choisie déjà finie : consolidation de cette région, toujours rien d'ailleurs.
+  const s4 = S.composeSeance(k2, { now, seed: 3, start: "53", focus: "53" });
+  assert.equal(s4.region?.code, "53");
+  assert.ok(s4.plan.length > 0 && s4.plan.every((it) => TOUR.get("53")!.deps.includes(it.code)));
   // Région choisie par le joueur sur la carte.
   assert.equal(S.currentRegion(k, "53", "84")?.code, "84");
   // Rien à revoir ni à découvrir dans une région finie choisie : on retombe sur l'ordre normal.
@@ -183,4 +197,14 @@ test("kilomètres de la semaine, parties du jour, quêtes retirées", () => {
   assert.equal(M(srv, sanitizeProfile({ focus: "84", focusAt: 200 })).focus, "84");
   assert.equal(M(srv, sanitizeProfile({ focusAt: 200 })).focus, undefined);
   assert.equal(M(srv, sanitizeProfile({ focus: "11", focusAt: 50 })).focus, "53");
+});
+
+test("route d'Hexa : tronçons de ville en ville, en boucle", async () => {
+  const R = await import("./road.ts");
+  assert.deepEqual(R.roadTrip(0), { from: "Paris", to: "Lille", ratio: 0, left: 225, lap: 1 });
+  const t = R.roadTrip(1386);
+  assert.equal(t.from, "Lyon"); assert.equal(t.to, "Marseille"); assert.equal(t.left, 225 + 520 + 490 + 315 - 1386);
+  assert.equal(R.roadTrip(R.LAP_KM + 10).lap, 2);
+  assert.deepEqual(R.citiesReached(200, 800), ["Lille", "Strasbourg"]);
+  assert.deepEqual(R.citiesReached(R.LAP_KM - 10, R.LAP_KM + 230), ["Paris", "Lille"]);
 });

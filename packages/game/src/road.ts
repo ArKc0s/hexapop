@@ -1,32 +1,47 @@
-// Les kilomètres (ex-XP) : une route avec des étapes réelles, pour qu'on voie que ça avance
-// comme une barre d'expérience, sans niveaux numérotés. Distances approximatives (route depuis Paris, puis à vol d'oiseau).
-export interface Stop { km: number; name: string; trip: string }
-export const ROAD: Stop[] = [
-  { km: 0, name: "Paris", trip: "Le départ" },
-  { km: 130, name: "Orléans", trip: "Paris → Orléans" },
-  { km: 225, name: "Lille", trip: "Paris → Lille" },
-  { km: 385, name: "Nantes", trip: "Paris → Nantes" },
-  { km: 465, name: "Lyon", trip: "Paris → Lyon" },
-  { km: 585, name: "Bordeaux", trip: "Paris → Bordeaux" },
-  { km: 775, name: "Marseille", trip: "Paris → Marseille" },
-  { km: 930, name: "Nice", trip: "Paris → Nice" },
-  { km: 1200, name: "Paris-Brest-Paris", trip: "La randonnée Paris-Brest-Paris" },
-  { km: 3400, name: "Tour de France", trip: "Un Tour de France cycliste" },
-  { km: 6750, name: "Pointe-à-Pitre", trip: "Paris → la Guadeloupe" },
-  { km: 9350, name: "Saint-Denis de La Réunion", trip: "Paris → La Réunion" },
-  { km: 40075, name: "Tour de la Terre", trip: "Le tour de la Terre" },
-  { km: 384400, name: "La Lune", trip: "La Terre → la Lune" },
+// Les kilomètres (ex-XP) : Hexa fait le tour de France de ville en ville, en boucle.
+// Une barre d'expérience sans niveaux numérotés : chaque tronçon (200 à 560 km) se parcourt en une à trois séances.
+// Distances routières approximatives.
+export const ROUTE: { city: string; km: number }[] = [
+  { city: "Paris", km: 0 },
+  { city: "Lille", km: 225 },
+  { city: "Strasbourg", km: 520 },
+  { city: "Lyon", km: 490 },
+  { city: "Marseille", km: 315 },
+  { city: "Nice", km: 200 },
+  { city: "Toulouse", km: 560 },
+  { city: "Bordeaux", km: 245 },
+  { city: "Nantes", km: 345 },
+  { city: "Brest", km: 300 },
+  { city: "Rennes", km: 245 },
+  { city: "Paris", km: 350 },
 ];
+export const LAP_KM = ROUTE.reduce((n, s) => n + s.km, 0);
 
-/** Où en est Hexa sur la route : dernière étape franchie, prochaine, et la part du tronçon parcourue. */
-export function roadTrip(km: number): { last: Stop; next: Stop | null; ratio: number; left: number } {
-  let i = 0;
-  while (i + 1 < ROAD.length && km >= ROAD[i + 1].km) i++;
-  const last = ROAD[i], next = ROAD[i + 1] ?? null;
-  return { last, next, ratio: next ? (km - last.km) / (next.km - last.km) : 1, left: next ? next.km - km : 0 };
+export interface Trip { from: string; to: string; ratio: number; left: number; lap: number }
+
+/** Où en est Hexa : le tronçon en cours, la part parcourue, ce qui reste, et le numéro du tour de France. */
+export function roadTrip(km: number): Trip {
+  const total = Math.max(0, km);
+  const lap = Math.floor(total / LAP_KM) + 1;
+  let rest = total % LAP_KM;
+  for (let i = 1; i < ROUTE.length; i++) {
+    const leg = ROUTE[i].km;
+    if (rest < leg) return { from: ROUTE[i - 1].city, to: ROUTE[i].city, ratio: rest / leg, left: leg - rest, lap };
+    rest -= leg;
+  }
+  return { from: "Paris", to: "Lille", ratio: 0, left: ROUTE[1].km, lap };
 }
 
-/** Étapes franchies entre deux totaux (pour l'écran de fin). */
-export function stopsPassed(before: number, after: number): Stop[] {
-  return ROAD.filter((s) => s.km > before && s.km <= after);
+/** Villes atteintes entre deux totaux (pour l'écran de fin). */
+export function citiesReached(before: number, after: number): string[] {
+  const out: string[] = [];
+  let at = 0;
+  for (let lap = 0; at <= after; lap++) {
+    for (let i = 1; i < ROUTE.length; i++) {
+      at = lap * LAP_KM + ROUTE.slice(1, i + 1).reduce((n, s) => n + s.km, 0);
+      if (at > after) return out;
+      if (at > before) out.push(ROUTE[i].city);
+    }
+  }
+  return out;
 }
