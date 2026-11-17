@@ -27,17 +27,554 @@
     "from": "now-30d",
     "to": "now"
   },
-  "refresh": "5m",
+  "refresh": "30s",
   "schemaVersion": 41,
   "version": 1,
   "panels": [
+    {
+      "id": 100,
+      "type": "row",
+      "title": "En direct (rafraîchi toutes les 30 s)",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 101,
+      "type": "stat",
+      "title": "En ligne maintenant",
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/live?hours=24",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "now",
+          "columns": [
+            {
+              "selector": "en_ligne",
+              "text": "En ligne maintenant",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#1572c4"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 102,
+      "type": "stat",
+      "title": "En partie solo",
+      "gridPos": {
+        "x": 4,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/live?hours=24",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "now",
+          "columns": [
+            {
+              "selector": "solo",
+              "text": "En partie solo",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#22b07d"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 103,
+      "type": "stat",
+      "title": "Défis du jour en cours",
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/live?hours=24",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "now",
+          "columns": [
+            {
+              "selector": "daily_en_partie",
+              "text": "Défis du jour en cours",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ffd93d"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 104,
+      "type": "stat",
+      "title": "Joueurs entre amis",
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/live?hours=24",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "now",
+          "columns": [
+            {
+              "selector": "multi_joueurs",
+              "text": "Joueurs entre amis",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ff4fae"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 105,
+      "type": "bargauge",
+      "title": "Où sont-ils ?",
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 8,
+        "h": 9
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/live?hours=24",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "now",
+          "columns": [
+            {
+              "selector": "ecran_accueil",
+              "text": "Accueil",
+              "type": "number"
+            },
+            {
+              "selector": "ecran_seance",
+              "text": "Séance",
+              "type": "number"
+            },
+            {
+              "selector": "ecran_entrainement",
+              "text": "Entraînement",
+              "type": "number"
+            },
+            {
+              "selector": "ecran_marathon",
+              "text": "Marathon",
+              "type": "number"
+            },
+            {
+              "selector": "ecran_revision",
+              "text": "Révisions",
+              "type": "number"
+            },
+            {
+              "selector": "ecran_defi",
+              "text": "Défi du jour",
+              "type": "number"
+            },
+            {
+              "selector": "ecran_multi",
+              "text": "Entre amis",
+              "type": "number"
+            },
+            {
+              "selector": "ecran_autre",
+              "text": "Autres pages",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "valueMode": "color",
+        "namePlacement": "left"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#1572c4"
+          },
+          "decimals": 0,
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 106,
+      "type": "table",
+      "title": "Salons en cours",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 16,
+        "h": 5
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/live?hours=24",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "now",
+          "columns": [
+            {
+              "selector": "duel_en_partie",
+              "text": "Duels en jeu",
+              "type": "number"
+            },
+            {
+              "selector": "plateau_en_partie",
+              "text": "Soirées en jeu",
+              "type": "number"
+            },
+            {
+              "selector": "coop_en_partie",
+              "text": "Équipes en jeu",
+              "type": "number"
+            },
+            {
+              "selector": "duel_salons",
+              "text": "Salons duel",
+              "type": "number"
+            },
+            {
+              "selector": "plateau_salons",
+              "text": "Salons soirée",
+              "type": "number"
+            },
+            {
+              "selector": "coop_salons",
+              "text": "Salons équipe",
+              "type": "number"
+            },
+            {
+              "selector": "plateau_spectateurs",
+              "text": "Spectateurs",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "md"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 107,
+      "type": "timeseries",
+      "title": "Joueurs présents, minute par minute (24 h)",
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 24,
+        "h": 5
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_HEXA}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_HEXA}"
+          },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "backend",
+          "url": "/api/admin/live?hours=24",
+          "url_options": {
+            "method": "GET"
+          },
+          "root_selector": "series",
+          "columns": [
+            {
+              "selector": "time",
+              "text": "Heure",
+              "type": "timestamp"
+            },
+            {
+              "selector": "ecran_accueil",
+              "text": "Accueil",
+              "type": "number"
+            },
+            {
+              "selector": "solo",
+              "text": "Solo",
+              "type": "number"
+            },
+            {
+              "selector": "daily_joueurs",
+              "text": "Défi du jour",
+              "type": "number"
+            },
+            {
+              "selector": "multi_joueurs",
+              "text": "Entre amis",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "fillOpacity": 35,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal"
+            },
+            "showPoints": "never"
+          },
+          "decimals": 0,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "timeFrom": "24h"
+    },
     {
       "id": 1,
       "type": "stat",
       "title": "Visiteurs aujourd'hui",
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 15,
         "w": 4,
         "h": 4
       },
@@ -105,7 +642,7 @@
       "title": "Visiteurs sur 30 jours (somme)",
       "gridPos": {
         "x": 4,
-        "y": 0,
+        "y": 15,
         "w": 4,
         "h": 4
       },
@@ -173,7 +710,7 @@
       "title": "Séances aujourd'hui",
       "gridPos": {
         "x": 8,
-        "y": 0,
+        "y": 15,
         "w": 4,
         "h": 4
       },
@@ -241,7 +778,7 @@
       "title": "Comptes",
       "gridPos": {
         "x": 12,
-        "y": 0,
+        "y": 15,
         "w": 4,
         "h": 4
       },
@@ -304,7 +841,7 @@
       "title": "Nouveaux comptes (30 j)",
       "gridPos": {
         "x": 16,
-        "y": 0,
+        "y": 15,
         "w": 4,
         "h": 4
       },
@@ -372,7 +909,7 @@
       "title": "Pic de joueurs en direct (30 j)",
       "gridPos": {
         "x": 20,
-        "y": 0,
+        "y": 15,
         "w": 4,
         "h": 4
       },
@@ -440,7 +977,7 @@
       "title": "Visiteurs uniques par jour",
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 19,
         "w": 12,
         "h": 8
       },
@@ -522,7 +1059,7 @@
       "title": "Parties solo par jour",
       "gridPos": {
         "x": 12,
-        "y": 4,
+        "y": 19,
         "w": 12,
         "h": 8
       },
@@ -614,7 +1151,7 @@
       "title": "Défi du jour par niveau",
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 27,
         "w": 12,
         "h": 8
       },
@@ -706,7 +1243,7 @@
       "title": "Entre amis",
       "gridPos": {
         "x": 12,
-        "y": 12,
+        "y": 27,
         "w": 12,
         "h": 8
       },
@@ -798,7 +1335,7 @@
       "title": "Comptes (du plus récent au plus ancien)",
       "gridPos": {
         "x": 0,
-        "y": 20,
+        "y": 35,
         "w": 24,
         "h": 10
       },
@@ -868,7 +1405,25 @@
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "Pseudo": 0,
+              "Dép.": 1,
+              "Connexion": 2,
+              "Vérifié": 3,
+              "Défis joués": 4,
+              "Inscrit le": 5,
+              "Vu le": 6
+            },
+            "excludeByName": {},
+            "renameByName": {}
+          }
+        }
+      ]
     }
   ]
 }

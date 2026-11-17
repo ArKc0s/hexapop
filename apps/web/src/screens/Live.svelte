@@ -50,7 +50,7 @@
     rewards = profile.record({ mode: "multi", level: room?.settings.level ?? "normal", input: room?.settings.input ?? "libre", results: live.myResults, won, now: Date.now() });
     sound.play(won ? "level" : "tap");
     const got = rewards;
-    offerTimer = setTimeout(() => { if (live.ranking) signup.offer({ kind: "multi", xp: got?.xp, firstGame: profile.data.stats.games <= 1 }); }, 1500);
+    offerTimer = setTimeout(() => { if (live.ranking) signup.offer({ kind: "multi", xp: got?.xp, firstGame: profile.data.stats.games <= 1, games: profile.data.stats.games }); }, 1500);
   });
   $effect(() => { if (room?.phase === "lobby") rewards = null; });
 

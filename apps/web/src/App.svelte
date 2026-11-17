@@ -20,6 +20,7 @@
   import Reminders from "./screens/Reminders.svelte";
   import { push } from "./lib/push.svelte.ts";
   import PushPrompt from "./lib/ui/PushPrompt.svelte";
+  import { startPresence } from "./lib/presence.ts";
   import SignupPrompt from "./lib/ui/SignupPrompt.svelte";
 
   nav.screen = screenFromHash();
@@ -32,6 +33,7 @@
   session.load();
   push.init();
   updater.start();
+  startPresence();
 </script>
 
 <!-- Filet de sécurité : un écran qui plante affiche un message au lieu de laisser un bouton qui ne fait rien. -->

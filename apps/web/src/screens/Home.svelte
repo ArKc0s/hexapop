@@ -11,6 +11,8 @@
   import { nav, takePendingRegion } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { session } from "../lib/api.svelte.ts";
+  import { signup } from "../lib/signup.svelte.ts";
+  import { stakeOf } from "../lib/stake.ts";
   import { sound } from "../lib/sound.svelte.ts";
   import { install } from "../lib/install.svelte.ts";
 
@@ -65,6 +67,9 @@
     return `Ta France est à ${pct} %. On consolide ?`;
   });
 
+  /** Invité qui a déjà joué : Hexa rappelle, sans bloquer, que sa progression n'est que sur cet appareil. */
+  const guestStake = $derived(session.ready && session.online && !session.me && !signup.never && p.stats.games > 0 ? stakeOf(p).text : "");
+
   function play() {
     sound.play("tap");
     startSeance();
@@ -102,7 +107,11 @@
     </div>
     <RoadBar {km} />
 
-    <div class="hello"><Mascot mood="happy" size={66} /><p class="bubble">{hello}</p></div>
+    <div class="hello"><Mascot mood="happy" size={66} />
+      <div class="bubble"><p>{hello}</p>
+        {#if guestStake}<p class="keep">Tout ça n'existe que sur cet appareil ({guestStake}). <button class="link" onclick={() => nav.go({ name: "account", view: "register", then: { name: "home" } })}>Le sauvegarder</button></p>{/if}
+      </div>
+    </div>
     {#if session.ready && !session.online}<p class="offline" role="status">Hors ligne : tes séances et l'Entraînement marchent, ta progression sera envoyée au retour. Le défi et le multi reviennent dès que la connexion est rétablie.</p>{/if}
 
     {#if install.suggest}
@@ -240,7 +249,8 @@
   .gp.ok { color: var(--green-d); }
   .tip { margin: 0; font-size: 13px; color: var(--soft); font-weight: 700; text-align: right; }
   .hello { display: flex; gap: 12px; align-items: flex-start; }
-  .hello .bubble { flex: 1; }
+  .hello .bubble { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .hello .keep { font-size: 14px; font-weight: 600; color: var(--soft); padding-top: 6px; border-top: 2px solid var(--bg); }
   /* Un seul espacement entre tous les boutons d'action */
   .actions { display: flex; flex-direction: column; gap: 12px; }
   .next { display: flex; flex-direction: column; gap: 8px; }

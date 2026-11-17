@@ -65,7 +65,13 @@
     setTimeout(() => sound.play("tick"), 700);
     if (r.stars && r.stars.after > r.stars.before) setTimeout(() => sound.play("star"), 300);
     // Invité : on laisse voir les récompenses, puis on propose de les garder.
-    offerTimer = setTimeout(() => signup.offer({ kind: "solo", xp: r.xp, stars: newStars, firstGame: profile.data.stats.games <= 1 }), 1000);
+    // Un vrai moment rend la sauvegarde évidente : on le nomme.
+    const medals = r.knowledge?.medals ?? [];
+    const moment = medals.length ? (medals.length === 1 ? `ta médaille ${["", "de bronze", "d'argent", "d'or"][medals[0].medal]}` : `tes ${medals.length} médailles`)
+      : passed.voyages.length ? `ton grand voyage (${passed.voyages[0]})`
+      : r.streak.extended && [2, 3, 7, 14, 30, 50, 100].includes(r.streak.count) ? `ta série de ${r.streak.count} jours`
+      : undefined;
+    offerTimer = setTimeout(() => signup.offer({ kind: "solo", xp: r.xp, stars: newStars, firstGame: profile.data.stats.games <= 1, moment, games: profile.data.stats.games }), 1000);
   });
 
   const weekKm = profile.data.week?.km ?? r.xp;

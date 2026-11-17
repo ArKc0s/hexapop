@@ -12,6 +12,7 @@ import { stats } from "./rooms.ts";
 import { life } from "./life.ts";
 import { hallOfFame, saveMarathon } from "./hof.ts";
 import { CLIENT_EVENTS, bump, report, visit } from "./stats.ts";
+import { liveReport, ping } from "./live.ts";
 import { timingSafeEqual } from "node:crypto";
 import { DEFAULT_PREFS, cleanPrefs, pushEnabled, validEndpoint, vapidPublicKey } from "./push.ts";
 import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
@@ -83,6 +84,13 @@ async function sendVerification(u: { id: number; pseudo: string; email: string }
 }
 
 type Handler = (req: IncomingMessage, res: ServerResponse, user: User | null) => Promise<void> | void;
+/** Lecture des statistiques (Grafana) : jeton STATS_TOKEN. */
+function statsAuth(req: IncomingMessage) {
+  const given = Buffer.from(String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
+  const want = Buffer.from(config.statsToken);
+  need(config.statsToken && given.length === want.length && timingSafeEqual(given, want), 401, "auth_required", "Jeton invalide.");
+}
+
 const routes: Record<string, Handler> = {
   "GET /api/health": (_req, res) => json(res, 200, { ok: true, ...stats(), ...(life.color ? { color: life.color } : {}) }),
 
@@ -347,11 +355,24 @@ const routes: Record<string, Handler> = {
 
   /** Lecture des statistiques (Grafana), protégée par STATS_TOKEN. */
   "GET /api/admin/stats": (req, res) => {
-    const given = Buffer.from(String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
-    const want = Buffer.from(config.statsToken);
-    need(config.statsToken && given.length === want.length && timingSafeEqual(given, want), 401, "auth_required", "Jeton invalide.");
+    statsAuth(req);
     const days = Math.min(365, Math.max(1, Number(new URL(req.url ?? "/", "http://x").searchParams.get("days")) || 30));
     json(res, 200, report(days), { "cache-control": "no-store" });
+  },
+
+  /** En direct (Grafana) : présents par écran, salons en cours, et une mesure par minute sur ?hours= (24 h par défaut). */
+  "GET /api/admin/live": (req, res) => {
+    statsAuth(req);
+    const hours = Math.min(14 * 24, Math.max(1, Number(new URL(req.url ?? "/", "http://x").searchParams.get("hours")) || 24));
+    json(res, 200, liveReport(hours), { "cache-control": "no-store" });
+  },
+
+  /** Présence anonyme : un onglet ouvert signale son écran (voir live.ts). */
+  "POST /api/stats/live": async (req, res) => {
+    if (!rateLimit("live:" + clientIp(req), 30, 60_000)) { res.writeHead(204).end(); return; }
+    const b = await body(req);
+    ping(s(b.id), s(b.s));
+    res.writeHead(204).end();
   },
 
   /** Marathon (les 101 en fiche complète, au clavier) : garde le meilleur résultat du compte. */

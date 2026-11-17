@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.13** : création de compte repensée (aux bons moments : 1re partie, médaille, série, grand voyage, défi du jour ; sinon de plus en plus espacé ; jamais deux fois par jour ; « Ne plus me proposer » après deux refus ; ce qu'on risque de perdre affiché, rappel discret dans la bulle d'Hexa) ; stats en direct dans Grafana (présents par écran, salons en cours, courbe à la minute).
 - **v1.12** : pause en partie solo (la question est cachée, le temps ne compte pas, pause automatique si l'appli passe en arrière-plan) ; confirmation avant de quitter une partie, le défi du jour ou une partie entre amis ; couleurs de correction : vert = juste, rose = faux, jaune réservé à la question (le bleu reste la couleur d'Hexa) ; légende de la carte à la correction ; sous-préfectures et voisins corrigés un par un (justes, faux, ce qui manquait).
 - **v1.10 / v1.11** : statistiques anonymes lisibles dans Grafana ; invités au classement du défi sous un pseudo généré, repris par leur compte à l'inscription ; confirmation du pseudo après inscription via Google & co.
 - **v1.9** : référencement : 127 pages générées (101 départements, 18 régions, listes, carte, quiz) sous `/france` et `/quiz`, données structurées, plan du site par atlas, vraies 404, aperçus de partage. Voir [`seo.md`](seo.md).

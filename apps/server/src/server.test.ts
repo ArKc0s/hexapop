@@ -423,6 +423,25 @@ test("statistiques anonymes : visiteurs uniques du jour, parties, lecture proté
   assert.ok(r.users.length >= 1 && r.users.every((u: Record<string, unknown>) => !("email" in u)), "jamais d'email dans les statistiques");
 });
 
+test("stats en direct : présents par écran et salons en cours", async () => {
+  const live = (id: string, sc: string) => fetch(BASE + "/api/stats/live", { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": "10.0.9.1" }, body: JSON.stringify({ id, s: sc }) });
+  await live("onglet-aaaaaaaa", "seance"); await live("onglet-bbbbbbbb", "accueil"); await live("onglet-aaaaaaaa", "marathon"); await live("onglet-cccccccc", "pirate");
+  const a = new Client(); await a.open();
+  a.send({ t: "hello", v: PROTOCOL_VERSION, name: "Ana" }); await a.wait("welcome");
+  a.send({ t: "create", kind: "duel" }); await a.wait("room");
+  assert.equal((await fetch(BASE + "/api/admin/live")).status, 401, "jeton requis");
+  const r = await (await fetch(BASE + "/api/admin/live?hours=2", { headers: { authorization: "Bearer jeton-stats" } })).json();
+  const n = r.now[0];
+  assert.equal(n.ecran_marathon, 1, "le même onglet compte une fois, sur son dernier écran");
+  assert.equal(n.ecran_seance, 0);
+  assert.equal(n.ecran_accueil, 1);
+  assert.equal(n.solo, 1);
+  assert.ok(n.en_ligne >= 2 && !("ecran_pirate" in n), "écran inconnu ignoré");
+  assert.ok(n.duel_salons >= 1 && n.duel_joueurs >= 1);
+  assert.ok(Array.isArray(r.series));
+  a.send({ t: "leave" }); a.ws.close();
+});
+
 test("invités au classement du défi : pseudo généré, un essai par navigateur, repris par le compte", { timeout: 60_000 }, async () => {
   const guest = "invite-test-0123456789ab";
   const play = async () => {

@@ -20,6 +20,7 @@ Le Grafana du homelab est sur `http://192.168.1.169:3000`.
 ## Ce qu'on voit
 | Panneau | Contenu |
 |---|---|
+| En direct (haut du tableau, rafraîchi toutes les 30 s) | en ligne maintenant, en partie solo, défis du jour en cours, joueurs entre amis ; où sont les joueurs (accueil, séance, entraînement, marathon, révisions, défi, entre amis) ; salons en cours par type ; courbe minute par minute sur 24 h. Source : `GET /api/admin/live?hours=24` (même jeton) |
 | Chiffres clés | visiteurs du jour, sur 30 jours, séances du jour, comptes, nouveaux comptes, pic de joueurs en direct |
 | Visiteurs uniques par jour | dont ceux qui jouent depuis l'appli installée |
 | Parties solo | séances (Continuer), entraînement, marathon, révisions |
@@ -29,4 +30,6 @@ Le Grafana du homelab est sur `http://192.168.1.169:3000`.
 
 ## Notes
 - Les visiteurs du jour en cours sont calculés en direct ; les jours passés sont des totaux (les empreintes du jour sont effacées le lendemain).
+- « En direct » : chaque onglet ouvert signale son écran toutes les minutes (identifiant tiré au hasard à chaque chargement, gardé 2 minutes en mémoire, voir `apps/server/src/live.ts`). Une mesure par minute est gardée 14 jours (table `stats_live`). Pendant une mise à jour, les salons qui finissent sur l'ancienne version n'apparaissent pas dans les chiffres en direct.
+- Les parties solo ne sont comptées que depuis la v1.10 (17/11/2026 vers 11 h 40).
 - Pendant une mise à jour, les deux versions écrivent dans la même base : les compteurs restent justes.

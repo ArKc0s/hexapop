@@ -499,3 +499,17 @@ export function busyRooms(): number {
 export const roomCodes = () => [...rooms.keys()];
 
 export function stats() { return { rooms: rooms.size, players: [...rooms.values()].reduce((n, r) => n + r.seats.size, 0) }; }
+
+/** Salons en ce moment, par type : nombre, en partie (pas en salle d'attente), joueurs et spectateurs. */
+export function liveRooms() {
+  const out: Record<RoomKind, { salons: number; en_partie: number; joueurs: number; spectateurs: number }> = {
+    duel: { salons: 0, en_partie: 0, joueurs: 0, spectateurs: 0 }, plateau: { salons: 0, en_partie: 0, joueurs: 0, spectateurs: 0 },
+    coop: { salons: 0, en_partie: 0, joueurs: 0, spectateurs: 0 }, daily: { salons: 0, en_partie: 0, joueurs: 0, spectateurs: 0 },
+  };
+  for (const r of rooms.values()) {
+    const k = out[r.kind];
+    k.salons++; k.joueurs += r.seats.size; k.spectateurs += r.spectators.size;
+    if (r.phase !== "lobby" && r.phase !== "ended") k.en_partie++;
+  }
+  return out;
+}

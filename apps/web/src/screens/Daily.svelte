@@ -53,7 +53,7 @@
     const o = live.daily;
     if (!o || session.me || (guest && guest.day === o.day)) return;
     guest = { day: o.day, level: o.level, points: o.points, elapsedMs: o.elapsedMs, grid: o.grid, claim: o.claim, name: o.name, rank: o.rank, players: o.players };
-    offerTimer = setTimeout(() => signup.offer({ kind: "daily" }), 1000);
+    offerTimer = setTimeout(() => signup.offer({ kind: "daily", guestName: o.name, games: profile.data.stats.games }), 1000);
     try { localStorage.setItem(GUEST_DAILY, JSON.stringify(guest)); } catch { /* rien */ }
   });
   /** Pseudo généré de l'invité au classement (« Mouette du Finistère »). */
