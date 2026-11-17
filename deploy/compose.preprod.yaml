@@ -1,0 +1,20 @@
+# Préprod : une seule instance, base à part (données de test), derrière preprod.hexapop.app (mot de passe, voir Caddy).
+# Déployée par deploy/preprod.sh depuis n'importe quelle branche ; la prod (deploy.sh) ne part que de main.
+services:
+  preprod:
+    image: hexapop:preprod
+    build: ./src
+    container_name: hexapop-preprod
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PUBLIC_URL: https://preprod.hexapop.app
+      HEXA_ENV: preprod
+    ports:
+      - "8790:8787"
+    volumes:
+      - ./data:/data
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "2" }

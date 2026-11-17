@@ -7,6 +7,8 @@ export const config = {
   webDir: process.env.WEB_DIR ?? "",
   /** Secret de tirage du défi du jour (empêche de le calculer à l'avance). */
   dailySecret: process.env.DAILY_SECRET ?? "dev-secret",
+  /** « preprod » : bandeau dans le jeu (voir deploy/compose.preprod.yaml). */
+  env: process.env.HEXA_ENV ?? "prod",
   /** Jeton de lecture des statistiques (Grafana) ; sans jeton, la route est fermée. */
   statsToken: process.env.STATS_TOKEN ?? "",
   smtp: {

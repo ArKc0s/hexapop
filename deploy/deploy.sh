@@ -10,6 +10,9 @@ set -eu
 [ -f "$(dirname "$0")/.deploy.env" ] && . "$(dirname "$0")/.deploy.env"
 : "${HOST:?définis HOST dans deploy/.deploy.env}" "${DIR:?définis DIR dans deploy/.deploy.env}"
 cd "$(dirname "$0")/.."
+# La prod ne part que de main (les branches de travail passent par la préprod : deploy/preprod.sh).
+B=$(git rev-parse --abbrev-ref HEAD)
+if [ "$B" != main ] && [ "${ANY_BRANCH:-0}" != 1 ]; then echo "Annulé : branche « $B ». La prod se déploie depuis main (préprod : deploy/preprod.sh)."; exit 1; fi
 
 ssh "$HOST" "mkdir -p $DIR/src $DIR/data"
 git archive --format=tar HEAD | ssh "$HOST" "rm -rf $DIR/src.new && mkdir $DIR/src.new && tar -x -C $DIR/src.new && echo $(git rev-parse --short HEAD) > $DIR/src.new/BUILD_COMMIT && rm -rf $DIR/src && mv $DIR/src.new $DIR/src"

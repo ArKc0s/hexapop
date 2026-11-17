@@ -35,6 +35,9 @@
   push.init();
   updater.start();
   startPresence();
+  // Préprod : un bandeau pour ne jamais la confondre avec le vrai jeu.
+  let preprod = $state(false);
+  fetch("/api/health").then((r) => r.json()).then((h) => (preprod = h.env === "preprod")).catch(() => {});
 </script>
 
 <!-- Filet de sécurité : un écran qui plante affiche un message au lieu de laisser un bouton qui ne fait rien. -->
@@ -69,8 +72,10 @@
 <UpdateBanner />
 <PseudoPrompt />
 <SignupPrompt />
+{#if preprod}<div class="preprod" role="note">Préprod · version de test</div>{/if}
 
 <style>
+  .preprod { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 90; background: var(--ink); color: var(--yellow); font-weight: 900; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 12px; border-radius: 10px 10px 0 0; pointer-events: none; }
   .crash { --w: 560px; display: flex; flex-direction: column; gap: 14px; }
   .crash p { margin: 0; font-weight: 600; color: var(--soft); }
   .crash .row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }

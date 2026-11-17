@@ -93,7 +93,7 @@ function statsAuth(req: IncomingMessage) {
 }
 
 const routes: Record<string, Handler> = {
-  "GET /api/health": (_req, res) => json(res, 200, { ok: true, ...stats(), ...(life.color ? { color: life.color } : {}) }),
+  "GET /api/health": (_req, res) => json(res, 200, { ok: true, ...stats(), ...(life.color ? { color: life.color } : {}), ...(config.env !== "prod" ? { env: config.env } : {}) }),
 
   "POST /api/auth/register": async (req, res) => {
     need(rateLimit("reg:" + clientIp(req), 10, 3_600_000), 429, "rate_limited", "Trop d'inscriptions depuis cette connexion, réessaie plus tard.");
