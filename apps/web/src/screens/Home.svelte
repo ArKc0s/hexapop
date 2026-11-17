@@ -167,17 +167,17 @@
 {/if}
 
 <style>
-  .home { max-width: 1720px; margin: 0 auto; padding: 22px 24px 28px; display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 10px 48px; }
+  .home { max-width: 1560px; margin: 0 auto; padding: 22px 24px 28px; display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 10px 48px; }
   /* Ordinateur : on occupe l'écran. La carte grandit jusqu'à la hauteur de la fenêtre, le tout centré verticalement. */
   @media (min-width: 861px) {
     .home { min-height: 100dvh; align-content: center; }
-    .right :global(.map) { max-height: calc(100dvh - 170px); }
+    .right :global(.map) { max-height: calc(100dvh - 230px); }
   }
   /* Grands écrans : la colonne de gauche et les textes autour de la carte grossissent avec (la carte, elle, s'étire seule). */
-  @media (min-width: 1600px) and (min-height: 900px) {
-    .home { grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); gap: 10px 64px; }
-    .left, .rhead, .tip, .legend { zoom: 1.2; }
-    .right :global(.map) { max-height: calc(100dvh - 220px); }
+  @media (min-width: 1800px) and (min-height: 1000px) {
+    .home { gap: 10px 56px; }
+    .left, .rhead, .tip, .legend { zoom: 1.1; }
+    .right :global(.map) { max-height: calc(100dvh - 260px); }
   }
   .left { display: flex; flex-direction: column; gap: 16px; }
   .top { display: flex; align-items: center; gap: 8px; }
