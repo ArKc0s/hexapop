@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { knowFills } from "../lib/knowFills.ts";
   import RoadBar from "../lib/ui/RoadBar.svelte";
   import { onDestroy } from "svelte";
   import { DEP, DEPARTEMENTS, MAX_STARS, PLAYER_LEVELS, TOUR, dayKey, fadingCodes, knownStars, liveStreak, medalCount, medalOf, playerLevel, starsOf, taFrance, titleFor, tourRegionOf } from "@hexa/game";
@@ -46,14 +47,7 @@
   const pct = $derived(taFrance(know));
   const stars = $derived(knownStars(know));
   const level = $derived(PLAYER_LEVELS[playerLevel(know)].nom);
-  const STAR_FILL = ["", "#dcebf8", "#b6d6f1"];
-  const MEDAL_FILL = ["", "#e6b98e", "#b4bfcd", "#f5c518"];
-  const fills = $derived(Object.fromEntries(all.flatMap((c) => {
-    const m = medalOf(know, c), s = starsOf(know, c);
-    if (!s) return know[c] && Object.values(know[c]).some((x) => x?.v) ? [[c, "#eef3f8"]] : [];
-    if (fading.includes(c)) return [[c, "var(--tint-ko)"]];
-    return [[c, m ? MEDAL_FILL[m] : STAR_FILL[s]]];
-  })));
+  const fills = $derived(knowFills(know, Date.now()));
 
   const hello = $derived.by(() => {
     if (!p.stats.games) return "Salut ! Moi c'est Hexa. Ta première séance t'attend : 2 minutes, promis.";
@@ -156,7 +150,6 @@
 
       <nav class="menu" aria-label="Plus">
         <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
-        <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
         <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
       </nav>
     </div>
@@ -179,7 +172,7 @@
     <div class="legend">
       <span><i style="background:#eef3f8; box-shadow: inset 0 0 0 1px #c8d4e0"></i>découvert</span><span><i style="background:#b6d6f1"></i>1-2 étoiles</span><span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
       <span><i style="background:var(--tint-ko)"></i>à réviser</span>
-      {#if fading.length}<button class="link" onclick={() => nav.go({ name: "setup", mode: "apprendre" })}>Réviser ({fading.length})</button>{/if}
+      {#if fading.length}<button class="link" onclick={() => startSeance("revision")}>Réviser ({fading.length})</button>{/if}
     </div>
   </section>
 

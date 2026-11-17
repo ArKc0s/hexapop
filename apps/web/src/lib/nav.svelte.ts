@@ -1,15 +1,13 @@
 import type { GameConfig, GameMode, RoundResult, Question, Rewards } from "@hexa/game";
 
-export type SoloMode = "apprendre" | "eclair" | "marathon" | "region";
+export type AlbumTab = "medailles" | "carte" | "succes";
 export interface PlayScreen { name: "play"; config: GameConfig; title: string; learn: boolean; mode: GameMode; region?: string }
 export type Screen =
   | { name: "home" }
   | { name: "training" }
-  | { name: "setup"; mode: SoloMode }
   | PlayScreen
   | { name: "results"; play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards }
-  | { name: "album"; tab?: "plaques" | "badges" }
-  | { name: "atlas" }
+  | { name: "album"; tab?: AlbumTab }
   | { name: "account"; view?: "login" | "register" | "forgot" | "reset" | "verify" | "profile"; token?: string; then?: Screen; notice?: string; oauthError?: string }
   | { name: "daily" }
   | { name: "lobby"; join?: string }
@@ -18,7 +16,7 @@ export type Screen =
   | { name: "legal"; doc: "apropos" | "mentions" | "confidentialite" | "cgu" }
   | { name: "rappels" };
 
-const SIMPLE: Partial<Record<Screen["name"], string>> = { training: "#entrainement", album: "#album", atlas: "#atlas", daily: "#defi", rappels: "#rappels" };
+const SIMPLE: Partial<Record<Screen["name"], string>> = { training: "#entrainement", album: "#album", daily: "#defi", rappels: "#rappels" };
 const LEGAL = { apropos: "#a-propos", mentions: "#mentions-legales", confidentialite: "#confidentialite", cgu: "#cgu" };
 
 class Nav {
@@ -38,6 +36,8 @@ export function screenFromHash(): Screen {
   const h = location.hash;
   for (const [doc, v] of Object.entries(LEGAL)) if (h === v) return { name: "legal", doc: doc as keyof typeof LEGAL };
   for (const [name, v] of Object.entries(SIMPLE)) if (h === v) return { name } as Screen;
+  // L'Atlas fait partie de l'Album (onglet Carte) : les anciens liens y mènent.
+  if (h === "#atlas") return { name: "album", tab: "carte" };
   const m = /^#([\w-]+)=([\w-]+)$/.exec(h);
   if (!m) return { name: "home" };
   const [, k, v] = m;

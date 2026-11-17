@@ -357,6 +357,9 @@
     .round { align-items: stretch; }
     .panel .actions { margin-top: auto; }
   }
+  /* Écrans d'ordinateur peu hauts (1366 × 768) : à la correction, les réponses sont déjà sous chaque question,
+     on retire la fiche détaillée pour que tout tienne sans défiler. */
+  @media (min-width: 901px) and (max-height: 860px) { .round.review .fichebox { display: none; } }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
   .clue { position: relative; }
   .clue.has-sw { padding-right: 118px; }

@@ -2,10 +2,8 @@
   import { nav, screenFromHash } from "./lib/nav.svelte.ts";
   import { session } from "./lib/api.svelte.ts";
   import Home from "./screens/Home.svelte";
-  import Setup from "./screens/Setup.svelte";
   import Play from "./screens/Play.svelte";
   import Results from "./screens/Results.svelte";
-  import Atlas from "./screens/Atlas.svelte";
   import Account from "./screens/Account.svelte";
   import Daily from "./screens/Daily.svelte";
   import Lobby from "./screens/Lobby.svelte";
@@ -29,13 +27,11 @@
 </script>
 
 {#if nav.screen.name === "home"}<Home />
-{:else if nav.screen.name === "setup"}<Setup mode={nav.screen.mode} />
 {:else if nav.screen.name === "play"}{#key nav.screen}<Play config={nav.screen.config} title={nav.screen.title} learn={nav.screen.learn} mode={nav.screen.mode} region={nav.screen.region} />{/key}
 {:else if nav.screen.name === "results"}{#key nav.screen}<Results {...nav.screen} />{/key}
 {:else if nav.screen.name === "training"}<Training />
 {:else if nav.screen.name === "album"}<Album tab={nav.screen.tab} />
 {:else if nav.screen.name === "rappels"}<Reminders />
-{:else if nav.screen.name === "atlas"}<Atlas />
 {:else if nav.screen.name === "account"}{#key nav.screen}<Account {...nav.screen} />{/key}
 {:else if nav.screen.name === "daily"}<Daily />
 {:else if nav.screen.name === "lobby"}<Lobby join={nav.screen.join} />

@@ -2,6 +2,10 @@
   import { DEPARTEMENTS, REGIONS, playable, randomSeed, type Field, type GameConfig, type GameMode, type Hint, type InputMode } from "@hexa/game";
   import { nav } from "../lib/nav.svelte.ts";
   import Mascot from "../lib/ui/Mascot.svelte";
+  import { previewSeance, startSeance } from "../lib/seance.svelte.ts";
+
+  /** Révisions dues : la même séance que celle proposée sur l'accueil. */
+  const due = previewSeance("revision").reviews;
 
   // ---------- options ----------
   type Zone = "france" | "region" | "om";
@@ -101,9 +105,11 @@
     <div><h1 class="title">Entraînement</h1><p>Choisis exactement ce que tu veux réviser. Sans chrono.</p></div>
   </div>
 
-  <button class="btn yellow revise" onclick={() => nav.go({ name: "setup", mode: "apprendre" })}>
-    <b>Révisions</b><small>12 départements choisis selon tes erreurs : ce que tu rates revient plus souvent.</small>
-  </button>
+  {#if due}
+    <button class="btn yellow revise" onclick={() => startSeance("revision")}>
+      <b>Réviser {due} département{due > 1 ? "s" : ""}</b><small>Ceux dont une étoile est à revoir, partout en France.</small>
+    </button>
+  {/if}
 
   <section class="card">
     <h2 class="label">Raccourcis</h2>
