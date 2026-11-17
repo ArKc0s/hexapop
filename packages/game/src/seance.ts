@@ -52,11 +52,11 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     .filter((x) => x.facets.length && DEP.has(x.code))
     .sort((a, b) => a.late - b.late);
   for (const x of due.slice(0, Math.ceil(size / 2))) {
-    if (x.facets.length >= 2) add({ code: x.code, hint: pick<Hint>(["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"] });
+    if (x.facets.length >= 2) add({ code: x.code, hint: pick<Hint>(["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"], tag: "review" });
     else {
       // Une seule facette : dans un sens ou dans l'autre (« le numéro du Finistère » / « le 29, c'est ? »).
       const f = x.facets[0] as Hint & Field;
-      add(r() < 0.5 ? { code: x.code, hint: "nom", ask: [f] } : { code: x.code, hint: f, ask: ["nom"] });
+      add(r() < 0.5 ? { code: x.code, hint: "nom", ask: [f], tag: "review" } : { code: x.code, hint: f, ask: ["nom"], tag: "review" });
     }
   }
   const reviews = plan.length;
@@ -70,28 +70,25 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     const started = deps.filter((c) => BASE_FACETS.some((f) => seen(k, c, f)));
     let fresh = deps.filter((c) => !started.includes(c));
     const room = () => size - plan.length - recall.length;
-    // Départements commencés : fiche complète si les 3 facettes ont été vues, sinon ce qui reste à voir.
+    // Départements commencés : fiche complète si les 3 facettes ont été vues, sinon ce qui reste à trouver.
     const steps: PlanItem[] = [];
     for (const c of started) {
       const unseen = BASE_FACETS.filter((f) => !seen(k, c, f)) as Field[];
-      if (!unseen.length) steps.push({ code: c, hint: pick<Hint>(["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"] });
-      else steps.push({ code: c, hint: "nom", ask: unseen, easy: true });
+      steps.push(unseen.length ? { code: c, hint: "nom", ask: unseen } : { code: c, hint: pick<Hint>(["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"] });
     }
     for (const it of steps.slice(0, Math.max(0, room() - 3))) add(it);
-    // Chez toi : tu le connais sûrement. Demandé d'emblée, sans aide facile : s'il est su, ce sont 3 étoiles tout de suite.
-    if (o.home && fresh.includes(o.home) && room() >= 4) {
+    // Chez toi : tu le connais sûrement, demandé d'emblée. S'il est su, ce sont 3 étoiles tout de suite.
+    if (o.home && fresh.includes(o.home) && room() >= 3) {
       add({ code: o.home, hint: "nom", ask: ["carte", "numero", "prefecture"], tag: "home" });
       fresh = fresh.filter((c) => c !== o.home);
     }
-    // Découverte : rien n'est montré avant. On devine avec des leurres lointains, la correction apprend
-    // (deviner avant de voir aide à retenir). D'abord la carte, puis numéro et préfecture ensemble,
-    // et un rappel en fin de séance, sans aide facile : c'est lui qui donne les premières étoiles.
-    const nNew = Math.min(fresh.length, reviews ? 2 : 3, Math.floor(room() / 3));
+    // Découverte : rien n'est montré avant. Une question complète par département (« devine ! ») : si tu sais, c'est fini,
+    // 3 étoiles d'un coup. Sinon la correction t'apprend, et il revient une fois en fin de séance (rappel).
+    const nNew = Math.min(fresh.length, reviews ? 3 : 4, Math.floor(room() / 2));
     const news = fresh.slice(0, nNew);
-    for (const c of news) add({ code: c, hint: "nom", ask: ["carte"], tag: "new", easy: true });
-    for (const c of news) add({ code: c, hint: "nom", ask: ["numero", "prefecture"], tag: "new", easy: true });
+    for (const c of news) add({ code: c, hint: "nom", ask: ["carte", "numero", "prefecture"], tag: "new" });
     discover.push(...news);
-    recall.push(...news.map((c): PlanItem => ({ code: c, hint: "nom", ask: ["carte", "numero", "prefecture"] })));
+    recall.push(...news.map((c): PlanItem => ({ code: c, hint: "nom", ask: ["carte", "numero", "prefecture"], recall: true })));
     for (const it of steps) if (room() > 0 && !used.has(it.code)) add(it);
   }
 
@@ -100,7 +97,7 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     const known = Object.keys(k).filter((c) => DEP.has(c) && !used.has(c) && BASE_FACETS.some((f) => starred(k, c, f)))
       .sort((a, b) => medalOf(k, a) - medalOf(k, b) || (k[a].carte?.b ?? 0) - (k[b].carte?.b ?? 0));
     // Jamais deux inconnues : le numéro ne sert d'indice que si le joueur le connaît déjà.
-    for (const c of known.slice(0, size - plan.length - recall.length)) add({ code: c, hint: pick<Hint>(starred(k, c, "numero") ? ["nom", "carte", "numero"] : ["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"] });
+    for (const c of known.slice(0, size - plan.length - recall.length)) add({ code: c, hint: pick<Hint>(starred(k, c, "numero") ? ["nom", "carte", "numero"] : ["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"], tag: "review" });
   }
   return { plan: [...plan.slice(0, size - recall.length), ...recall], region, reviews, discover };
 }

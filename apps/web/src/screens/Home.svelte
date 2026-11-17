@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RoadBar from "../lib/ui/RoadBar.svelte";
   import { onDestroy } from "svelte";
   import { DEP, DEPARTEMENTS, MAX_STARS, PLAYER_LEVELS, TOUR, dayKey, fadingCodes, knownStars, liveStreak, medalCount, medalOf, playerLevel, starsOf, taFrance, titleFor, tourRegionOf } from "@hexa/game";
   import Welcome from "../lib/ui/Welcome.svelte";
@@ -83,8 +84,8 @@
     <div class="top">
       <h1 class="riso logo" data-t="HEXA">HEXA</h1>
       <span class="chip" class:gold={goalDone} title={goalDone ? "Objectif du jour atteint !" : "Série de jours joués"}><Icon name="flame" /> {streak}</span>
-      <span class="chip km tabnum" title="Kilomètres parcourus">{km.toLocaleString("fr-FR")} km</span>
     </div>
+    <RoadBar {km} />
     <!-- Sur mobile, compte et son restent en haut de l'écran -->
     <div class="acc mob">
       {#if session.me}

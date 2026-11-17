@@ -21,14 +21,16 @@ export interface Question {
   choices?: Partial<Record<ChoiceField, string[]>>;
   /** Pour placer sur la carte en mode propositions : 4 départements surlignés, dont le bon. */
   mapChoices?: string[];
-  /** Séance Continuer : département jamais vu (« devine », la correction t'apprend) ou celui d'où tu viens. */
-  tag?: "new" | "home";
+  /** Séance Continuer : département jamais vu (« devine »), celui d'où tu viens, ou une révision (hors de la région en cours). */
+  tag?: "new" | "home" | "review";
+  /** Rappel de fin de séance : sauté si le département a déjà été réussi sans faute plus tôt dans la séance. */
+  recall?: boolean;
   /** Propositions faciles (leurres lointains) : la bonne réponse ne compte que comme « vue ». */
   easy?: boolean;
 }
 
 /** Question imposée (séance composée) : département, indice, ce qu'on demande. */
-export interface PlanItem { code: string; hint: Hint; ask: Field[]; tag?: "new" | "home"; easy?: boolean }
+export interface PlanItem { code: string; hint: Hint; ask: Field[]; tag?: "new" | "home" | "review"; recall?: boolean; easy?: boolean }
 
 export interface Answer {
   carte?: string;
@@ -131,10 +133,11 @@ export function makeGame(cfg: GameConfig): Question[] {
       if (!fields.length) fields = fieldsFor(d, it.hint, cfg.level, ["carte", "numero", "prefecture"]);
       const q: Question = { index, code: it.code, hint: it.hint, fields, durationMs: duration };
       if (it.tag) q.tag = it.tag;
+      if (it.recall) q.recall = true;
       if (it.easy) q.easy = true;
       const others = it.easy ? easyDistractors(d, r) : distractors(d, r);
       q.choices = makeChoices(d, fields, others, r);
-      if (fields.includes("carte")) q.mapChoices = shuffle([d.code, ...others.map((x) => x.code)], r);
+      // Pas de carte à 4 départements surlignés en séance : on y joue région par région, les leurres trahiraient la réponse.
       return q;
     });
   }

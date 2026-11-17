@@ -1,4 +1,6 @@
 <script lang="ts">
+  import RoadBar from "../lib/ui/RoadBar.svelte";
+  import { stopsPassed } from "@hexa/game";
   import { onMount, onDestroy } from "svelte";
   import { BADGE, TOUR, nextTourRegion, randomSeed, type Question, type RoundResult, type Rewards } from "@hexa/game";
   import { startSeance } from "../lib/seance.svelte.ts";
@@ -47,6 +49,7 @@
   });
 
   const weekKm = profile.data.week?.km ?? r.xp;
+  const passed = stopsPassed(profile.data.xp - r.xp, profile.data.xp);
   const regionName = r.stars ? TOUR.get(r.stars.region)?.nom : null;
   const next = play.mode === "tour" ? nextTourRegion(profile.data) : null;
 
@@ -71,7 +74,9 @@
 
     <div class="km">
       <b class="gain tabnum">+{r.xp.toLocaleString("fr-FR")} km</b>
-      <span class="tabnum">{profile.data.xp.toLocaleString("fr-FR")} km parcourus · {weekKm.toLocaleString("fr-FR")} cette semaine · {rank}</span>
+      <RoadBar km={profile.data.xp} gain={r.xp} />
+      {#each passed as s (s.km)}<span class="stop">Étape franchie : <b>{s.trip}</b> !</span>{/each}
+      <span class="tabnum">{weekKm.toLocaleString("fr-FR")} km cette semaine · {rank}</span>
     </div>
 
     <div class="rewards">
@@ -126,7 +131,9 @@
   .sub { color: var(--soft); font-weight: 700; }
   .km { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .km .gain { font-size: 22px; font-weight: 900; }
-  .km span { color: var(--soft); font-weight: 700; font-size: 14px; }
+  .km { width: min(100%, 420px); }
+  .km > span { color: var(--soft); font-weight: 700; font-size: 14px; }
+  .km .stop { color: var(--ink); background: #fff4c2; border-radius: 999px; padding: 3px 12px; }
   .gain { color: var(--green-d); }
   .rewards { width: min(460px, 100%); display: flex; flex-direction: column; gap: 8px; }
   .rw { background: #fff; border-radius: 18px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; text-align: left; box-shadow: 0 4px 0 var(--line); animation: pop-in .4s cubic-bezier(.2, 1.4, .4, 1) both; }

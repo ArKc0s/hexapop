@@ -88,13 +88,13 @@ Concrètement : on découvre le Finistère en questions simples, puis il revient
 
 ### 3.2 La forme de la réponse : préférence du joueur
 - **Propositions ou clavier**, au choix, **changeable à tout moment** (un bouton dans la question, mémorisé).
-- Pour la carte, les « propositions » sont **4 départements surlignés** : on apprend à situer sans viser au pixel sur mobile. Sans propositions, on vise sur la carte entière (avec le zoom par région).
+- Pour la carte, les « propositions » sont **4 départements surlignés**, en Entraînement seulement (France entière, leurres voisins). **Pas en séance** : on y joue région par région, des leurres pris ailleurs trahiraient la réponse (retour de Léo, 2026-11-17). Pendant qu'on place, les départements déjà joués dans la partie ne sont plus colorés, pour qu'on ne trouve pas par élimination.
 - Les deux formats font progresser. Pour que les propositions restent un vrai test, **elles deviennent plus piégeuses à mesure qu'on progresse** : au début, 4 réponses très différentes ; ensuite, 4 départements de la même région, des numéros proches, des préfectures voisines.
 
 ### 3.3 Première rencontre
-Un département jamais vu est **deviné, pas montré** : « Nouveau · devine ! », en propositions faciles (leurres lointains), d'abord sur la carte, puis numéro et préfecture ensemble. Se tromper ne coûte rien (« Maintenant tu sais »), c'est la correction qui apprend : deviner avant de voir aide à retenir, et c'est moins abrutissant que de montrer la réponse pour la redemander aussitôt. Le rappel en fin de séance, sans aide facile, donne les étoiles. Le département d'où vient le joueur est demandé d'emblée en fiche complète (« Chez toi ») : il le connaît sûrement, ce sont 3 étoiles tout de suite.
+Un département jamais vu est **deviné, pas montré** : « Nouveau · devine ! », **une seule question complète** (le placer, son numéro, sa préfecture), rien n'est montré avant. Si tu sais, c'est fini : 3 étoiles d'un coup, il ne revient pas dans la séance. Sinon, pas de rouge (« Maintenant tu sais »), la correction t'apprend, et il revient **une fois** en fin de séance (rappel), qui donne les étoiles. Le département d'où vient le joueur est demandé en premier (« Chez toi »). Les révisions et la consolidation, qui peuvent être hors de la région en cours, sont marquées « À revoir ».
 
-*2026-11-17 : la première version montrait chaque facette avant de la demander (carte « À retenir »). Retour de Léo sur un compte neuf : « super long et bateau, on nous donne la réponse et on nous demande juste après ». Remplacée par « devine d'abord ».*
+*2026-11-17 : la première version montrait chaque facette avant de la demander (carte « À retenir »). Retour de Léo sur un compte neuf : « super long et bateau, on nous donne la réponse et on nous demande juste après ». Remplacée par « devine d'abord », puis rendue adaptative (« on me demande beaucoup la même chose alors que je suis fort ») : une question par nouveau département, rappel seulement en cas d'erreur.*
 
 ### 3.4 Correction et chrono
 - **Correction immédiate** : la fiche de correction actuelle (✓ / ✗ par champ, bonne réponse, carte).
@@ -152,7 +152,7 @@ Pour les comptes connectés, trois tableaux :
 - **Légendes** : les joueurs qui ont atteint 100 % de « Ta France », puis tout en argent, puis tout en or, avec la date.
 
 ### 4.7 Ce qui reste à côté
-- **Les kilomètres** (ex-XP) : ils montrent **combien tu joues**, quand la carte montre **ce que tu sais**. Chaque bonne réponse fait avancer Hexa sur la route, dans tous les modes et tous les atlas (défi et multi compris). Affichés en total (« Tu as parcouru 12 430 km ») et à la semaine (« 840 km cette semaine »), ils servent aux **ligues hebdomadaires** et à se comparer entre amis. **Pas de niveaux** (1, 2, 3…) et rien à débloquer : c'est un compteur d'activité, qui continue de monter quand la carte est finie.
+- **Les kilomètres** (ex-XP) : ils montrent **combien tu joues**, quand la carte montre **ce que tu sais**. Chaque bonne réponse fait avancer Hexa sur la route, dans tous les modes et tous les atlas (défi et multi compris). Affichés comme une **barre d'expérience** : la route d'Hexa, avec des étapes réelles (Paris → Orléans, Lille, Lyon, Marseille… un Tour de France, La Réunion, le tour de la Terre, la Lune) et « Lille dans 85 km », la barre avance à l'écran de fin, et à la semaine (« 840 km cette semaine »), ils servent aux **ligues hebdomadaires** et à se comparer entre amis. **Pas de niveaux** (1, 2, 3…) et rien à débloquer : c'est un compteur d'activité, qui continue de monter quand la carte est finie.
 - **Les succès** (ex-badges) : des exploits rares, rangés dans le profil, jamais au premier plan.
 
 ### 4.8 Ce qu'on retire ou fusionne
@@ -217,7 +217,7 @@ Le gros bouton **Continuer**, la carte « Ta France » en héros avec le pourcen
 
 **Première minute**
 1. Ouverture : pas de compte, pas de menu. La mascotte : « Tu viens d'où ? » → il touche son département sur la carte (ou « passer »).
-2. Première séance tout de suite : son département d'abord (« Chez toi », sûrement su), puis 3 départements autour à deviner en propositions faciles, et un rappel en fin de séance. 10 questions, environ 12 étoiles.
+2. Première séance tout de suite : son département d'abord (« Chez toi », sûrement su), puis les départements autour à deviner, un rappel en fin de séance pour ceux ratés. De 4 à 8 questions selon ce qu'il sait déjà.
 3. Fin de séance : « 4 étoiles ! Ta France : 1 % », sa région commence à se colorer, la série démarre.
 
 **Après la première séance** : la proposition de sauvegarder (compte), puis d'activer les rappels (« on te dit quand tes étoiles pâlissent »).

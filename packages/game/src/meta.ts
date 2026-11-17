@@ -41,6 +41,8 @@ export interface Profile {
   home?: string;
   /** Région choisie sur la carte de l'accueil pour la séance (sinon la suivante dans l'ordre de découverte). */
   focus?: string;
+  /** Date du dernier choix de région (ou de son annulation) : entre deux appareils, le plus récent l'emporte. */
+  focusAt?: number;
   /** Kilomètres (ex-XP) de la semaine en cours, pour les ligues et entre amis. */
   week?: { id: string; km: number };
   /** Parties du jour, pour l'objectif personnel facultatif. */
@@ -73,8 +75,11 @@ export function mergeProfiles(a: Profile, b: Profile): Profile {
   for (const k of new Set([...Object.keys(a.tiers), ...Object.keys(b.tiers)])) if (DEP.has(k)) p.tiers[k] = Math.max(a.tiers[k] ?? 0, b.tiers[k] ?? 0);
   p.badges = { ...b.badges, ...a.badges };
   if (a.know || b.know) p.know = mergeKnowledge(a.know ?? {}, b.know ?? {});
-  p.home = a.home ?? b.home;
-  p.focus = a.focus ?? b.focus;
+  p.home = b.home ?? a.home;
+  // Choix de région : le plus récent gagne, y compris une annulation (sinon le serveur rétablissait l'ancien choix).
+  const f = (b.focusAt ?? 0) >= (a.focusAt ?? 0) ? b : a;
+  if (f.focus) p.focus = f.focus;
+  if (f.focusAt) p.focusAt = f.focusAt;
   const later = <T extends { id?: string; day?: string }>(x?: T, y?: T, key: "id" | "day" = "id") => (!x ? y : !y ? x : (x[key] ?? "") >= (y[key] ?? "") ? x : y);
   if (a.week || b.week) p.week = a.week && b.week && a.week.id === b.week.id ? { id: a.week.id, km: Math.max(a.week.km, b.week.km) } : later(a.week, b.week);
   if (a.today || b.today) p.today = a.today && b.today && a.today.day === b.today.day ? { day: a.today.day, games: Math.max(a.today.games, b.today.games) } : later(a.today, b.today, "day");
@@ -106,6 +111,7 @@ export function sanitizeProfile(raw: unknown): Profile {
   if (know) p.know = know;
   if (typeof r.home === "string" && DEP.has(r.home)) p.home = r.home;
   if (typeof r.focus === "string" && TOUR_REGIONS.some((t) => t.code === r.focus)) p.focus = r.focus;
+  if (r.focusAt) p.focusAt = num(r.focusAt, 8.64e15);
   if (r.week && day(r.week.id)) p.week = { id: r.week.id, km: num(r.week.km, 1e8) };
   if (r.today && day(r.today.day)) p.today = { day: r.today.day, games: num(r.today.games, 1e4) };
   for (const k of Object.keys(p.stats) as (keyof Profile["stats"])[]) p.stats[k] = num(r.stats?.[k], 1e7);

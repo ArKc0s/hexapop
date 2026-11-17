@@ -44,7 +44,7 @@ class ProfileStore {
 
   /** Région choisie sur la carte de l'accueil pour la prochaine séance (null : retour à l'ordre normal). */
   setFocus(region: string | null) {
-    this.data = { ...this.data, focus: region ?? undefined };
+    this.data = { ...this.data, focus: region ?? undefined, focusAt: Date.now() };
     this.save();
     for (const fn of this.listeners) fn();
   }

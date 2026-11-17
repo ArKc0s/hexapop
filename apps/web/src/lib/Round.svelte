@@ -38,8 +38,8 @@
   const feedback = $derived.by(() => {
     if (!result) return null;
     if (result.accuracy >= 0.999) return { mood: combo >= 5 ? "wow" : "happy", text: combo >= 3 ? `Combo ×${combo} ! ${PRAISE[combo % PRAISE.length]}` : PRAISE[q.index % PRAISE.length] } as const;
-    if (result.accuracy > 0) return { mood: "think", text: `Presque ! ${Math.round(result.accuracy * 100)} % de bon, la correction est juste au-dessus.` } as const;
     if (q.tag === "new") return { mood: "think", text: `Maintenant tu sais ! On y revient en fin de séance.` } as const;
+    if (result.accuracy > 0) return { mood: "think", text: `Presque ! ${Math.round(result.accuracy * 100)} % de bon, la correction est juste au-dessus.` } as const;
     return { mood: "sad", text: `Raté : ${d.nom} (${d.code}). Tu le retiendras !` } as const;
   });
   $effect(() => {
@@ -65,6 +65,8 @@
   let nudge = $state(false);
   // Première rencontre : on montre d'abord la réponse (« À retenir »), puis on pose la question.
   // svelte-ignore state_referenced_locally
+  /** Révision ou consolidation hors de la région en cours : on le dit, sinon la question semble tomber de nulle part. */
+  const rev = $derived(q.tag === "review" ? "À revoir · " : "");
   const needsPlacing = $derived(!result && !submitted && has("carte") && !sel);
 
   // La carte ne sert qu'à placer le département ; les voisins se tapent (nom ou numéro).
@@ -127,7 +129,8 @@
   }
 
   const marks = $derived.by(() => {
-    const m: Record<string, Mark> = { ...history };
+    // Pendant qu'on place, on cache les départements déjà joués : sinon on trouve par élimination, et ils masqueraient le surlignage.
+    const m: Record<string, Mark> = !result && has("carte") ? {} : { ...history };
     if (!result) {
       if (q.hint === "carte") m[q.code] = "hint";
       if (sel) m[sel] = "sel";
@@ -226,16 +229,16 @@
         </button>
       {/if}
       {#if q.hint === "numero"}
-        <span class="kicker">Le département numéro</span>
+        <span class="kicker">{rev}Le département numéro</span>
         <span class="riso bignum" data-t={d.code}>{d.code}</span>
       {:else if q.hint === "prefecture"}
-        <span class="kicker">Le département de</span>
+        <span class="kicker">{rev}Le département de</span>
         <h2 class="qname">{d.prefecture}</h2>
       {:else if q.hint === "nom"}
-        <span class="kicker">{q.tag === "new" ? "Nouveau · devine !" : q.tag === "home" ? "Chez toi" : "Trouve"}</span>
+        <span class="kicker">{q.tag === "new" ? "Nouveau · devine !" : q.tag === "home" ? "Chez toi" : q.tag === "review" ? "À revoir" : "Trouve"}</span>
         <h2 class="qname">{d.nom}</h2>
       {:else}
-        <span class="kicker">Il clignote sur la carte</span>
+        <span class="kicker">{rev}Il clignote sur la carte</span>
         <h2 class="qname">Quel est ce département ?</h2>
       {/if}
     </div>

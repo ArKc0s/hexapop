@@ -130,22 +130,21 @@ test("séance Continuer : découverte, révisions, consolidation, jamais deux in
   const S = await import("./seance.ts");
   const { makeGame } = await import("./round.ts");
   const now = T("2026-11-17");
-  // Nouveau joueur sans région : la Bretagne, 3 départements à deviner (carte, puis numéro + préfecture), rien de montré avant.
+  // Nouveau joueur sans région : la Bretagne, 4 départements à deviner, une question complète chacun, rien de montré avant.
   const s0 = S.composeSeance({}, { now, seed: 1, start: "53" });
   assert.equal(s0.region?.code, "53");
-  assert.equal(s0.discover.length, 3);
-  assert.equal(s0.plan.length, 9);
-  assert.ok(s0.plan.slice(0, 3).every((it) => it.tag === "new" && it.easy && it.hint === "nom" && it.ask.join() === "carte"));
-  assert.ok(s0.plan.slice(3, 6).every((it) => it.tag === "new" && it.easy && it.ask.join() === "numero,prefecture"));
-  // Rappel en fin de séance : fiche complète sans aide facile, qui donne les premières étoiles.
-  assert.ok(s0.plan.slice(6).every((it) => !it.tag && !it.easy && it.ask.length === 3 && s0.discover.includes(it.code)));
+  assert.equal(s0.discover.length, 4);
+  assert.equal(s0.plan.length, 8);
+  assert.ok(s0.plan.slice(0, 4).every((it) => it.tag === "new" && !it.easy && it.hint === "nom" && it.ask.length === 3));
+  // Rappel en fin de séance, sauté par le jeu si le département a été réussi du premier coup.
+  assert.ok(s0.plan.slice(4).every((it) => it.recall && !it.tag && it.ask.length === 3 && s0.discover.includes(it.code)));
   const qs = makeGame({ seed: 2, level: "normal", input: "choix", switchable: true, plan: s0.plan });
-  assert.ok(qs.slice(0, 6).every((q) => q.tag === "new" && q.easy && q.durationMs === 0));
-  assert.ok(qs.filter((q) => q.fields[0] === "carte").every((q) => q.mapChoices!.length === 4));
-  // Joueur du Finistère : son département d'abord, demandé directement (il le connaît sûrement), puis 3 à découvrir.
+  assert.ok(qs.every((q) => q.durationMs === 0 && !q.mapChoices), "pas de carte surlignée en séance");
+  assert.ok(qs.slice(4).every((q) => q.recall));
+  // Joueur du Finistère : son département d'abord, puis les 3 autres à deviner.
   const sh = S.composeSeance({}, { now, seed: 1, start: "53", home: "29" });
   assert.deepEqual(sh.plan[0], { code: "29", hint: "nom", ask: ["carte", "numero", "prefecture"], tag: "home" });
-  assert.equal(sh.plan.length, 10);
+  assert.equal(sh.plan.length, 7);
   assert.ok(!sh.discover.includes("29"));
   // Joueur avancé : révisions échues d'abord, puis la région suivante (pas finie).
   const solid = { b: 2, d: now - 1, s: 1 as const, v: 1 as const };
@@ -155,10 +154,10 @@ test("séance Continuer : découverte, révisions, consolidation, jamais deux in
   assert.ok(s1.reviews >= 1 && s1.reviews <= 5);
   assert.notEqual(s1.region?.code, "53", "Bretagne finie : on passe à une voisine");
   assert.ok(TOUR.get("53")!.neighbors.includes(s1.region!.code));
-  // Un département revient une seule fois, sauf ceux qu'on découvre (carte, numéro + préfecture, rappel).
+  // Un département revient une seule fois, sauf ceux qu'on découvre (question puis rappel).
   const others = s1.plan.filter((x) => !s1.discover.includes(x.code)).map((x) => x.code);
   assert.equal(new Set(others).size, others.length);
-  for (const c of s1.discover) assert.equal(s1.plan.filter((x) => x.code === c).length, 3);
+  for (const c of s1.discover) assert.equal(s1.plan.filter((x) => x.code === c).length, 2);
   assert.ok(s1.plan.length <= 12);
   // Région choisie par le joueur sur la carte.
   assert.equal(S.currentRegion(k, "53", "84")?.code, "84");
@@ -178,4 +177,10 @@ test("kilomètres de la semaine, parties du jour, quêtes retirées", () => {
   assert.equal(profile.today?.games, 1);
   const s = sanitizeProfile({ home: "29", focus: "53", week: { id: "2026-11-16", km: 12 }, today: { day: "nope", games: 3 } });
   assert.equal(s.home, "29"); assert.equal(s.focus, "53"); assert.equal(s.week?.km, 12); assert.equal(s.today, undefined);
+  // Choix de région : le plus récent gagne entre le serveur et l'appareil, annulation comprise.
+  const M = mergeProfiles;
+  const srv = sanitizeProfile({ focus: "53", focusAt: 100 });
+  assert.equal(M(srv, sanitizeProfile({ focus: "84", focusAt: 200 })).focus, "84");
+  assert.equal(M(srv, sanitizeProfile({ focusAt: 200 })).focus, undefined);
+  assert.equal(M(srv, sanitizeProfile({ focus: "11", focusAt: 50 })).focus, "53");
 });

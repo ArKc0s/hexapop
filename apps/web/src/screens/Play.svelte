@@ -13,7 +13,7 @@
   // svelte-ignore state_referenced_locally
   const play: PlayScreen = { name: "play", ...props };
 
-  const questions = makeGame(play.config);
+  let questions = $state(makeGame(play.config));
   let i = $state(0);
   let startedAt = $state(performance.now());
   let result = $state<RoundResult | null>(null);
@@ -49,6 +49,9 @@
     nav.go({ name: "results", play, questions, results, rewards });
   }
   function next() {
+    // Rappel de fin de séance inutile pour un département déjà réussi sans faute : on ne redemande pas ce que tu sais.
+    const known = new Set(results.filter((r) => r.accuracy >= 0.999).map((r) => r.code));
+    if (questions.some((x, k) => k > i && x.recall && known.has(x.code))) questions = questions.filter((x, k) => k <= i || !(x.recall && known.has(x.code)));
     if (i + 1 >= questions.length) return finish();
     i += 1;
     result = null;
