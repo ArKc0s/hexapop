@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f3eee4">
-  <title>Hexa · les départements de France</title>
+  <title>Hexa · le jeu pour apprendre les départements français</title>
+  <link rel="canonical" href="https://hexapop.app/">
   <meta name="description" content="Apprends les 101 départements en jouant : les placer, leur numéro, leur préfecture. Séances de 2 minutes, défi du jour, parties entre amis. Gratuit et sans pub.">
   <!-- Aperçu quand on partage le lien (Discord, WhatsApp, Messenger, X…) -->
   <meta property="og:type" content="website">
@@ -18,6 +19,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Hexa : la mascotte et une carte de France qui se colore à mesure qu'on apprend.">
   <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"WebSite","name":"Hexa","alternateName":"hexapop","url":"https://hexapop.app/","inLanguage":"fr"},{"@context":"https://schema.org","@type":"VideoGame","name":"Hexa","url":"https://hexapop.app/","description":"Jeu gratuit pour apprendre les 101 départements français : les placer sur la carte, leur numéro, leur préfecture. Séances de 2 minutes, défi du jour, parties entre amis.","inLanguage":"fr","genre":["Quiz","Éducatif","Géographie"],"gamePlatform":["Navigateur web","Mobile"],"applicationCategory":"EducationalApplication","isAccessibleForFree":true,"image":"https://hexapop.app/og.png","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}]</script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <!-- Installation sur l'écran d'accueil : s'ouvre sans barre de navigateur -->
   <link rel="manifest" href="/manifest.webmanifest">
@@ -29,6 +31,19 @@
 </head>
 <body>
   <div id="app"></div>
+  <!-- Pour les moteurs et sous l'accueil : ce qu'est Hexa, et les pages pour réviser (masqué ailleurs dans le jeu) -->
+  <footer id="seo-foot">
+    <h2>Apprendre les départements français en jouant</h2>
+    <p>Hexa est un jeu gratuit, sans publicité, pour connaître les <b>101 départements</b> : les placer sur la carte, leur numéro, leur préfecture, puis leurs sous-préfectures et leurs voisins. Des séances de 2 minutes, un défi du jour à ton niveau et des parties entre amis.</p>
+    <nav aria-label="Réviser">
+      <a href="/france/departements">Liste des départements</a>
+      <a href="/france/carte-des-departements">Carte des départements</a>
+      <a href="/france/prefectures">Liste des préfectures</a>
+      <a href="/quiz/departements">Quiz des départements</a>
+      <a href="/quiz/numeros-des-departements">Quiz des numéros</a>
+      <a href="/quiz/prefectures">Quiz des préfectures</a>
+    </nav>
+  </footer>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

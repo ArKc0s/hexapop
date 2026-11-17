@@ -30,16 +30,23 @@ const SECURITY_HEADERS = {
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml",
   ".json": "application/json", ".png": "image/png", ".webmanifest": "application/manifest+json", ".woff2": "font/woff2",
+  ".xml": "application/xml; charset=utf-8", ".txt": "text/plain; charset=utf-8",
 };
 function serveStatic(url: string, res: import("node:http").ServerResponse) {
   const path = decodeURIComponent(url.split("?")[0]);
   let file = normalize(join(config.webDir, path));
   if (!file.startsWith(normalize(config.webDir))) { res.writeHead(403).end(); return; }
   let st;
+  let status = 200;
   try { st = statSync(file); if (st.isDirectory()) { file = join(file, "index.html"); st = statSync(file); } }
-  catch { file = join(config.webDir, "index.html"); st = statSync(file); }
+  catch {
+    // Le jeu n'a qu'une page (« / », écrans en #…) : une adresse inconnue est une vraie 404, pas l'accueil
+    // (les moteurs de recherche pénalisent les fausses pages « trouvées »).
+    file = join(config.webDir, "404.html");
+    try { st = statSync(file); status = 404; } catch { file = join(config.webDir, "index.html"); st = statSync(file); }
+  }
   const immutable = path.startsWith("/assets/");
-  res.writeHead(200, {
+  res.writeHead(status, {
     ...SECURITY_HEADERS,
     "content-type": TYPES[extname(file)] ?? "application/octet-stream",
     "content-length": st.size,

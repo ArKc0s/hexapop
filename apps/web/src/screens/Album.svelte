@@ -28,6 +28,8 @@
   const FACET: Record<string, string> = { carte: "Le placer", numero: "Son numéro", prefecture: "Sa préfecture" };
   const fmt = (t: number) => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   const starred = (c: string, f: Facet) => !!know[c]?.[f]?.s;
+  /** Page de référence du département (générée par scripts/seo.ts, même adresse). */
+  const depPage = (c: string) => { const d = DEPARTEMENTS.find((x) => x.code === c)!; return `/france/departements/${c.toLowerCase()}-${d.nom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`; };
 
   // Onglet Carte
   const fills = $derived(knowFills(know, now));
@@ -53,6 +55,7 @@
     </ul>
   </div>
   <Fiche code={c} />
+  <a class="link more" href={depPage(c)}>Sa page : carte, voisins et repères</a>
 {/snippet}
 
 <main class="album page" class:wide={cur === "carte"}>
@@ -195,4 +198,5 @@
     .sheet { border-radius: 24px 24px 0 0; width: 100%; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
     header .seg button { padding-inline: 10px; }
   }
+  .more { align-self: flex-start; font-size: 14px; }
 </style>

@@ -50,7 +50,12 @@
       };
     } catch { return DEFAULTS; }
   }
+  let { preset: linkPreset }: { preset?: string } = $props();
   const init = load();
+  // Arrivée depuis une page de quiz (hexapop.app/quiz/…) : le raccourci correspondant, sur toute la France.
+  // svelte-ignore state_referenced_locally
+  const fromLink = { carte: 0, numeros: 1, prefectures: 2, fiche: 3, expert: 4 }[linkPreset ?? ""];
+  if (fromLink !== undefined) { init.give = [...PRESETS[fromLink].give]; init.ask = [...PRESETS[fromLink].ask]; init.zone = "france"; history.replaceState(null, "", location.pathname + "#entrainement"); }
   let zone = $state<Zone>(init.zone);
   let region = $state(init.region);
   let give = $state<Hint[]>(init.give.length ? init.give : DEFAULTS.give);

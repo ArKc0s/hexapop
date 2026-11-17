@@ -23,6 +23,8 @@
   if (location.hash.startsWith("#oauth-")) history.replaceState(null, "", location.pathname);
   // Lien modifié à la main ou bouton précédent : on suit le nouveau lien.
   window.addEventListener("hashchange", () => (nav.screen = screenFromHash()));
+  // Le pied de page de présentation (index.html) n'apparaît que sous l'accueil.
+  $effect(() => { document.body.classList.toggle("on-home", nav.screen.name === "home"); });
   session.load();
   push.init();
 </script>
@@ -30,7 +32,7 @@
 {#if nav.screen.name === "home"}<Home />
 {:else if nav.screen.name === "play"}{#key nav.screen}<Play config={nav.screen.config} title={nav.screen.title} learn={nav.screen.learn} mode={nav.screen.mode} region={nav.screen.region} />{/key}
 {:else if nav.screen.name === "results"}{#key nav.screen}<Results {...nav.screen} />{/key}
-{:else if nav.screen.name === "training"}<Training />
+{:else if nav.screen.name === "training"}<Training preset={nav.screen.preset} />
 {:else if nav.screen.name === "album"}<Album tab={nav.screen.tab} />
 {:else if nav.screen.name === "hof"}<HallOfFame />
 {:else if nav.screen.name === "rappels"}<Reminders />

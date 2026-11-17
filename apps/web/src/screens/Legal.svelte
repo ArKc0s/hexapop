@@ -23,6 +23,7 @@
     <ul class="about">
       <li><a class="link" href={bugUrl()} target="_blank" rel="noopener">Signaler un bug</a> (ta version est jointe automatiquement) ou <a class="link" href="https://github.com/ArKc0s/hexapop/issues/new?template=idee.yml" target="_blank" rel="noopener">proposer une idée</a></li>
       <li><a class="link" href="https://github.com/ArKc0s/hexapop" target="_blank" rel="noopener">Code source</a>, sous licence GNU AGPL-3.0</li>
+      <li>Pour réviser : la <a class="link" href="/france/departements">liste des départements</a>, la <a class="link" href="/france/carte-des-departements">carte</a> et les <a class="link" href="/quiz">quiz</a></li>
       <li>Contact : {EDITEUR.contact}</li>
     </ul>
     <p>Les documents légaux sont dans les onglets ci-dessus : mentions légales, confidentialité, conditions d'utilisation.</p>
@@ -32,6 +33,7 @@
     <p>Hexa (hexapop.app) est un site non commercial, édité à titre personnel par :</p>
     <ul>
       <li>{EDITEUR.nom}, particulier</li>
+      <li>Pour réviser : la <a class="link" href="/france/departements">liste des départements</a>, la <a class="link" href="/france/carte-des-departements">carte</a> et les <a class="link" href="/quiz">quiz</a></li>
       <li>Contact : {EDITEUR.contact}</li>
     </ul>
     <p>Directeur de la publication : {EDITEUR.nom}.</p>

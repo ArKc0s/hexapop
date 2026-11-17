@@ -8,7 +8,7 @@
   import Map from "../lib/Map.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
   import Icon from "../lib/ui/Icon.svelte";
-  import { nav } from "../lib/nav.svelte.ts";
+  import { nav, takePendingRegion } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { session } from "../lib/api.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
@@ -37,6 +37,11 @@
     : seance.region && seance.expert ? `${seance.region.nom} · expert${seance.experts.length ? ` : ${names(seance.experts)}` : ""}`
     : seance.region ? `${seance.region.nom}${seance.reviews ? ` · ${seance.reviews} à revoir` : ""}${seance.discover.length ? ` · nouveau : ${names(seance.discover)}` : ""}`
     : "");
+  // Lien « Jouer cette région » des pages de référencement (#region=53) : elle devient la région de la prochaine séance.
+  {
+    const r = takePendingRegion();
+    if (r && TOUR.has(r)) { profile.setFocus(r); history.replaceState(null, "", location.pathname); }
+  }
   /** Toucher la carte : la prochaine séance se fait dans cette région. */
   function focusOn(code: string) {
     const r = tourRegionOf(code);

@@ -4,7 +4,7 @@ export type AlbumTab = "medailles" | "carte" | "succes";
 export interface PlayScreen { name: "play"; config: GameConfig; title: string; learn: boolean; mode: GameMode; region?: string }
 export type Screen =
   | { name: "home" }
-  | { name: "training" }
+  | { name: "training"; /** Raccourci à appliquer (liens des pages de quiz : carte, numeros, prefectures, fiche). */ preset?: string }
   | PlayScreen
   | { name: "results"; play: PlayScreen; questions: Question[]; results: RoundResult[]; rewards: Rewards; /** Réponses utilisées (Marathon : le Hall of Fame se joue au clavier). */ input?: InputMode }
   | { name: "hof" }
@@ -32,11 +32,20 @@ class Nav {
 }
 export const nav = new Nav();
 
+/** Région demandée par un lien #region=… (appliquée par l'accueil, qui la choisit pour la prochaine séance). */
+export let pendingRegion: string | null = null;
+export const takePendingRegion = () => { const r = pendingRegion; pendingRegion = null; return r; };
+
 /** Écran de départ selon le lien ouvert. */
 export function screenFromHash(): Screen {
   const h = location.hash;
   for (const [doc, v] of Object.entries(LEGAL)) if (h === v) return { name: "legal", doc: doc as keyof typeof LEGAL };
   for (const [name, v] of Object.entries(SIMPLE)) if (h === v) return { name } as Screen;
+  // Liens des pages de quiz et de région (hexapop.app/france/…) : un quiz réglé, ou la région à jouer.
+  const ent = /^#entrainement=(\w+)$/.exec(h);
+  if (ent) return { name: "training", preset: ent[1] };
+  const reg = /^#region=(\w+)$/.exec(h);
+  if (reg) { pendingRegion = reg[1].toUpperCase(); return { name: "home" }; }
   // L'Atlas fait partie de l'Album (onglet Carte) : les anciens liens y mènent.
   if (h === "#atlas") return { name: "album", tab: "carte" };
   const m = /^#([\w-]+)=([\w-]+)$/.exec(h);

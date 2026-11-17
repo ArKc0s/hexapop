@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.9** : référencement : 127 pages générées (101 départements, 18 régions, listes, carte, quiz) sous `/france` et `/quiz`, données structurées, plan du site par atlas, vraies 404, aperçus de partage. Voir [`seo.md`](seo.md).
 - **v1.8** : mise à jour sans coupure (deux versions en ligne, l'ancienne finit ses parties) ; jeu jouable hors ligne (séances, Entraînement) avec reprise automatique au retour du serveur ; copie de secours Cloudflare préparée.
 - **v1.7** (étape 5 de la [refonte](conception.md), refonte terminée) : séances expert région par région (sous-préfectures et voisins) et médailles d'or ; Hall of Fame (défi de la semaine et du mois par niveau, Marathon, Légendes).
 - **v1.6** (étape 4 de la [refonte](conception.md)) : défi du jour par niveau (Découverte, Confirmé, Expert) avec les mêmes 10 départements, classement et partage par niveau ; Entre amis : chacun joue à son niveau par défaut (3 niveaux), jamais deux inconnues en Découverte.
