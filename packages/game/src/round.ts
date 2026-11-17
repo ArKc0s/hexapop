@@ -127,6 +127,9 @@ export function playable(hints: Hint[], ask: Field[]): boolean {
   return hints.some((h) => ask.some((f) => f !== h));
 }
 
+/** Autres réponses acceptées pour la préfecture : la préfecture du Val-d'Oise est à Cergy (chef-lieu légal : Pontoise). */
+export const PREFECTURE_ALIASES: Record<string, string[]> = { "95": ["Cergy", "Cergy-Pontoise"], "91": ["Évry"] };
+
 export function makeGame(cfg: GameConfig): Question[] {
   const r = rng(cfg.seed);
   if (cfg.plan) {
@@ -208,7 +211,7 @@ export function grade(q: Question, a: Answer): RoundResult {
       case "carte": return { field, score: a.carte === d.code ? 1 : 0, expected: d.code };
       case "nom": return { field, score: a.nom && sameName(a.nom, d.nom) ? 1 : 0, expected: d.nom };
       case "numero": return { field, score: a.numero && sameCode(a.numero, d.code) ? 1 : 0, expected: d.code };
-      case "prefecture": return { field, score: a.prefecture && sameName(a.prefecture, d.prefecture) ? 1 : 0, expected: d.prefecture };
+      case "prefecture": return { field, score: a.prefecture && [d.prefecture, ...(PREFECTURE_ALIASES[d.code] ?? [])].some((p) => sameName(a.prefecture!, p)) ? 1 : 0, expected: d.prefecture };
       case "sousPrefectures": return { field, score: gradeList(a.sousPrefectures, d.sousPrefectures, true), expected: d.sousPrefectures };
       case "limitrophes": return { field, score: gradeList(a.limitrophes, d.limitrophes, false), expected: d.limitrophes };
     }

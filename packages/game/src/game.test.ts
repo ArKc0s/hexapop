@@ -136,3 +136,9 @@ test("Découverte : mêmes départements, jamais deux inconnues, propositions fa
   }
   assert.equal(decouverte[0].durationMs, 20_000);
 });
+
+test("préfecture : variantes acceptées (Cergy, Cergy-Pontoise pour le 95)", () => {
+  const q = makeGame({ seed: 1, level: "normal", input: "libre", plan: [{ code: "95", hint: "nom", ask: ["prefecture"] }] })[0];
+  for (const p of ["Pontoise", "Cergy", "cergy pontoise", "Cergy-Pontoise"]) assert.equal(grade(q, { prefecture: p, elapsedMs: 0 }).accuracy, 1, p);
+  assert.equal(grade(q, { prefecture: "Argenteuil", elapsedMs: 0 }).accuracy, 0);
+});
