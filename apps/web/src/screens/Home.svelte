@@ -89,7 +89,7 @@
         {#if session.me}
           <button class="back" onclick={() => nav.go({ name: "account", view: "profile" })}>{session.me.pseudo}</button>
         {:else if session.online}
-          <button class="back" onclick={() => nav.go({ name: "account", view: "login" })}>Se connecter</button>
+          <button class="back" onclick={() => nav.go({ name: "account", view: "login" })}>Connexion</button>
         {/if}
         <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
       </div>
@@ -122,24 +122,43 @@
       {#if p.focus && TOUR.has(p.focus)}<button class="focus" onclick={() => profile.setFocus(null)}>Région choisie : {TOUR.get(p.focus)?.nom} <span aria-label="Annuler">✕</span></button>{/if}
     </div>
 
-    <div class="row2">
-      <button class="btn pink" disabled={!session.online} onclick={() => nav.go({ name: "daily" })}>Défi du jour<small>nouveau dans {countdown}</small></button>
-      <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel, équipe ou soirée</small></button>
+    <div class="modes">
+      <div class="row2">
+        <button class="btn pink" disabled={!session.online} onclick={() => nav.go({ name: "daily" })}>Défi du jour<small>nouveau dans {countdown}</small></button>
+        <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>duel, équipe ou soirée</small></button>
+      </div>
+      <button class="btn white train" onclick={() => nav.go({ name: "training" })}>
+        <span><b>Entraînement</b><small>Choisis la zone et les questions, sans chrono</small></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </button>
     </div>
 
-    <div class="goal">
-      <span class="k">Objectif perso</span>
-      <div class="seg">{#each [0, 1, 3, 5] as g (g)}<button class:on={goal === g} onclick={() => setGoal(g)}>{g ? `${g} / jour` : "Aucun"}</button>{/each}</div>
-      {#if goal}<span class="gp tabnum" class:ok={goalDone}>{goalDone ? "Atteint !" : `${todayGames}/${goal} aujourd'hui`}</span>{/if}
-    </div>
+    <!-- Bas de colonne : sur ordinateur, calé sur le bas de la carte -->
+    <div class="foot">
+      <div class="goal">
+        <div class="gh">
+          <span class="k">Objectif du jour</span>
+          <span class="gp tabnum" class:ok={goalDone}>{goal ? (goalDone ? `Atteint ! ${todayGames}/${goal}` : `${todayGames}/${goal} partie${goal > 1 ? "s" : ""}`) : "Aucun, et c'est très bien aussi"}</span>
+        </div>
+        <!-- Un seul contrôle : chaque hexagone est une partie. On touche le 3e pour viser 3 parties ; ils se remplissent quand on joue. -->
+        <div class="pips" role="group" aria-label="Parties par jour visées">
+          {#each [1, 2, 3, 4, 5] as n (n)}
+            <button class="pip" class:aim={n <= goal} class:done={n <= todayGames} aria-pressed={goal === n}
+              aria-label={goal === n ? `Objectif : ${n} partie${n > 1 ? "s" : ""} par jour (toucher pour retirer)` : `Viser ${n} partie${n > 1 ? "s" : ""} par jour`}
+              title={goal === n ? "Toucher à nouveau pour retirer l'objectif" : `${n} partie${n > 1 ? "s" : ""} par jour`}
+              onclick={() => setGoal(goal === n ? 0 : n)}><i></i></button>
+          {/each}
+          {#if !goal}<span class="ph">Touche un hexagone pour viser autant de parties par jour</span>{/if}
+        </div>
+      </div>
 
-    <nav class="menu" aria-label="Autres modes">
-      <button onclick={() => nav.go({ name: "training" })}>Entraînement</button>
-      <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
-      <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
-      <button onclick={() => nav.go({ name: "rappels" })}>Rappels</button>
-      <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
-    </nav>
+      <nav class="menu" aria-label="Plus">
+        <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
+        <button onclick={() => nav.go({ name: "atlas" })}>Atlas</button>
+        <button onclick={() => nav.go({ name: "rappels" })}>Rappels</button>
+        <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
+      </nav>
+    </div>
   </section>
 
   <section class="right" aria-label="Ta France">
@@ -184,9 +203,30 @@
   .logo { font-size: 44px; margin: 0 auto 0 0; }
   .chip.gold { background: var(--yellow); box-shadow: 0 3px 0 var(--yellow-d); }
   .focus { align-self: flex-start; border: 0; background: var(--ink); color: #fff; font-weight: 800; font-size: 13px; padding: 5px 11px; border-radius: 999px; margin-top: 6px; cursor: pointer; }
-  .goal { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
-  .goal .seg button { padding: 6px 10px; font-size: 13.5px; }
+  .modes { display: flex; flex-direction: column; gap: 12px; }
+  .train { justify-content: space-between; text-align: left; padding: 12px 18px; }
+  .train > span:first-child { display: flex; flex-direction: column; gap: 2px; }
+  .train b { font-weight: 900; font-size: 18px; }
+  .train small { font-size: 13.5px; font-weight: 700; color: var(--soft); }
+  .train .arrow { font-size: 22px; font-weight: 900; }
+  .foot { display: flex; flex-direction: column; gap: 14px; }
+  @media (min-width: 861px) { .foot { margin-top: auto; } }
+  .goal { display: flex; flex-direction: column; gap: 8px; }
+  .gh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
   .gp { font-weight: 800; font-size: 13.5px; color: var(--soft); }
+  .pips { display: flex; align-items: center; gap: 6px; }
+  .pip { border: 0; padding: 0; background: none; cursor: pointer; width: 34px; height: 38px; position: relative; flex: none; }
+  .pip::before, .pip i { content: ""; position: absolute; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+  .pip::before { inset: 0; background: var(--line); }
+  .pip i { inset: 3px; background: var(--bg); transition: background .2s; }
+  .pip.aim::before { background: var(--ink); }
+  .pip.aim i { background: #fff; }
+  .pip.done i { background: var(--yellow); }
+  .pip.done:not(.aim)::before { background: var(--yellow-d); }
+  .pip:hover i { background: #fff4c2; }
+  .pip.done:hover i { background: var(--yellow); }
+  .pip:active { transform: scale(.92); }
+  .ph { margin-left: 8px; font-size: 12.5px; font-weight: 700; color: var(--soft); line-height: 1.2; }
   .gp.ok { color: var(--green-d); }
   .tip { margin: 0; font-size: 13px; color: var(--soft); font-weight: 700; text-align: right; }
   .hello { display: flex; gap: 12px; align-items: flex-start; }
@@ -197,7 +237,7 @@
   .next .more { align-self: flex-start; font-size: 14px; margin-top: 4px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row2 .btn { flex-direction: column; gap: 3px; padding: 13px 10px; }
-  .menu { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .menu { display: flex; flex-wrap: wrap; gap: 6px 18px; border-top: 2px solid var(--line); padding-top: 10px; }
   .menu button { background: none; border: 0; padding: 4px 0; cursor: pointer; font-weight: 800; font-size: 15.5px; color: var(--ink); }
   .menu button:hover { color: var(--blue); }
   .menu span { color: var(--soft); font-weight: 700; margin-left: 2px; }
@@ -209,7 +249,7 @@
   .snd { border: 0; background: #fff; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; box-shadow: 0 3px 0 var(--line); display: grid; place-items: center; }
   .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 13px; font-weight: 700; color: var(--soft); justify-content: flex-end; }
   .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
-  .menu .soft { color: var(--soft); font-weight: 700; }
+  .menu .soft { color: var(--soft); font-weight: 700; margin-left: auto; }
   .acc.mob { display: none; }
   .install { display: flex; gap: 12px; align-items: center; justify-content: space-between; border: 2px dashed var(--line); }
   .install b { font-weight: 900; }
