@@ -12,6 +12,8 @@ COPY apps/server/package.json apps/server/
 RUN pnpm install --frozen-lockfile --filter @hexa/web... --filter @hexa/game
 COPY packages packages
 COPY apps/web apps/web
+# Commit de la version (écrit par deploy/deploy.sh) ; le joker évite l'échec s'il est absent.
+COPY BUILD_COMMI[T] ./
 RUN pnpm --filter @hexa/game test && pnpm --filter @hexa/web build
 
 FROM node:24-slim

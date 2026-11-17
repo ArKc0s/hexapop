@@ -12,7 +12,7 @@ set -eu
 cd "$(dirname "$0")/.."
 
 ssh "$HOST" "mkdir -p $DIR/src $DIR/data"
-git archive --format=tar HEAD | ssh "$HOST" "rm -rf $DIR/src.new && mkdir $DIR/src.new && tar -x -C $DIR/src.new && rm -rf $DIR/src && mv $DIR/src.new $DIR/src"
+git archive --format=tar HEAD | ssh "$HOST" "rm -rf $DIR/src.new && mkdir $DIR/src.new && tar -x -C $DIR/src.new && echo $(git rev-parse --short HEAD) > $DIR/src.new/BUILD_COMMIT && rm -rf $DIR/src && mv $DIR/src.new $DIR/src"
 scp -q deploy/compose.yaml "$HOST:$DIR/compose.yaml"
 ssh "$HOST" "DIR=$DIR ROUTER=${ROUTER:-0} FORCE=${FORCE:-0} sh -s" <<'REMOTE'
 set -eu

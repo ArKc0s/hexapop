@@ -21,7 +21,13 @@ body:
     id: ecran
     attributes:
       label: Où ?
-      options: [Accueil, Tour de France, Partie solo, Défi du jour, Entre amis (duel / soirée), Album et badges, Compte et connexion, Autre]
+      options: [Accueil, Continuer (séance), Entraînement, Défi du jour, Entre amis (duel / équipe / soirée), Album, Hall of Fame, Compte et connexion, Autre]
+  - type: input
+    id: version
+    attributes:
+      label: Version d'Hexa
+      description: Remplie toute seule si tu viens du lien « Signaler un bug » ; sinon, en bas de la page À propos.
+      placeholder: ex. 1.8.0 · a3f9c21
   - type: input
     id: appareil
     attributes:

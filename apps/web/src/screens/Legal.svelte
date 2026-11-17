@@ -1,5 +1,6 @@
 <script lang="ts">
   import { nav } from "../lib/nav.svelte.ts";
+  import { BUILT, COMMIT, VERSION, bugUrl } from "../lib/version.ts";
   import { EDITEUR, MAJ, SOUS_TRAITANTS } from "../lib/legal.ts";
 
   export type Doc = "apropos" | "mentions" | "confidentialite" | "cgu";
@@ -20,11 +21,12 @@
   {#if doc === "apropos"}
     <p>Hexa est un jeu gratuit pour apprendre les 101 départements français : leur place sur la carte, leur numéro, leur préfecture. Fait à titre personnel, <b>sans publicité ni traceur</b>.</p>
     <ul class="about">
-      <li><a class="link" href="https://github.com/ArKc0s/hexapop/issues/new/choose" target="_blank" rel="noopener">Signaler un bug ou proposer une idée</a></li>
+      <li><a class="link" href={bugUrl()} target="_blank" rel="noopener">Signaler un bug</a> (ta version est jointe automatiquement) ou <a class="link" href="https://github.com/ArKc0s/hexapop/issues/new?template=idee.yml" target="_blank" rel="noopener">proposer une idée</a></li>
       <li><a class="link" href="https://github.com/ArKc0s/hexapop" target="_blank" rel="noopener">Code source</a>, sous licence GNU AGPL-3.0</li>
       <li>Contact : {EDITEUR.contact}</li>
     </ul>
     <p>Les documents légaux sont dans les onglets ci-dessus : mentions légales, confidentialité, conditions d'utilisation.</p>
+    <p class="ver tabnum">Version {VERSION}{COMMIT ? ` · ${COMMIT}` : ""} · {BUILT.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
   {:else if doc === "mentions"}
     <h2>Éditeur</h2>
     <p>Hexa (hexapop.app) est un site non commercial, édité à titre personnel par :</p>
@@ -144,4 +146,5 @@
   table { border-collapse: collapse; font-size: 14px; min-width: 620px; }
   th, td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); }
   th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
+  .ver { margin-top: 8px; font-size: 13px; color: var(--soft); font-weight: 600; }
 </style>

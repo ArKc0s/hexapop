@@ -4,3 +4,4 @@ dist/
 *.db-*
 .env
 deploy/.deploy.env
+BUILD_COMMIT
