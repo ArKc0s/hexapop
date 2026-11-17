@@ -13,6 +13,7 @@ import { startPushScheduler } from "./push.ts";
 import { life } from "./life.ts";
 import { busyRooms, roomCodes, stats } from "./rooms.ts";
 import { sharePage } from "./share.ts";
+import { preprodAllowed, preprodHandle } from "./preprod.ts";
 import { peak } from "./stats.ts";
 // Pic de joueurs connectés en même temps, par jour (statistiques).
 setInterval(() => { const n = stats().players; if (n > 0 && !life.draining) peak("joueurs_max", n); }, 30_000).unref();
@@ -71,6 +72,8 @@ function internal(req: import("node:http").IncomingMessage, res: import("node:ht
 const server = createServer((req, res) => {
   const url = req.url ?? "/";
   if (url.startsWith("/api/internal/")) return internal(req, res);
+  // Préprod : mot de passe des testeurs (voir preprod.ts) ; la santé reste lisible pour le déploiement.
+  if (!url.startsWith("/api/health") && preprodHandle(req, res)) return;
   if (url.startsWith("/api/")) return void handleApi(req, res);
   // Résultat partagé du défi du jour (voir share.ts).
   const shared = /^\/d\/([\w-]{6,16})$/.exec(url.split("?")[0]);
@@ -88,6 +91,7 @@ const resumeIds = new Map<string, string>(); // jeton de reprise -> id joueur (r
 
 server.on("upgrade", (req, socket, head) => {
   if (!req.url?.startsWith("/api/ws")) return socket.destroy();
+  if (!preprodAllowed(req)) return socket.destroy();
   if (!rateLimit("ws:" + clientIp(req), 60, 60_000)) return socket.destroy();
   wss.handleUpgrade(req, socket, head, (ws) => onConnection(ws, sessionToken(req), clientIp(req)));
 });
