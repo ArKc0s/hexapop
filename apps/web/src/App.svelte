@@ -1,5 +1,6 @@
 <script lang="ts">
   import { nav, screenFromHash } from "./lib/nav.svelte.ts";
+  import { bugUrl } from "./lib/version.ts";
   import { session } from "./lib/api.svelte.ts";
   import Home from "./screens/Home.svelte";
   import Play from "./screens/Play.svelte";
@@ -29,6 +30,9 @@
   push.init();
 </script>
 
+<!-- Filet de sécurité : un écran qui plante affiche un message au lieu de laisser un bouton qui ne fait rien. -->
+{#key nav.screen}
+<svelte:boundary onerror={(e) => console.error("[écran]", e)}>
 {#if nav.screen.name === "home"}<Home />
 {:else if nav.screen.name === "play"}{#key nav.screen}<Play config={nav.screen.config} title={nav.screen.title} learn={nav.screen.learn} mode={nav.screen.mode} region={nav.screen.region} />{/key}
 {:else if nav.screen.name === "results"}{#key nav.screen}<Results {...nav.screen} />{/key}
@@ -43,6 +47,21 @@
 {:else if nav.screen.name === "stage"}<Stage code={nav.screen.code} />
 {:else if nav.screen.name === "legal"}<Legal doc={nav.screen.doc} />
 {/if}
+  {#snippet failed()}
+    <main class="page crash">
+      <h1 class="title">Oups, cet écran a planté</h1>
+      <p>Ta progression est enregistrée. Reviens à l'accueil pour continuer, et si ça se reproduit, dis-le-nous : la version du jeu est jointe automatiquement.</p>
+      <div class="row"><button class="btn big" onclick={() => nav.go({ name: "home" })}>Retour à l'accueil</button><a class="link" href={bugUrl()} target="_blank" rel="noopener">Signaler le bug</a></div>
+    </main>
+  {/snippet}
+</svelte:boundary>
+{/key}
 
 <PushPrompt />
 <SignupPrompt />
+
+<style>
+  .crash { --w: 560px; display: flex; flex-direction: column; gap: 14px; }
+  .crash p { margin: 0; font-weight: 600; color: var(--soft); }
+  .crash .row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+</style>

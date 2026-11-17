@@ -41,7 +41,10 @@
   const r = rewards;
   const total = results.reduce((n, x) => n + x.points, 0);
   const perfect = results.filter((x) => x.accuracy >= 0.999).length;
-  const missed = results.filter((x) => x.accuracy < 0.999);
+  // Un département peut revenir deux fois dans une séance (question puis rappel) : on garde sa dernière réponse.
+  // (Deux entrées pour le même département faisaient planter la liste « À revoir », et le bilan ne s'ouvrait pas.)
+  const last = [...new globalThis.Map(results.map((x) => [x.code, x] as const)).values()];
+  const missed = last.filter((x) => x.accuracy < 0.999);
   const marks: Record<string, Mark> = Object.fromEntries(results.map((x) => [x.code, x.accuracy >= 0.999 ? "done-ok" : "done-ko"]));
   let focus = $state<string | null>(missed[0]?.code ?? null);
 
