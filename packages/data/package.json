@@ -6,6 +6,7 @@
     "./departements.json": "./src/departements.json",
     "./regions.json": "./src/regions.json",
     "./map.json": "./src/map.json",
-    "./monde.json": "./src/monde.json"
+    "./monde.json": "./src/monde.json",
+    "./monde-carte.json": "./src/monde-carte.json"
   }
 }

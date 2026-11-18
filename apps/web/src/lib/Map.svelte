@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { tourRegionOf, OUTRE_MER, type AtlasId } from "@hexa/game";
-  import { MAP, IDF_SOURCE, IDF_TARGET, zoomTransform, geoOf } from "./map.ts";
+  import { MAP, IDF_SOURCE, IDF_TARGET, zoomTransform, geoOf, circle } from "./map.ts";
   import { world } from "./world.svelte.ts";
 
   export type Mark = "sel" | "ok" | "ko" | "miss" | "hint" | "near" | "done-ok" | "done-ko" | "focus" | "subject";
@@ -59,7 +59,19 @@
   const vb = $derived((view ?? full).map((n) => n.toFixed(1)).join(" "));
   const zoomed = $derived(!!view);
   // Ombre rose : 4 unités sur la France. Monde : plus fine (les pays sont petits), et constante à l'écran quand on zoome.
-  const shadow = $derived(geo.atlas === "monde" ? +(1.4 * ((view ?? full)[2] / full[2])).toFixed(2) : 4);
+  // Monde : la carte se regarde zoomée (un continent en plein écran). Les traits fins, l'ombre rose et les ronds des
+  // petits pays gardent la même taille à l'écran que sur la carte de France, quel que soit le zoom
+  // (vector-effect ne s'applique pas aux <use>, on calcule l'épaisseur en unités de la carte).
+  let cw = $state(0), ch = $state(0);
+  const ppu = $derived.by(() => { const v = view ?? full; return cw && ch ? Math.min(cw / v[2], ch / v[3]) : cw ? cw / v[2] : 1; });
+  const isW = $derived(geo.atlas === "monde");
+  const shadow = $derived(isW ? +(3 / ppu).toFixed(3) : 4);
+  const shapes = $derived.by(() => {
+    if (!geo.dots) return geo.paths;
+    const r = 5 / ppu, out: Record<string, string> = { ...geo.paths };
+    for (const [c, p] of Object.entries(geo.dots)) out[c] = (out[c] ?? "") + circle(p, r);
+    return out;
+  });
   let anim = 0;
   function animateTo(target: number[] | null) {
     cancelAnimationFrame(anim);
@@ -83,7 +95,7 @@
   /** Cadre d'une région (métropole), au ratio de la vue complète. */
   function regionBox(code: string): number[] {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const c of tourRegionOf(code).deps) for (const [, x, y] of geo.paths[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
+    for (const c of tourRegionOf(code).deps) for (const [, x, y] of shapes[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
       x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y);
     }
     const pad = 0.12, ratio = full[3] / full[2];
@@ -97,7 +109,7 @@
   function boxOf(list: string[]): number[] | null {
     if (list.some((c) => OM.has(c) || (geo.zoom && IDF_SOURCE.codes.includes(c)))) return null;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const c of list) for (const [, x, y] of geo.paths[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
+    for (const c of list) for (const [, x, y] of shapes[c].matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
       x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y);
     }
     const pad = 0.25, ratio = full[3] / full[2];
@@ -109,7 +121,7 @@
   /** Cadre englobant ces éléments, au ratio de la vue complète, au moins `min` de sa largeur. */
   function fitBox(list: string[], min: number): number[] {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const c of list) for (const [, x, y] of (geo.paths[c] ?? "").matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
+    for (const c of list) for (const [, x, y] of (shapes[c] ?? "").matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
       x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y);
     }
     const ratio = full[3] / full[2];
@@ -246,12 +258,12 @@
   }
 </script>
 
-<div class="wrap" class:zoomable>
+<div class="wrap" class:zoomable bind:clientWidth={cw} bind:clientHeight={ch}>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <svg bind:this={svg} class="map" class:r={geo.atlas === "regions"} class:w={geo.atlas === "monde"} class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
+  <svg bind:this={svg} class="map" class:r={geo.atlas === "regions"} class:w={geo.atlas === "monde"} style={isW ? `--sw:${(0.75 / ppu).toFixed(4)}` : undefined} class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
     onclick={pickFrom} onkeydown={key} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onwheel={wheel}>
     <defs>
-      {#each codes as code (code)}<path id="{uid}-{code}" d={geo.paths[code]} />{/each}
+      {#each codes as code (code)}<path id="{uid}-{code}" d={shapes[code]} />{/each}
     </defs>
 
     {#each geo.insets as b (b.code)}
@@ -265,7 +277,7 @@
 
     {#if geo.fond}<path class="fond" d={geo.fond} aria-hidden="true" />{/if}
     <!-- Ombre rose : un léger décalage de la silhouette, la seule touche riso de la carte -->
-    <g class="shadow" class:none={geo.atlas === "monde"} transform="translate({shadow} {shadow})" aria-hidden="true">
+    <g class="shadow" transform="translate({shadow} {shadow})" aria-hidden="true">
       {#each codes as code (code)}<use href="#{uid}-{code}" transform={shiftOf(code)} />{/each}
     </g>
 
@@ -310,10 +322,11 @@
   .shadow use { fill: var(--pink); }
   /* Monde : traits fins (les pays sont petits), l'ombre plus courte, les terres hors jeu en gris. */
   /* Monde : la mer en beige soutenu, les pays en blanc, des frontières nettes ; pas d'ombre rose (côtes en dents de scie). */
-  .map.w { background: #e2d9c6; border-radius: 18px; }
-  .shadow.none { display: none; }
-  .map.w .deps use { stroke: #6f6656; stroke-width: .7; }
-  .fond { fill: #cfc5b0; stroke: #a99f8a; stroke-width: .5; vector-effect: non-scaling-stroke; }
+  /* Monde, même direction artistique que la carte de France : pays blancs, frontières fines, côtes à l'encre
+     (le contour épais des « régions »), ombre rose ; les zones hors jeu (disputées, territoires) en gris clair. */
+  .map.w .deps use { stroke-width: var(--sw); }
+  .map.w .regions path { stroke-width: 1.4; }
+  .fond { fill: #e6dfd0; stroke: #b9af9a; stroke-width: .6; vector-effect: non-scaling-stroke; }
   .frame { fill: #fffdf8; stroke: #d6cdb9; stroke-width: 1.5; }
   .cap { font: 700 13px var(--f-ui); fill: var(--soft); }
   .src { fill: none; stroke: var(--soft); stroke-width: 1; stroke-dasharray: 2 2; }

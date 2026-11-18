@@ -11,6 +11,7 @@ import mapshaper from "mapshaper";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SRC = join(root, "data", "sources", "monde", "ne_50m_admin_0_countries.geojson");
 const OUT = join(root, "packages", "data", "src", "monde.json");
+const OUT_CARTE = join(root, "packages", "data", "src", "monde-carte.json");
 
 // ---------- Les pays ----------
 // code (ADM0_A3 de Natural Earth) | nom | article | capitale | continent | autres noms acceptés | autres capitales acceptées
@@ -278,11 +279,15 @@ const W = 1000;
 const PROJ = "+proj=natearth +lon_0=11";
 const out = await run(
   `-i combine-files in.json dis.json snap -erase dis target=in -dissolve code,fond copy-fields=fond target=in ` +
-  `-merge-layers target=in,dis force name=all -proj ${PROJ} -simplify 12% keep-shapes ` +
-  `-filter-islands min-area=40km2 remove-empty -o out.json format=geojson`,
+  // Assez de détail pour un continent en plein écran (la carte se regarde zoomée), coordonnées au dixième (moins d'un pixel, même zoomé sur l'Europe).
+  `-merge-layers target=in,dis force name=all -proj ${PROJ} -simplify 30% keep-shapes ` +
+  `-filter-islands min-area=40km2 remove-empty ` +
+  // Le trait de côte (toutes les terres fondues) : un contour épais à l'encre, comme les régions sur la carte de France.
+  `-dissolve + name=land -o out.json format=geojson target=all -o land.json format=geojson target=land`,
   { "in.json": geo, "dis.json": JSON.stringify(disputed) },
 );
 const fc = JSON.parse(out["out.json"]);
+const landFc = JSON.parse(out["land.json"]);
 let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
 const walkPts = (c, f) => (typeof c[0] === "number" ? f(c) : c.forEach((x) => walkPts(x, f)));
 for (const f of fc.features) walkPts(f.geometry.coordinates, ([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
@@ -361,13 +366,16 @@ const items = PAYS.map((p) => ({
   ...(p.alias.length ? { alias: p.alias } : {}), ...(p.capAlias.length ? { capAlias: p.capAlias } : {}), ...(p.capNote ? { capNote: p.capNote } : {}),
 })).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
 
-writeFileSync(OUT, JSON.stringify({
+// Deux fichiers : la liste (petite, pour le jeu et le serveur) et la carte (lourde, chargée par l'appli seulement
+// quand l'atlas Monde est proposé).
+writeFileSync(OUT, JSON.stringify({ items }));
+writeFileSync(OUT_CARTE, JSON.stringify({
   viewBox: [0, 0, W, H],
-  items,
   paths: Object.fromEntries(Object.entries(paths).map(([c, d]) => ["W" + c, d])),
   dots: Object.fromEntries(Object.entries(dots).map(([c, p]) => ["W" + c, p])),
   fond,
+  cote: (landFc.features?.map((f) => f.geometry) ?? landFc.geometries ?? [landFc]).filter(Boolean).map((g) => pathOf(g).d).join(""),
   views,
 }));
 console.log(JSON.stringify(views));
-console.log(`${items.length} pays, ${Object.keys(dots).length} petits pays en rond, carte ${W}×${H}, ${(readFileSync(OUT).length / 1024).toFixed(0)} Ko`);
+console.log(`${items.length} pays, ${Object.keys(dots).length} petits pays en rond, carte ${W}×${H}, liste ${(readFileSync(OUT).length / 1024).toFixed(0)} Ko, carte ${(readFileSync(OUT_CARTE).length / 1024).toFixed(0)} Ko`);

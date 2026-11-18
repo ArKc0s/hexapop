@@ -1,5 +1,5 @@
 import map from "@hexa/data/map.json";
-import monde from "@hexa/data/monde.json";
+import { mondeCarte } from "./world.svelte.ts";
 import { DEPARTEMENTS } from "@hexa/game";
 
 export interface Box { x: number; y: number; w: number; h: number }
@@ -67,16 +67,22 @@ export interface Geo {
   /** Monde : cadre de chaque continent (code du groupe → x, y, largeur, hauteur). */
   views?: Record<string, [number, number, number, number]>;
 }
-const W = monde as unknown as { viewBox: [number, number, number, number]; paths: Record<string, string>; dots: Record<string, [number, number]>; fond: string; views: Record<string, [number, number, number, number]> };
-/** Un rond ajouté au tracé du pays : il se colore et se touche comme le pays. En polygone (16 côtés) et en coordonnées
- *  absolues, pour que les calculs de cadre (zoom sur un continent) lisent des points de la carte. */
-const DOT_R = 3.6;
-const circle = ([x, y]: [number, number]) =>
-  "M" + Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2; return `${(x + DOT_R * Math.cos(a)).toFixed(1)},${(y + DOT_R * Math.sin(a)).toFixed(1)}`; }).join("L") + "Z";
+type MondeCarte = { viewBox: [number, number, number, number]; paths: Record<string, string>; dots: Record<string, [number, number]>; fond: string; cote: string; views: Record<string, [number, number, number, number]> };
+/** Un rond ajouté au tracé d'un petit pays, de rayon r (en unités de la carte : Map.svelte le garde constant à l'écran).
+ *  En polygone et en coordonnées absolues, pour que les calculs de cadre lisent des points de la carte. */
+export const circle = ([x, y]: [number, number], r: number) =>
+  "M" + Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2; return `${(x + r * Math.cos(a)).toFixed(2)},${(y + r * Math.sin(a)).toFixed(2)}`; }).join("L") + "Z";
+let mondeGeo: Geo | null = null;
+const EMPTY_MONDE: Geo = { atlas: "monde", paths: {}, insets: [], zoom: false, outlines: [], inner: [], viewBox: [0, 0, 1000, 450], views: {} };
+function monde(): Geo {
+  const W = mondeCarte.data as MondeCarte | null; // lu ici : la carte se redessine quand le fichier arrive
+  if (!W) return EMPTY_MONDE;
+  return (mondeGeo ??= { atlas: "monde", paths: W.paths, insets: [], zoom: false, outlines: [W.cote], inner: [], viewBox: W.viewBox, fond: W.fond, dots: W.dots, views: W.views });
+}
 const REGIONS_OUTLINE = (map as unknown as { regions: Record<string, string> }).regions;
 /** Outre-mer : une région = un département, même encart. */
 const OM_REGION: Record<string, string> = { "971": "R01", "972": "R02", "973": "R03", "974": "R04", "976": "R06" };
-const GEO: Record<AtlasId, Geo> = {
+const GEO: Record<"france" | "regions", Geo> = {
   france: { atlas: "france", paths: MAP.paths, insets: MAP.insets, zoom: true, outlines: Object.values(REGIONS_OUTLINE), inner: [] },
   regions: {
     atlas: "regions",
@@ -88,10 +94,5 @@ const GEO: Record<AtlasId, Geo> = {
     zoom: false, outlines: [],
     inner: DEPARTEMENTS.filter((d) => !d.outreMer).map((d) => MAP.paths[d.code]),
   },
-  monde: {
-    atlas: "monde",
-    paths: Object.fromEntries(Object.entries(W.paths).map(([c, d]) => [c, W.dots[c] ? d + circle(W.dots[c]) : d])),
-    insets: [], zoom: false, outlines: [], inner: [], viewBox: W.viewBox, fond: W.fond, dots: W.dots, views: W.views,
-  },
 };
-export const geoOf = (a: AtlasId): Geo => GEO[a];
+export const geoOf = (a: AtlasId): Geo => (a === "monde" ? monde() : GEO[a as "france" | "regions"]);

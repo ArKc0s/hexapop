@@ -39,7 +39,7 @@
   // Monde : la carte entière est deux fois plus large que haute ; un continent remplit la colonne et se lit.
   // Par défaut celui de la prochaine séance ; « Tout » montre le monde entier.
   const CONT_SHORT: Record<string, string> = { WEU: "Europe", WAF: "Afrique", WAS: "Asie", WNA: "Am. du Nord", WSA: "Am. du Sud", WOC: "Océanie" };
-  const views = geoOf("monde").views ?? {};
+  const views = $derived(geoOf("monde").views ?? {});
   let cont = $state<string | null>(null);
   const shownCont = $derived(cont ?? (seance.region && views[seance.region.code] ? seance.region.code : "WEU"));
   const frame = $derived(monde && shownCont !== "all" ? views[shownCont] : undefined);

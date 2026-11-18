@@ -8,6 +8,10 @@ const host = typeof location !== "undefined" ? location.hostname : "";
 export const PREVIEW = host.startsWith("preprod.") || host === "localhost" || host === "127.0.0.1";
 const OFFERED = offeredAtlases(PREVIEW);
 
+/** Carte du monde (500 Ko) : chargée seulement quand l'atlas Monde est proposé, jamais en prod tant qu'il est en essai. */
+export const mondeCarte = $state<{ data: unknown }>({ data: null });
+if (OFFERED.includes("monde")) import("@hexa/data/monde-carte.json").then((m) => (mondeCarte.data = m.default)).catch(() => {});
+
 export const world = {
   get id(): AtlasId { const a = profile.data.atlas ?? "france"; return OFFERED.includes(a) ? a : "france"; },
   get atlas(): Atlas { return ATLASES[this.id]; },

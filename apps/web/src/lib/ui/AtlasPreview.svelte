@@ -13,8 +13,9 @@
   // Pas d'or : il se confondrait avec le jaune de la question qui clignote.
   const PALETTE = [STAR_FILL[1], STAR_FILL[2], STAR_FILL[2], MEDAL_FILL[1], MEDAL_FILL[2]];
   // Seulement ce qui se voit en petit : ni l'outre-mer, ni les micro-États du Monde (des ronds).
-  const dots = geoOf(atlas).dots ?? {};
-  const codes = ATLASES[atlas].items.filter((d) => !d.outreMer && !dots[d.code]).map((d) => d.code);
+  // (la carte du monde arrive après coup : on relit les petits pays à chaque fois)
+  const codesNow = () => { const dots = geoOf(atlas).dots ?? {}; return ATLASES[atlas].items.filter((d) => !d.outreMer && !dots[d.code]).map((d) => d.code); };
+  let codes = codesNow();
   const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)];
 
   /** Point de départ : un tiers de la carte déjà coloré, pour qu'on voie tout de suite à quoi ça ressemble. */
@@ -30,6 +31,7 @@
   const timers: ReturnType<typeof setTimeout>[] = [];
   const later = (ms: number, f: () => void) => timers.push(setTimeout(f, ms));
   function step() {
+    codes = codesNow();
     const left = codes.filter((c) => !fills[c]);
     if (left.length < codes.length * 0.25) { fills = seed(); later(600, step); return; }
     const c = pick(left);
