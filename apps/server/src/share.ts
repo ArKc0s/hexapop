@@ -60,16 +60,10 @@ const value = (f: Field, v: string | string[]) => {
 
 const empty = (v: string | string[]) => (Array.isArray(v) ? v.length === 0 : !v);
 
-export function sharePage(id: string): string | null {
-  const row = db.prepare("SELECT day, data FROM daily_shares WHERE id = ?").get(id) as { day: string; data: string } | undefined;
-  if (!row) return null;
-  const s = JSON.parse(row.data) as ShareData;
-  const live = row.day >= today();
-  const ok = s.grid.filter((g) => g === 2).length, mid = s.grid.filter((g) => g === 1).length, ko = s.grid.filter((g) => g === 0).length;
-  const sec = Math.round(s.elapsedMs / 1000);
-  const title = `${s.name} : ${s.points.toLocaleString("fr-FR")} points au défi Hexa n° ${s.number}`;
-  const desc = `${ok} juste${ok > 1 ? "s" : ""}, ${mid} à moitié, ${ko} raté${ko > 1 ? "s" : ""} en ${LEVEL_NAMES[s.level]}${s.rank ? ` · ${s.rank}${s.rank === 1 ? "er" : "e"} sur ${s.players}` : ""}. À toi de faire mieux !`;
-  const rounds = s.rounds.map((r, i) => {
+
+/** Les réponses du partage, en HTML (liste des tours). */
+function roundsHtml(s: ShareData): string {
+  return s.rounds.map((r, i) => {
     const d = dep(r.code);
     const g = s.grid[i] ?? 0;
     const fields = r.fields.map((f) => {
@@ -78,6 +72,38 @@ export function sharePage(id: string): string | null {
     }).join("");
     return `<li class="round g${g}"><div class="rh"><i class="m">${MARK[g]}</i><b>${esc(d?.nom ?? r.code)} (${esc(r.code)})</b><span>${HINT[r.hint]}</span></div><ul>${fields}</ul></li>`;
   }).join("");
+}
+
+type ShareRow = { day: string; data: string };
+const shareRow = (id: string) => db.prepare("SELECT day, data FROM daily_shares WHERE id = ?").get(id) as ShareRow | undefined;
+
+/**
+ * Réponses d'un partage pour celui qui regarde. Pendant le défi, seulement s'il a déjà joué le défi du jour (compte ou
+ * invité de ce navigateur) : les réponses ne sont même pas dans la page, rien à dévoiler en fouillant le code.
+ * « locked » : pas encore joué ; null : partage inconnu.
+ */
+export function shareAnswers(id: string, userId: number | null, guestId: string | null): string | "locked" | null {
+  const row = shareRow(id);
+  if (!row) return null;
+  const s = JSON.parse(row.data) as ShareData;
+  if (row.day >= today()) {
+    const played = (userId !== null && !!db.prepare("SELECT 1 FROM daily_results WHERE day = ? AND user_id = ?").get(row.day, userId))
+      || (guestId !== null && !!db.prepare("SELECT 1 FROM daily_guest_results WHERE day = ? AND guest_id = ?").get(row.day, guestId));
+    if (!played) return "locked";
+  }
+  return roundsHtml(s);
+}
+
+export function sharePage(id: string): string | null {
+  const row = shareRow(id);
+  if (!row) return null;
+  const s = JSON.parse(row.data) as ShareData;
+  const live = row.day >= today();
+  const ok = s.grid.filter((g) => g === 2).length, mid = s.grid.filter((g) => g === 1).length, ko = s.grid.filter((g) => g === 0).length;
+  const sec = Math.round(s.elapsedMs / 1000);
+  const title = `${s.name} : ${s.points.toLocaleString("fr-FR")} points au défi Hexa n° ${s.number}`;
+  const desc = `${ok} juste${ok > 1 ? "s" : ""}, ${mid} à moitié, ${ko} raté${ko > 1 ? "s" : ""} en ${LEVEL_NAMES[s.level]}${s.rank ? ` · ${s.rank}${s.rank === 1 ? "er" : "e"} sur ${s.players}` : ""}. À toi de faire mieux !`;
+
   return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
@@ -98,7 +124,10 @@ export function sharePage(id: string): string | null {
 .g2 .m, .grid .g2 { background: #22b07d; } .g1 .m, .grid .g1 { background: #ffd93d; color: #1c1a37; } .g0 .m, .grid .g0 { background: #ff4fae; }
 .legend { font-size: 14px; color: var(--soft); }
 .go { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-details { background: #fff; border-radius: 24px; padding: 14px 18px; }
+details, .answers { background: #fff; border-radius: 24px; padding: 14px 18px; }
+.answers { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.answers .lock { color: var(--soft); font-weight: 600; }
+.answers.open .lock, .answers.open .btn { display: none; }
 summary { cursor: pointer; font-weight: 800; }
 summary small { display: block; color: var(--soft); font-weight: 600; }
 .rounds { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -126,10 +155,16 @@ summary small { display: block; color: var(--soft); font-weight: 600; }
     <p class="legend">✓ juste · ~ à moitié · ✗ raté (une case par département)</p>
     <div class="go"><a class="btn" href="/#defi">${live ? "Fais mieux : joue le défi du jour" : "Joue le défi d'aujourd'hui"}</a><span class="legend">Gratuit, sans inscription, 2 minutes.</span></div>
   </div>
-  <details${live ? "" : " open"}>
-    <summary>Voir ses réponses${live ? "<small>Attention : ça dévoile les départements du défi d'aujourd'hui. Joue d'abord !</small>" : ""}</summary>
-    <ol class="rounds">${rounds}</ol>
-  </details>
+  ${live ? `<section class="answers" id="answers" data-id="${esc(id)}">
+    <b>Ses réponses</b>
+    <p class="lock">Elles se dévoilent quand tu as joué le défi d'aujourd'hui : les mêmes départements pour tout le monde, pas de triche !</p>
+    <a class="btn" href="/#defi">Jouer le défi, puis revenir ici</a>
+    <ol class="rounds" hidden></ol>
+  </section>
+  <script src="/d-reponses.js" defer></script>` : `<details open>
+    <summary>Ses réponses</summary>
+    <ol class="rounds">${roundsHtml(s)}</ol>
+  </details>`}
 </main>
 </body></html>`;
 }

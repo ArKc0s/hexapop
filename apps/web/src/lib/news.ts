@@ -4,6 +4,13 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
+    id: 13, version: "1.15.1", date: "2026-11-18", title: "Pas de spoil, et ton pseudo comme tu veux",
+    items: [
+      "Les réponses d'un ami à son défi du jour ne s'ouvrent qu'une fois que tu as joué le tien : plus moyen de se gâcher le défi (ni de tricher) en regardant avant.",
+      "Après une inscription avec Google (ou un autre service), tu peux maintenant effacer complètement le prénom proposé pour taper ton pseudo.",
+    ],
+  },
+  {
     id: 12, version: "1.15", date: "2026-11-17", title: "Montre tes réponses (ou cache-les)",
     items: [
       "Partager ton défi du jour donne un lien vers ta page de résultat : ton score, ta grille, et toutes tes réponses, question par question (idée de Mathis).",

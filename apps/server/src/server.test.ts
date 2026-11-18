@@ -457,10 +457,18 @@ test("invités au classement du défi : pseudo généré, un essai par navigateu
   }
   const end = await c.wait("end");
   assert.equal(end.daily?.saved, true, "invité classé");
-  // Page de résultat partagée : score, grille, réponses données (repliées : le défi est en cours).
+  // Page de résultat partagée : score et grille ; pendant le défi, les réponses ne sont pas dans la page.
   assert.ok(end.daily?.share, "lien de partage");
   const page = await (await fetch(BASE + "/d/" + end.daily!.share)).text();
-  assert.ok(page.includes(end.daily!.name!) && page.includes("Voir ses réponses") && page.includes("dévoile"), "page du résultat");
+  assert.ok(page.includes(end.daily!.name!) && page.includes("Elles se dévoilent quand tu as joué") && !page.includes('class="round '), "page du résultat, sans les réponses");
+  // Elles se demandent au serveur : refusées à qui n'a pas joué aujourd'hui, données à qui a joué.
+  const ans = (g?: string) => fetch(`${BASE}/api/share/answers?id=${end.daily!.share}${g ? `&guest=${g}` : ""}`);
+  assert.equal((await ans()).status, 403, "pas encore joué : cadenas");
+  assert.equal((await ans("autre-invite-0123456789")).status, 403, "un autre invité qui n'a pas joué : cadenas");
+  const open = await ans(guest);
+  assert.equal(open.status, 200);
+  assert.ok(((await open.json()).html as string).includes('class="round '), "a joué : réponses");
+  assert.equal((await fetch(`${BASE}/api/share/answers?id=inconnu123`)).status, 404);
   assert.equal((await fetch(BASE + "/d/inconnu123")).status, 404);
   assert.match(end.daily?.name ?? "", / du Finistère$/);
   assert.ok((end.daily?.rank ?? 0) >= 1);
