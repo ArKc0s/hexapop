@@ -425,8 +425,12 @@
      on retire la fiche détaillée pour que tout tienne sans défiler. */
   @media (min-width: 901px) and (max-height: 860px) { .round.review .fichebox { display: none; } }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
-  /* Monde : la carte est large et basse ; sur ordinateur, on la centre en hauteur face au panneau de réponses. */
-  @media (min-width: 901px) { .round.w .mapwrap { justify-content: center; } }
+  /* Monde, sur ordinateur : la carte prend toute la hauteur de la colonne (celle du panneau de réponses). Sans zoom le
+     monde est centré ; en zoomant, la hauteur disponible montre plus de carte au lieu de rester une bande étroite. */
+  @media (min-width: 901px) {
+    .round.w .mapwrap :global(.wrap) { flex: 1; min-height: min(68dvh, 560px); }
+    .round.w .mapwrap :global(svg.map) { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; }
+  }
   .clue { position: relative; }
   .clue.has-sw { padding-right: 118px; }
   .modesw { position: absolute; right: 0; top: 0; border: 0; background: var(--bg); color: var(--ink); font-weight: 800; font-size: 13px; padding: 6px 11px; border-radius: 999px; cursor: pointer; box-shadow: 0 2px 0 var(--line); z-index: 1; }
