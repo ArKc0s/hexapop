@@ -4,6 +4,14 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
+    id: 14, version: "1.15.2", date: "2026-11-18", title: "Hexa a son Discord",
+    items: [
+      "Rejoins le Discord d'Hexa (lien en bas de l'accueil) : le défi du jour chaque matin, le podium du soir et une question du jour à quatre choix.",
+      "Les soirées publiques y sont annoncées : rejoins la partie en un clic, ou regarde-la en spectateur et joue la suivante.",
+      "Une idée, un bug ? Ouvre un fil dans #idées ou #bugs : c'est suivi sur GitHub, et la réponse revient dans ton fil.",
+    ],
+  },
+  {
     id: 13, version: "1.15.1", date: "2026-11-18", title: "Pas de spoil, et ton pseudo comme tu veux",
     items: [
       "Les réponses d'un ami à son défi du jour ne s'ouvrent qu'une fois que tu as joué le tien : plus moyen de se gâcher le défi (ni de tricher) en regardant avant.",

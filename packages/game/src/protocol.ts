@@ -20,6 +20,8 @@ export interface RoomSettings {
   elimination: boolean;
   /** Handicap : niveau propre à certains joueurs (id joueur -> niveau). Les autres jouent au niveau du salon. */
   levels: Record<string, Level>;
+  /** Soirée publique (plateau, lancée par un admin) : annoncée sur le Discord d'Hexa, ouverte à tous. */
+  public?: boolean;
 }
 
 export interface PlayerInfo {

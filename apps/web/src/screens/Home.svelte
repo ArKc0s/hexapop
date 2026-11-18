@@ -88,6 +88,8 @@
     const left = 86400 - (g("hour") * 3600 + g("minute") * 60 + g("second"));
     return `${String(Math.floor(left / 3600)).padStart(2, "0")}:${String(Math.floor((left % 3600) / 60)).padStart(2, "0")}`;
   });
+  /** Le serveur Discord d'Hexa (défi du jour, soirées publiques, idées et bugs). */
+  const DISCORD = "https://discord.gg/VBXbyXZW7t";
 </script>
 
 {#if showWelcome}
@@ -173,6 +175,7 @@
         <button onclick={() => nav.go({ name: "album" })}>Album <span>{medalCount(p, 1)}/101</span></button>
         <button onclick={() => nav.go({ name: "hof" })}>Hall of Fame</button>
         <button onclick={() => nav.go({ name: "news" })}>Nouveautés{#if newsDot}<i class="dot" aria-label="(nouveau)"></i>{/if}</button>
+        <a class="discord" href={DISCORD} target="_blank" rel="noopener">Discord</a>
         <button class="soft" onclick={() => nav.go({ name: "legal", doc: "apropos" })}>À propos</button>
       </nav>
     </div>
@@ -267,7 +270,8 @@
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row2 .btn { flex-direction: column; gap: 3px; padding: 13px 10px; }
   .menu { display: flex; flex-wrap: wrap; gap: 6px 18px; border-top: 2px solid var(--line); padding-top: 10px; }
-  .menu button { background: none; border: 0; padding: 4px 0; cursor: pointer; font-weight: 800; font-size: 15.5px; color: var(--ink); }
+  .menu button, .menu .discord { background: none; border: 0; padding: 4px 0; cursor: pointer; font-weight: 800; font-size: 15.5px; color: var(--ink); text-decoration: none; }
+  .menu .discord { color: #5865f2; }
   .menu button:hover { color: var(--blue); }
   .menu span { color: var(--soft); font-weight: 700; margin-left: 2px; }
   .menu .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pink); margin-left: 4px; vertical-align: 6px; box-shadow: 0 0 0 2px #fff; }

@@ -7,6 +7,8 @@ export const config = {
   webDir: process.env.WEB_DIR ?? "",
   /** Secret de tirage du défi du jour (empêche de le calculer à l'avance). */
   dailySecret: process.env.DAILY_SECRET ?? "dev-secret",
+  /** Comptes admins (identifiants séparés par des virgules) : soirées publiques annoncées sur Discord. */
+  admins: new Set((process.env.HEXA_ADMINS ?? "").split(",").map((x) => Number(x.trim())).filter((n) => n > 0)),
   /** Jeton de lecture des statistiques (Grafana) ; sans jeton, la route est fermée. */
   statsToken: process.env.STATS_TOKEN ?? "",
   smtp: {

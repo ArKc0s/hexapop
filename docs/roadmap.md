@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.15.2** : serveur Discord et bot (apps/bot, voir docs/discord.md) : défi du jour et podium, question du jour, nouveautés et roadmap publique (docs/roadmap-publique.md) publiées seules, soirées plateau publiques réservées aux admins (HEXA_ADMINS) annoncées avec mention et dans le statut du bot, forums #bugs / #idées ↔ issues GitHub ; lien Discord sur le site.
 - **v1.15.1** : les réponses d'un partage ne s'ouvrent qu'à qui a joué le défi du jour (elles ne sont plus dans la page) ; pseudo après Google : le champ peut être vidé ; partage texte + lien (Snapchat refusait image + texte venant d'une webapp), l'image du score devient l'aperçu du lien (/d/<id>.png, générée par le serveur).
 - **v1.15** : page de résultat partagée du défi (hexapop.app/d/…, réponses repliées tant que le défi est en cours, 90 jours) ; partage lisible par tous (✅ 🟧 ❌ et décompte, symboles dans l'image) ; correction en bleu (v1.14.2) ; « Nouvelle partie » après « Rejouer les ratés » (v1.14.1).
 - **v1.14** : page Nouveautés (point rose sur l'accueil quand il y a du neuf) ; kilomètres affichés à chaque réponse en solo ; image de partage du défi du jour ; image d'aperçu propre à chaque fiche département et région ; IndexNow après chaque déploiement ; salons : arrivées et départs regroupés (moins de trafic en soirée nombreuse).

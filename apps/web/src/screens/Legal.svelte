@@ -22,6 +22,7 @@
     <p>Hexa est un jeu gratuit pour apprendre les 101 départements français : leur place sur la carte, leur numéro, leur préfecture. Fait à titre personnel, <b>sans publicité ni traceur</b>.</p>
     <ul class="about">
       <li><a class="link" href={bugUrl()} target="_blank" rel="noopener">Signaler un bug</a> (ta version est jointe automatiquement) ou <a class="link" href="https://github.com/ArKc0s/hexapop/issues/new?template=idee.yml" target="_blank" rel="noopener">proposer une idée</a></li>
+      <li><a class="link" href="https://discord.gg/VBXbyXZW7t" target="_blank" rel="noopener">Le Discord d'Hexa</a> : le défi du jour chaque matin, les soirées publiques, tes idées et tes bugs</li>
       <li><a class="link" href="https://github.com/ArKc0s/hexapop" target="_blank" rel="noopener">Code source</a>, sous licence GNU AGPL-3.0</li>
       <li>Pour réviser : la <a class="link" href="/france/departements">liste des départements</a>, la <a class="link" href="/france/carte-des-departements">carte</a> et les <a class="link" href="/quiz">quiz</a></li>
       <li>Contact : {EDITEUR.contact}</li>

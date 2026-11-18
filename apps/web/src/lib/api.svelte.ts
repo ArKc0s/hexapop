@@ -3,7 +3,7 @@ import { progress } from "./progress.svelte.ts";
 import { profile } from "./profile.svelte.ts";
 import { forgetGuest, guestId } from "./guest.ts";
 
-export interface Me { id: number; pseudo: string; email: string; emailVerified: boolean; home: string | null; providers: string[]; hasPassword: boolean }
+export interface Me { id: number; pseudo: string; email: string; emailVerified: boolean; home: string | null; providers: string[]; hasPassword: boolean; /** Admin : peut ouvrir une soirée publique (annoncée sur Discord). */ admin?: boolean }
 export interface ProviderInfo { id: "google" | "discord" | "twitch" | "apple"; label: string }
 
 export class ApiError extends Error {

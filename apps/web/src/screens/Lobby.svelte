@@ -115,6 +115,12 @@
         <div class="rule"><span>Battle royale (élimination)</span><div class="seg">
           <button class:on={room.settings.elimination} disabled={!isHost} onclick={() => set({ elimination: true })}>Oui</button>
           <button class:on={!room.settings.elimination} disabled={!isHost} onclick={() => set({ elimination: false })}>Non</button></div></div>
+        {#if room.kind === "plateau" && isHost && session.me?.admin}
+          <div class="rule"><span>Soirée publique (Discord)</span><div class="seg">
+            <button class:on={!!room.settings.public} onclick={() => set({ public: true })}>Oui</button>
+            <button class:on={!room.settings.public} onclick={() => set({ public: false })}>Non</button></div></div>
+          {#if room.settings.public}<p class="hint">Le bot Hexa annonce le salon sur le Discord, mentionne les joueurs inscrits aux soirées et affiche le lien dans son statut. Relance en boucle : il réannonce à chaque nouvelle partie.</p>{/if}
+        {:else if room.settings.public}<p class="hint">Soirée publique : annoncée sur le Discord d'Hexa.</p>{/if}
         {#if room.settings.elimination}<p class="hint">Battle royale : à partir du 3e tour, le dernier quart du classement est éliminé à chaque tour, jusqu'au dernier survivant. Les éliminés suivent la fin en spectateurs.</p>{/if}
         <details>
           <summary class="k">Régions · {room.settings.regions.length ? room.settings.regions.length : "toute la France"}</summary>

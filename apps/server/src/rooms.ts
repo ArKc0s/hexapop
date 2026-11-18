@@ -2,6 +2,7 @@
 // les clients n'envoient que leurs réponses, l'heure de réception fait foi
 // (corrigée de la moitié de la latence mesurée par ping WebSocket).
 
+import { config } from "./config.ts";
 import { randomBytes, randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import {
@@ -238,7 +239,13 @@ export class Room {
   updateSettings(c: Conn, s: Partial<RoomSettings>) {
     if (!this.isHost(c)) return fail(c, "not_host", "Seul l'hôte peut changer les règles.");
     if (this.phase !== "lobby") return fail(c, "already_started", "La partie a déjà commencé.");
+    const wasPublic = !!this.settings.public;
     this.settings = clampSettings(s, this.settings);
+    // Soirée publique : soirée plateau, et seul un admin peut l'ouvrir (ou la refermer).
+    const admin = c.userId !== null && config.admins.has(c.userId);
+    const pub = typeof s.public === "boolean" && admin && this.kind === "plateau" ? s.public : wasPublic;
+    this.settings = { ...this.settings, ...(pub ? { public: true } : {}) };
+    if (!pub) delete this.settings.public;
     this.syncLevels();
     this.broadcastRoom();
   }
@@ -533,4 +540,13 @@ export function liveRooms() {
     if (r.phase !== "lobby" && r.phase !== "ended") k.en_partie++;
   }
   return out;
+}
+
+/** Soirées publiques en cours (le bot Discord les annonce) : code, état, joueurs, hôte. */
+export function publicRooms() {
+  return [...rooms.values()].filter((r) => r.settings.public && r.seats.size > 0).map((r) => ({
+    code: r.code, kind: r.kind, phase: r.phase, players: r.seats.size, spectators: r.spectators.size,
+    host: [...r.seats.values()].find((x) => x.info.host)?.info.name ?? "",
+    round: r.qi + 1, rounds: r.questions.length || r.settings.rounds, level: r.settings.level,
+  }));
 }

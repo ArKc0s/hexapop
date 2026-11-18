@@ -15,7 +15,7 @@ let srv: ChildProcess;
 let logs = "";
 
 before(async () => {
-  srv = spawn(process.execPath, ["src/index.ts"], { env: { ...process.env, PORT: String(PORT), DB_PATH: join(dir, "t.db"), GOOGLE_CLIENT_ID: "id-test", GOOGLE_CLIENT_SECRET: "secret-test", STATS_TOKEN: "jeton-stats" }, stdio: ["ignore", "pipe", "pipe"] });
+  srv = spawn(process.execPath, ["src/index.ts"], { env: { ...process.env, PORT: String(PORT), DB_PATH: join(dir, "t.db"), GOOGLE_CLIENT_ID: "id-test", GOOGLE_CLIENT_SECRET: "secret-test", STATS_TOKEN: "jeton-stats", HEXA_ADMINS: "1" }, stdio: ["ignore", "pipe", "pipe"] });
   srv.stdout!.on("data", (d) => (logs += d));
   srv.stderr!.on("data", (d) => (logs += d));
   for (let i = 0; i < 50; i++) {
@@ -491,4 +491,26 @@ test("invités au classement du défi : pseudo généré, un essai par navigateu
   const lb2 = await (await fetch(BASE + "/api/daily/leaderboard?level=decouverte")).json();
   assert.ok(lb2.top.some((p: { name: string; guest: number }) => p.name === "VraiPseudo" && p.guest === 0));
   assert.ok(!lb2.top.some((p: { name: string }) => p.name === end.daily!.name), "l'entrée invitée a disparu");
+});
+
+test("soirée publique : réservée à un admin, en plateau, listée pour le bot Discord", { timeout: 30_000 }, async () => {
+  // Le compte n° 1 (« Léo », premier test) est admin (HEXA_ADMINS=1).
+  const { token } = await (await post("/api/auth/login", { login: "leo@example.com", password: "motdepasse" })).json();
+  assert.equal((await (await fetch(BASE + "/api/me", { headers: { authorization: `Bearer ${token}` } })).json()).user.admin, true);
+  const admin = new Client(token); await admin.open();
+  admin.send({ t: "hello", v: PROTOCOL_VERSION }); await admin.wait("welcome");
+  admin.send({ t: "create", kind: "plateau" }); const room = (await admin.wait("room")).room as string;
+  admin.send({ t: "settings", settings: { public: true } });
+  await admin.wait("room", (m) => !!m.settings.public);
+  const list = (await (await fetch(BASE + "/api/rooms/public")).json()).rooms as { code: string; host: string; phase: string }[];
+  assert.ok(list.some((r) => r.code === room && r.host === "Léo" && r.phase === "lobby"), "salon public listé");
+  // Un invité hôte d'une soirée ne peut pas la rendre publique.
+  const guest = new Client(); await guest.open();
+  guest.send({ t: "hello", v: PROTOCOL_VERSION, name: "Invité" }); await guest.wait("welcome");
+  guest.send({ t: "create", kind: "plateau" }); const g = (await guest.wait("room")).room as string;
+  guest.send({ t: "settings", settings: { public: true, rounds: 20 } });
+  const after = await guest.wait("room", (m) => m.settings.rounds === 20);
+  assert.ok(!after.settings.public, "pas admin : pas public");
+  assert.ok(!(await (await fetch(BASE + "/api/rooms/public")).json()).rooms.some((r: { code: string }) => r.code === g));
+  admin.send({ t: "leave" }); guest.send({ t: "leave" }); admin.ws.close(); guest.ws.close();
 });
