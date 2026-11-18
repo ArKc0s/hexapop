@@ -29,26 +29,28 @@ E = {
   "hexa_aviateur": eyes() + cheeks() + SMILE + '<path d="M3.2 19.5 Q32 13 60.8 19.5 L61.6 24.2 Q32 17.8 2.4 24.2 Z" fill="#8a5a2b"/>'
      + f'<g stroke="{INK}" stroke-width="2.2"><circle cx="22" cy="17.5" r="7.4" fill="#bfe3f7"/><circle cx="42" cy="17.5" r="7.4" fill="#bfe3f7"/></g>'
      + stroke("M29.4 16.6 Q32 15 34.6 16.6", 2.2) + '<path d="M18.4 15.2 Q20 12.6 23 12.4 M38.4 15.2 Q40 12.6 43 12.4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".9"/>',
-  # Coucou : un bras levé qui sort du flanc droit, main ouverte, deux traits de mouvement ; même rose et même ombre
-  # bleue décalée que le corps (pas de contour), grand sourire.
-  "hexa_salut": "ARM" + "BODY" + eyes() + cheeks() + f'<path d="M22 45 Q32 57 42 45Z" fill="{INK}" stroke="{INK}" stroke-width="2.6" stroke-linejoin="round"/><path d="M27 50 Q32 54 37 50 Q32 52 27 50Z" fill="#ff7cc2"/>'
-     + f'<path d="M56.5 1 Q58 -4.5 63 -7" fill="none" stroke="{INK}" stroke-width="2.4" stroke-linecap="round"/><path d="M73.5 -6.5 Q77 -2 76 2.5" fill="none" stroke="{INK}" stroke-width="2.4" stroke-linecap="round"/>',
+  # Coucou façon 👋 : une main ouverte (doigts écartés) à côté du visage, clin d'œil, grand sourire, traits de mouvement.
+  "hexa_salut": "BODY" + f'<ellipse cx="22" cy="34" rx="7" ry="8" fill="#fff"/><circle cx="23.5" cy="35.5" r="3.6" fill="{INK}"/>' + stroke("M36 35 Q42 29 48 35", 3.2)
+     + cheeks() + f'<path d="M22 45 Q32 57 42 45Z" fill="{INK}" stroke="{INK}" stroke-width="2.6" stroke-linejoin="round"/><path d="M27 50 Q32 54 37 50 Q32 52 27 50Z" fill="#ff7cc2"/>'
+     + "HAND" + stroke("M70 9 Q74 6 77 8", 2.4) + stroke("M75 15 Q78.5 13.5 79 16.5", 2.2) + stroke("M51 20 Q50 16 52.5 13", 2.2),
   "hexa_gg": eyes() + cheeks() + stroke("M22 45 Q32 57 42 45")
      + f'<path d="M14 6 L20 -6 L26 2 L32 -9 L38 2 L44 -6 L50 6 Z" fill="{YEL}" stroke="{INK}" stroke-width="2" stroke-linejoin="round"/><circle cx="32" cy="-9" r="2.2" fill="{PINK}" stroke="{INK}" stroke-width="1.2"/><circle cx="20" cy="-6" r="1.8" fill="{BLUE}" stroke="{INK}" stroke-width="1"/><circle cx="44" cy="-6" r="1.8" fill="{BLUE}" stroke="{INK}" stroke-width="1"/>',
 }
 # Un seul cadre pour tous : Hexa a la même taille et la même place sur chaque émoji, avec ou sans chapeau.
 BOX = "-10 -13 89 89"
-def arm(dx=0, dy=0, color=PINK):
-    # bras qui part du flanc droit et monte, main ronde « moufle » ouverte (4 doigts courts et dodus, pouce vers l'intérieur)
-    g = f'<g transform="translate({dx} {dy})">'
-    g += f'<path d="M59 40 Q67.5 36 67.5 22" fill="none" stroke="{color}" stroke-width="8.5" stroke-linecap="round"/>'
-    g += f'<g transform="translate(67.5 14) rotate(12)"><rect x="-7.2" y="-6.5" width="14.4" height="13" rx="6" fill="{color}"/>'
-    for x, h in [(-5.2, 7.2), (-1.8, 8.8), (1.8, 8.6), (5.2, 6.8)]:
-        g += f'<path d="M{x:.1f} -3 L{x:.1f} {-3 - h:.1f}" stroke="{color}" stroke-width="3.9" stroke-linecap="round"/>'
-    g += f'<path d="M-5 3 L-10.5 -1" stroke="{color}" stroke-width="3.9" stroke-linecap="round"/></g></g>'
-    return g
+import math
+def wave_hand(dx=0, dy=0, color=PINK):
+    # Main ouverte façon 👋 (pas de bras) : paume ronde, doigts largement écartés en éventail, pouce sur le côté,
+    # inclinée à côté du visage.
+    g = f'<g transform="translate({64 + dx} {30 + dy}) rotate(-18)"><circle r="7.4" fill="{color}"/>'
+    for ang, ln in [(-44, 8.2), (-15, 9.6), (14, 9.4), (42, 8.0), (-100, 6.8)]:
+        r = math.radians(ang)
+        x0, y0 = 4 * math.sin(r), -4 * math.cos(r)
+        x1, y1 = (4 + ln) * math.sin(r), -(4 + ln) * math.cos(r)
+        g += f'<path d="M{x0:.2f} {y0:.2f} L{x1:.2f} {y1:.2f}" stroke="{color}" stroke-width="4.1" stroke-linecap="round"/>'
+    return g + '</g>'
 def mascot(name, inner):
-    inner = inner.replace("ARM", arm(2.5, 2.5, BLUE) + arm())
+    inner = inner.replace("HAND", wave_hand(2.2, 2.2, BLUE) + wave_hand(color="#ff8fcb"))
     content = inner.replace("BODY", body()) if "BODY" in inner else body() + inner
     return f'<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="{BOX}">{content}</svg>'
 for n, inner in E.items(): open(f"{OUT}/{n}.svg", "w").write(mascot(n, inner))
