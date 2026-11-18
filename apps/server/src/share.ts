@@ -5,6 +5,8 @@
 import { randomBytes } from "node:crypto";
 import { dep, LEVEL_NAMES, type Answer, type Field, type Level, type Question, type RoundResult } from "@hexa/game";
 import { db, now } from "./db.ts";
+import { Resvg } from "@resvg/resvg-js";
+import { config } from "./config.ts";
 import { dailyNumber, today } from "./daily.ts";
 
 db.exec(`
@@ -111,7 +113,7 @@ export function sharePage(id: string): string | null {
 <meta name="robots" content="noindex">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Hexa">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">
-<meta property="og:image" content="https://hexapop.app/og.png"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="${shareCardUrl(id)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/seo/seo.css">
 <style>
@@ -168,3 +170,53 @@ summary small { display: block; color: var(--soft); font-weight: 600; }
 </main>
 </body></html>`;
 }
+
+// ---------- image d'aperçu du lien (1200 × 630) ----------
+// Le partage envoie le texte et le lien (Snapchat refuse une image accompagnée de texte venant d'une webapp) : l'image
+// du score arrive par l'aperçu du lien (WhatsApp, Messages, Discord, Snapchat…). Ni réponses ni départements dedans.
+const FONTS = ["gabarito-800.ttf", "gabarito-600.ttf", "bowlby-one.ttf"].map((f) => new URL(`../fonts/${f}`, import.meta.url).pathname);
+const COLOR = ["#ff4fae", "#ffd93d", "#22b07d"];
+/** Coche, tilde, croix dessinés (les polices n'ont pas ces signes). */
+function markSvg(g: number, x: number, y: number, s: number): string {
+  const c = (n: number) => (n * s).toFixed(1), ink = g === 1 ? "#1c1a37" : "#fff";
+  if (g === 2) return `<path d="M${x + +c(0.26)} ${y + +c(0.52)} L${x + +c(0.43)} ${y + +c(0.69)} L${x + +c(0.75)} ${y + +c(0.33)}" fill="none" stroke="${ink}" stroke-width="${c(0.11)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if (g === 1) return `<path d="M${x + +c(0.27)} ${y + +c(0.55)} Q${x + +c(0.39)} ${y + +c(0.38)} ${x + +c(0.5)} ${y + +c(0.5)} T${x + +c(0.73)} ${y + +c(0.45)}" fill="none" stroke="${ink}" stroke-width="${c(0.1)}" stroke-linecap="round"/>`;
+  return `<path d="M${x + +c(0.32)} ${y + +c(0.32)} L${x + +c(0.68)} ${y + +c(0.68)} M${x + +c(0.68)} ${y + +c(0.32)} L${x + +c(0.32)} ${y + +c(0.68)}" stroke="${ink}" stroke-width="${c(0.11)}" stroke-linecap="round"/>`;
+}
+function cardSvg(s: ShareData, day: string): string {
+  const pts = s.points.toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ");
+  const n = s.grid.length, size = n > 6 ? 78 : 104, gap = 14, perRow = n > 6 ? Math.ceil(n / 2) : n;
+  const gx = 1200 - 70 - perRow * size - (perRow - 1) * gap, gy = n > 6 ? 300 : 360;
+  const cells = s.grid.map((g, i) => {
+    const x = gx + (i % perRow) * (size + gap), y = gy + Math.floor(i / perRow) * (size + gap);
+    return `<rect x="${x}" y="${y + 5}" width="${size}" height="${size}" rx="${size * 0.24}" fill="#1c1a37" opacity=".12"/><rect x="${x}" y="${y}" width="${size}" height="${size}" rx="${size * 0.24}" fill="${COLOR[g] ?? COLOR[0]}"/>${markSvg(g, x, y, size)}`;
+  }).join("");
+  const name = s.name.length > 22 ? s.name.slice(0, 21) + "…" : s.name;
+  const rank = s.rank ? ` · ${s.rank}${s.rank === 1 ? "er" : "e"} sur ${s.players}` : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" fill="#f3eee4"/>
+<text x="76" y="118" font-family="Bowlby One" font-size="60" fill="#ff4fae">HEXA</text>
+<text x="70" y="112" font-family="Bowlby One" font-size="60" fill="#1572c4">HEXA</text>
+<text x="70" y="186" font-family="Gabarito" font-weight="600" font-size="32" fill="#6b6884">${esc(`Défi du jour n° ${s.number} · ${LEVEL_NAMES[s.level]} · ${fmtDay(day)}`)}</text>
+<text x="70" y="262" font-family="Gabarito" font-weight="800" font-size="58" fill="#1c1a37">${esc(name)}</text>
+<text x="78" y="418" font-family="Bowlby One" font-size="140" fill="#ff4fae">${esc(pts)}</text>
+<text x="70" y="410" font-family="Bowlby One" font-size="140" fill="#1c1a37">${esc(pts)}</text>
+<text x="72" y="466" font-family="Gabarito" font-weight="600" font-size="32" fill="#6b6884">${esc(`points · ${Math.round(s.elapsedMs / 1000)} s${rank}`)}</text>
+${cells}
+<rect x="70" y="526" width="440" height="64" rx="32" fill="#d9a90b"/><rect x="70" y="520" width="440" height="64" rx="32" fill="#ffd93d"/>
+<text x="290" y="562" text-anchor="middle" font-family="Gabarito" font-weight="800" font-size="27" fill="#1c1a37">À toi de jouer · hexapop.app</text>
+</svg>`;
+}
+const cardCache = new Map<string, Buffer>();
+/** Image d'aperçu d'un partage (PNG), gardée en mémoire (les 200 dernières : elle ne change jamais). */
+export function shareCardPng(id: string): Buffer | null {
+  const hit = cardCache.get(id);
+  if (hit) return hit;
+  const row = shareRow(id);
+  if (!row) return null;
+  const png = new Resvg(cardSvg(JSON.parse(row.data) as ShareData, row.day), { font: { fontFiles: FONTS, loadSystemFonts: false, defaultFontFamily: "Gabarito" } }).render().asPng();
+  if (cardCache.size >= 200) cardCache.delete(cardCache.keys().next().value!);
+  cardCache.set(id, png);
+  return png;
+}
+export const shareCardUrl = (id: string) => `${config.publicUrl.replace(/\/$/, "")}/d/${id}.png`;

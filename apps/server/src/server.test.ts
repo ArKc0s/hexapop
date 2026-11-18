@@ -469,6 +469,11 @@ test("invités au classement du défi : pseudo généré, un essai par navigateu
   assert.equal(open.status, 200);
   assert.ok(((await open.json()).html as string).includes('class="round '), "a joué : réponses");
   assert.equal((await fetch(`${BASE}/api/share/answers?id=inconnu123`)).status, 404);
+  // L'image d'aperçu du lien : le score en image (WhatsApp, Messages, Snapchat l'affichent sous le lien).
+  assert.ok(page.includes(`/d/${end.daily!.share}.png`), "og:image du résultat");
+  const card = await fetch(`${BASE}/d/${end.daily!.share}.png`);
+  assert.equal(card.headers.get("content-type"), "image/png");
+  assert.ok((await card.arrayBuffer()).byteLength > 10_000);
   assert.equal((await fetch(BASE + "/d/inconnu123")).status, 404);
   assert.match(end.daily?.name ?? "", / du Finistère$/);
   assert.ok((end.daily?.rank ?? 0) >= 1);

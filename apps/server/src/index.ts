@@ -12,7 +12,7 @@ import { accountLevel, higherLevel, isGuestId } from "./daily.ts";
 import { startPushScheduler } from "./push.ts";
 import { life } from "./life.ts";
 import { busyRooms, roomCodes, stats } from "./rooms.ts";
-import { sharePage } from "./share.ts";
+import { shareCardPng, sharePage } from "./share.ts";
 import { peak } from "./stats.ts";
 // Pic de joueurs connectés en même temps, par jour (statistiques).
 setInterval(() => { const n = stats().players; if (n > 0 && !life.draining) peak("joueurs_max", n); }, 30_000).unref();
@@ -72,6 +72,12 @@ const server = createServer((req, res) => {
   const url = req.url ?? "/";
   if (url.startsWith("/api/internal/")) return internal(req, res);
   if (url.startsWith("/api/")) return void handleApi(req, res);
+  // Image d'aperçu d'un résultat partagé (le lien la montre dans WhatsApp, Messages, Snapchat…).
+  const card = /^\/d\/([\w-]{6,16})\.png$/.exec(url.split("?")[0]);
+  if (card && (req.method === "GET" || req.method === "HEAD")) {
+    const png = shareCardPng(card[1]);
+    if (png) { res.writeHead(200, { "content-type": "image/png", "content-length": png.length, "cache-control": "public, max-age=86400" }).end(req.method === "HEAD" ? undefined : png); return; }
+  }
   // Résultat partagé du défi du jour (voir share.ts).
   const shared = /^\/d\/([\w-]{6,16})$/.exec(url.split("?")[0]);
   if (shared && (req.method === "GET" || req.method === "HEAD")) {
