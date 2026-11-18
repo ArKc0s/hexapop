@@ -10,7 +10,13 @@
   let error = $state("");
   let busy = $state(false);
   const open = $derived(welcomeAccount.ask && !!session.me);
-  $effect(() => { if (open && !pseudo) pseudo = session.me!.pseudo; });
+  // Pré-rempli une seule fois, à l'ouverture. (Avant : « si le champ est vide, remettre le pseudo du service » se
+  // redéclenchait dès qu'on effaçait la dernière lettre, impossible de vider le champ pour taper autre chose.)
+  let filled = false;
+  $effect(() => {
+    if (!open) { filled = false; return; }
+    if (!filled) { filled = true; pseudo = session.me!.pseudo; }
+  });
 
   async function save() {
     const p = pseudo.trim();

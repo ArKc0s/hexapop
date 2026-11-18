@@ -13,7 +13,7 @@ import { life } from "./life.ts";
 import { hallOfFame, saveMarathon } from "./hof.ts";
 import { CLIENT_EVENTS, bump, report, visit } from "./stats.ts";
 import { liveReport, ping } from "./live.ts";
-import { shareOf } from "./share.ts";
+import { shareAnswers, shareOf } from "./share.ts";
 import { timingSafeEqual } from "node:crypto";
 import { DEFAULT_PREFS, cleanPrefs, pushEnabled, validEndpoint, vapidPublicKey } from "./push.ts";
 import { PROVIDERS, enabledProviders, newState, pkce, takeState, type Identity, type ProviderId } from "./oauth.ts";
@@ -316,6 +316,16 @@ const routes: Record<string, Handler> = {
     json(res, 200, { ok: true });
   },
   "GET /api/auth/providers": (_req, res) => json(res, 200, { providers: enabledProviders() }),
+
+  /** Réponses d'un résultat partagé : pendant le défi, seulement pour qui l'a déjà joué (voir share.ts). */
+  "GET /api/share/answers": (req, res, user) => {
+    const q = new URL(req.url ?? "/", "http://x").searchParams;
+    const guest = q.get("guest");
+    const html = shareAnswers(q.get("id") ?? "", user?.id ?? null, isGuestId(guest) ? guest : null);
+    if (html === null) throw new HttpError(404, "not_found", "Partage introuvable.");
+    if (html === "locked") return json(res, 403, { error: "locked", message: "Joue d'abord le défi du jour." });
+    json(res, 200, { html });
+  },
 
   "GET /api/daily": (req, res, user) => {
     const day = today();

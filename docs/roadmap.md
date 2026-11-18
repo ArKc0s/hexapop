@@ -3,6 +3,7 @@
 Idées validées avec Léo, à planifier. Mise à jour : 2026-11-17.
 
 ## Fait
+- **v1.15.1** : les réponses d'un partage ne s'ouvrent qu'à qui a joué le défi du jour (elles ne sont plus dans la page) ; pseudo après Google : le champ peut être vidé.
 - **v1.15** : page de résultat partagée du défi (hexapop.app/d/…, réponses repliées tant que le défi est en cours, 90 jours) ; partage lisible par tous (✅ 🟧 ❌ et décompte, symboles dans l'image) ; correction en bleu (v1.14.2) ; « Nouvelle partie » après « Rejouer les ratés » (v1.14.1).
 - **v1.14** : page Nouveautés (point rose sur l'accueil quand il y a du neuf) ; kilomètres affichés à chaque réponse en solo ; image de partage du défi du jour ; image d'aperçu propre à chaque fiche département et région ; IndexNow après chaque déploiement ; salons : arrivées et départs regroupés (moins de trafic en soirée nombreuse).
 - **v1.13** : création de compte repensée (aux bons moments : 1re partie, médaille, série, grand voyage, défi du jour ; sinon de plus en plus espacé ; jamais deux fois par jour ; « Ne plus me proposer » après deux refus ; ce qu'on risque de perdre affiché, rappel discret dans la bulle d'Hexa) ; stats en direct dans Grafana (présents par écran, salons en cours, courbe à la minute).

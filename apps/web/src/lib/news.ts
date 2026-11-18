@@ -4,12 +4,19 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
-    id: 13, version: "1.16", date: "2026-11-18", title: "Nouveau : les régions",
+    id: 14, version: "1.16", date: "2026-11-18", title: "Nouveau : les régions",
     items: [
       "Un deuxième atlas : les 18 régions, leur chef-lieu, puis en expert leurs départements et leurs voisines.",
       "Choisis ce que tu apprends en haut de l'accueil : tout suit (Continuer, la carte, l'Album, l'Entraînement, le défi du jour).",
       "Chaque atlas a son défi du jour, son classement et son Hall of Fame. Entre amis, l'hôte choisit l'atlas, et chacun joue à son niveau.",
       "Ta série et les kilomètres d'Hexa restent communs. Et dans les régions, Hexa sort son bob d'explorateur.",
+    ],
+  },
+  {
+    id: 13, version: "1.15.1", date: "2026-11-18", title: "Pas de spoil, et ton pseudo comme tu veux",
+    items: [
+      "Les réponses d'un ami à son défi du jour ne s'ouvrent qu'une fois que tu as joué le tien : plus moyen de se gâcher le défi (ni de tricher) en regardant avant.",
+      "Après une inscription avec Google (ou un autre service), tu peux maintenant effacer complètement le prénom proposé pour taper ton pseudo.",
     ],
   },
   {
