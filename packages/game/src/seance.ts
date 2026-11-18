@@ -157,7 +157,7 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     // Départements commencés : ce qui reste à trouver, ou la fiche complète si tout a été vu.
     const steps: PlanItem[] = [];
     for (const c of started) {
-      const unseen = A.base.filter((f) => !seen(k, c, f)) as Field[];
+      const unseen = baseFacetsOf(c).filter((f) => !seen(k, c, f)) as Field[];
       steps.push(unseen.length ? { code: c, hint: "nom", ask: unseen } : full(c));
     }
     for (const it of steps.slice(0, Math.max(0, room() - 3))) add(it);

@@ -64,8 +64,10 @@ export interface Geo {
   fond?: string;
   /** Monde : les pays trop petits pour le doigt ont un rond cliquable (centre). */
   dots?: Record<string, [number, number]>;
+  /** Monde : cadre de chaque continent (code du groupe → x, y, largeur, hauteur). */
+  views?: Record<string, [number, number, number, number]>;
 }
-const W = monde as unknown as { viewBox: [number, number, number, number]; paths: Record<string, string>; dots: Record<string, [number, number]>; fond: string };
+const W = monde as unknown as { viewBox: [number, number, number, number]; paths: Record<string, string>; dots: Record<string, [number, number]>; fond: string; views: Record<string, [number, number, number, number]> };
 /** Un rond ajouté au tracé du pays : il se colore et se touche comme le pays. En polygone (16 côtés) et en coordonnées
  *  absolues, pour que les calculs de cadre (zoom sur un continent) lisent des points de la carte. */
 const DOT_R = 3.6;
@@ -89,7 +91,7 @@ const GEO: Record<AtlasId, Geo> = {
   monde: {
     atlas: "monde",
     paths: Object.fromEntries(Object.entries(W.paths).map(([c, d]) => [c, W.dots[c] ? d + circle(W.dots[c]) : d])),
-    insets: [], zoom: false, outlines: [], inner: [], viewBox: W.viewBox, fond: W.fond, dots: W.dots,
+    insets: [], zoom: false, outlines: [], inner: [], viewBox: W.viewBox, fond: W.fond, dots: W.dots, views: W.views,
   },
 };
 export const geoOf = (a: AtlasId): Geo => GEO[a];

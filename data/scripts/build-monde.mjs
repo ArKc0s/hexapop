@@ -101,7 +101,7 @@ IRQ|Irak|l'|Bagdad|AS|Iraq
 IRN|Iran|l'|Téhéran|AS
 IRL|Irlande|l'|Dublin|EU
 ISL|Islande|l'|Reykjavik|EU
-ISR|Israël||Jérusalem|AS||Tel Aviv
+ISR|Israël||Jérusalem|AS||Tel-Aviv;Tel Aviv
 ITA|Italie|l'|Rome|EU
 JAM|Jamaïque|la|Kingston|NA
 JPN|Japon|le|Tokyo|AS
@@ -151,7 +151,7 @@ UGA|Ouganda|l'|Kampala|AF
 UZB|Ouzbékistan|l'|Tachkent|AS
 PAK|Pakistan|le|Islamabad|AS
 PLW|Palaos|les|Ngerulmud|OC|Palau|Melekeok
-PSX|Palestine|la|Ramallah|AS||Jérusalem-Est
+PSX|Palestine|la|Jérusalem-Est|AS|État de Palestine|Ramallah;Jérusalem
 PAN|Panama|le|Panama|NA
 PNG|Papouasie-Nouvelle-Guinée|la|Port Moresby|OC
 PRY|Paraguay|le|Asuncion|SA
@@ -216,11 +216,32 @@ ZWE|Zimbabwe|le|Harare|AF
   const list = (s) => s.split(";").map((x) => x.trim()).filter(Boolean);
   return { code, nom, article, capitale, continent, alias: list(alias), capAlias: list(capAlias) };
 });
+// Capitales au statut contesté : demandées comme les autres (ne rien demander serait aussi une prise de position), avec
+// les réponses défendables acceptées et une note factuelle, montrée sur la fiche et à la correction.
+const CAP_NOTE = {
+  ISR: "Proclamée capitale par Israël, où siègent le gouvernement et le Parlement ; statut contesté, la plupart des ambassades sont à Tel-Aviv (accepté aussi).",
+  PSX: "Capitale proclamée en 1988 ; les institutions siègent à Ramallah (accepté aussi).",
+};
+for (const p of PAYS) if (CAP_NOTE[p.code]) p.capNote = CAP_NOTE[p.code];
 const BY = new Map(PAYS.map((p) => [p.code, p]));
 if (BY.size !== PAYS.length) throw new Error("code en double");
 
-// Territoires rattachés à un pays de la liste (même forme) : ce que l'ONU compte dans ce pays.
-const MERGE = { SOL: "SOM", CYN: "CYP", HKG: "CHN", MAC: "CHN", ALD: "FIN", KAS: "IND" };
+// Territoires rattachés à un pays de la liste, sans contestation : Hong Kong et Macao (Chine), Åland (Finlande).
+// Somaliland et Chypre du Nord : rattachés à la Somalie et à Chypre seulement pour calculer les voisins (États reconnus
+// par l'ONU) ; sur la carte, ce sont des zones disputées, en gris (ci-dessous).
+const MERGE = { SOL: "SOM", CYN: "CYP", HKG: "CHN", MAC: "CHN", ALD: "FIN" };
+
+// Neutralité (demande de Léo, 2026-11-18 : « on se base sur des faits avérés uniquement ») :
+// - la liste suit un critère vérifiable : les 193 États membres de l'ONU et ses 2 États observateurs ;
+// - les frontières sont celles de Natural Earth, et toute zone que Natural Earth signale comme disputée ou sécessionniste
+//   avec une revendication (Crimée, Golan, Cachemire, Abkhazie, Kouriles…) est en gris, attribuée à personne et jamais
+//   demandée. Exceptions factuelles : Bornéo du Nord (aucune revendication notée) et l'Artsakh (république
+//   autoproclamée dissoute le 1er janvier 2024, territoire sous administration de l'Azerbaïdjan, État reconnu).
+const DISPUTES = join(root, "data", "sources", "monde", "ne_50m_admin_0_breakaway_disputed_areas.geojson");
+const disputed = JSON.parse(readFileSync(DISPUTES, "utf8"));
+disputed.features = disputed.features
+  .filter((f) => /claimed/i.test(f.properties.NOTE_BRK ?? "") && f.properties.BRK_NAME !== "Artsakh")
+  .map((f) => ({ ...f, properties: { code: "", fond: 1, a3: "DIS" } }));
 
 // ---------- Géométrie ----------
 const raw = JSON.parse(readFileSync(SRC, "utf8"));
@@ -251,12 +272,15 @@ const voisins = new Map(PAYS.map((p) => [p.code, new Set()]));
   for (const set of owners.values()) if (set.size > 1) for (const a of set) for (const b of set) if (a !== b) voisins.get(a).add(b);
 }
 
-// 2) Tracés : projection Natural Earth, simplifiée, sans l'Antarctique.
+// 2) Tracés : projection Natural Earth centrée sur 11° E (le Pacifique coupé à 169° O : les Fidji, les Samoa et les
+// Tonga restent entiers, à droite de l'Océanie), simplifiée, sans l'Antarctique.
 const W = 1000;
+const PROJ = "+proj=natearth +lon_0=11";
 const out = await run(
-  `-i in.json snap -dissolve code,fond copy-fields=fond -proj +proj=natearth -simplify 12% keep-shapes ` +
+  `-i combine-files in.json dis.json snap -erase dis target=in -dissolve code,fond copy-fields=fond target=in ` +
+  `-merge-layers target=in,dis force name=all -proj ${PROJ} -simplify 12% keep-shapes ` +
   `-filter-islands min-area=40km2 remove-empty -o out.json format=geojson`,
-  { "in.json": geo },
+  { "in.json": geo, "dis.json": JSON.stringify(disputed) },
 );
 const fc = JSON.parse(out["out.json"]);
 let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -302,16 +326,39 @@ for (const f of fc.features) {
 // Les plus petits ont pu disparaître à la simplification : on les place d'après la source.
 const missing = PAYS.filter((p) => !paths[p.code]);
 if (missing.length) {
-  const o2 = await run(`-i in.json -filter '${missing.map((p) => `code == "${p.code}"`).join(" || ")}' -dissolve code -points inner -proj +proj=natearth -o out.json format=geojson`, { "in.json": geo });
+  const o2 = await run(`-i in.json -filter '${missing.map((p) => `code == "${p.code}"`).join(" || ")}' -dissolve code -points inner -proj ${PROJ} -o out.json format=geojson`, { "in.json": geo });
   for (const f of JSON.parse(o2["out.json"]).features) { dots[f.properties.code] = pt(f.geometry.coordinates); paths[f.properties.code] = ""; }
 }
 const still = PAYS.filter((p) => paths[p.code] === undefined);
 if (still.length) throw new Error("Pays sans tracé : " + still.map((p) => p.code).join(", "));
 
+// Cadres des continents (accueil, album : un continent remplit la colonne, la carte entière est deux fois plus large
+// que haute). Rectangles en longitude / latitude, projetés point par point comme la carte (un polygone serait coupé
+// à la couture du Pacifique).
+const VIEWS = {
+  EU: [-25, 34, 45, 71.5], AF: [-26, -36, 60, 38], AS: [25, -12, 150, 56],
+  NA: [-168, 6, -52, 72], SA: [-83, -56, -33, 13], OC: [110, -48, 190, 22],
+};
+const rect = ([a, b, c, d]) => {
+  const ring = [];
+  for (let i = 0; i <= 40; i++) ring.push([a + ((c - a) * i) / 40, b]);
+  for (let i = 0; i <= 40; i++) ring.push([c, b + ((d - b) * i) / 40]);
+  for (let i = 0; i <= 40; i++) ring.push([c - ((c - a) * i) / 40, d]);
+  for (let i = 0; i <= 40; i++) ring.push([a, d - ((d - b) * i) / 40]);
+  return ring;
+};
+const vOut = await run(`-i in.json -proj ${PROJ} -o out.json format=geojson`, { "in.json": JSON.stringify({ type: "FeatureCollection", features: Object.entries(VIEWS).map(([k, v]) => ({ type: "Feature", properties: { k }, geometry: { type: "MultiPoint", coordinates: rect(v).map(([x, y]) => [x > 180 ? x - 360 : x, y]) } })) }) });
+const views = {};
+for (const f of JSON.parse(vOut["out.json"]).features) {
+  const b = [Infinity, Infinity, -Infinity, -Infinity];
+  walkPts(f.geometry.coordinates, (c) => { const [x, y] = pt(c); b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); });
+  views["W" + f.properties.k] = [r1(b[0]), r1(b[1]), r1(b[2] - b[0]), r1(b[3] - b[1])];
+}
+
 const items = PAYS.map((p) => ({
   code: "W" + p.code, iso2: p.iso2, rang: p.rang, nom: p.nom, article: p.article, capitale: p.capitale, continent: p.continent,
   limitrophes: [...voisins.get(p.code)].map((c) => "W" + c).sort(),
-  ...(p.alias.length ? { alias: p.alias } : {}), ...(p.capAlias.length ? { capAlias: p.capAlias } : {}),
+  ...(p.alias.length ? { alias: p.alias } : {}), ...(p.capAlias.length ? { capAlias: p.capAlias } : {}), ...(p.capNote ? { capNote: p.capNote } : {}),
 })).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
 
 writeFileSync(OUT, JSON.stringify({
@@ -320,5 +367,7 @@ writeFileSync(OUT, JSON.stringify({
   paths: Object.fromEntries(Object.entries(paths).map(([c, d]) => ["W" + c, d])),
   dots: Object.fromEntries(Object.entries(dots).map(([c, p]) => ["W" + c, p])),
   fond,
+  views,
 }));
+console.log(JSON.stringify(views));
 console.log(`${items.length} pays, ${Object.keys(dots).length} petits pays en rond, carte ${W}×${H}, ${(readFileSync(OUT).length / 1024).toFixed(0)} Ko`);

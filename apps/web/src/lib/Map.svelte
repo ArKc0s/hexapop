@@ -19,8 +19,10 @@
     atlas?: AtlasId;
     /** Cadrer la vue sur ces éléments (Monde : la correction zoome sur le pays, sinon il est trop petit pour être vu). */
     zoomTo?: string[];
+    /** Cadre fixe à la place de la carte entière (Monde : un continent) ; la carte prend alors ses proportions. */
+    frame?: [number, number, number, number];
   }
-  let { marks = {}, fills, interactive = true, zoomable = false, onpick, label = "Carte des départements", candidates, atlas, zoomTo }: Props = $props();
+  let { marks = {}, fills, interactive = true, zoomable = false, onpick, label = "Carte des départements", candidates, atlas, zoomTo, frame }: Props = $props();
   const geo = $derived(geoOf(atlas ?? world.id));
   const cand = $derived(candidates ? new Set(candidates) : null);
   const allowed = (code: string) => !cand || cand.has(code);
@@ -48,10 +50,12 @@
   const FULL_WIDE: number[] = [...MAP.viewBox];
   const FULL_NARROW = [-10, -10, 1020, STRIP_Y + MAP.insets[0].h + 20];
   // Carte à cadre propre (Monde) : le même sur mobile et sur ordinateur, un peu de marge autour.
-  const full = $derived(geo.viewBox ? [geo.viewBox[0] - 6, geo.viewBox[1] - 6, geo.viewBox[2] + 12, geo.viewBox[3] + 12] : narrow ? FULL_NARROW : FULL_WIDE);
+  const full = $derived(frame ? [...frame] : geo.viewBox ? [geo.viewBox[0] - 6, geo.viewBox[1] - 6, geo.viewBox[2] + 12, geo.viewBox[3] + 12] : narrow ? FULL_NARROW : FULL_WIDE);
 
   // ---------- vue (zoom) ----------
   let view = $state<number[] | null>(null); // null = vue complète
+  // Nouveau cadre (continent) : on repart de la vue entière de ce cadre.
+  $effect(() => { void frame; view = null; });
   const vb = $derived((view ?? full).map((n) => n.toFixed(1)).join(" "));
   const zoomed = $derived(!!view);
   // Ombre rose : 4 unités sur la France. Monde : plus fine (les pays sont petits), et constante à l'écran quand on zoome.
@@ -261,7 +265,7 @@
 
     {#if geo.fond}<path class="fond" d={geo.fond} aria-hidden="true" />{/if}
     <!-- Ombre rose : un léger décalage de la silhouette, la seule touche riso de la carte -->
-    <g class="shadow" transform="translate({shadow} {shadow})" aria-hidden="true">
+    <g class="shadow" class:none={geo.atlas === "monde"} transform="translate({shadow} {shadow})" aria-hidden="true">
       {#each codes as code (code)}<use href="#{uid}-{code}" transform={shiftOf(code)} />{/each}
     </g>
 
@@ -305,8 +309,11 @@
   .map.r .deps use:not(.om) { stroke: var(--ink); stroke-width: 1.4; }
   .shadow use { fill: var(--pink); }
   /* Monde : traits fins (les pays sont petits), l'ombre plus courte, les terres hors jeu en gris. */
-  .map.w .deps use { stroke-width: .5; }
-  .fond { fill: #e4ddcd; stroke: #c9bfa9; stroke-width: .4; vector-effect: non-scaling-stroke; }
+  /* Monde : la mer en beige soutenu, les pays en blanc, des frontières nettes ; pas d'ombre rose (côtes en dents de scie). */
+  .map.w { background: #e2d9c6; border-radius: 18px; }
+  .shadow.none { display: none; }
+  .map.w .deps use { stroke: #6f6656; stroke-width: .7; }
+  .fond { fill: #cfc5b0; stroke: #a99f8a; stroke-width: .5; vector-effect: non-scaling-stroke; }
   .frame { fill: #fffdf8; stroke: #d6cdb9; stroke-width: 1.5; }
   .cap { font: 700 13px var(--f-ui); fill: var(--soft); }
   .src { fill: none; stroke: var(--soft); stroke-width: 1; stroke-dasharray: 2 2; }

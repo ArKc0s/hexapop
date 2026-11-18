@@ -4,6 +4,8 @@
   import { onDestroy } from "svelte";
   import { ATLASES, ATLAS_IDS, maxStars, ITEM, DEP, DEPARTEMENTS, PLAYER_LEVELS, TOUR, dayKey, fadingCodes, knownStars, liveStreak, medalCount, medalOf, playerLevel, starsOf, taFrance, titleFor, tourRegionOf } from "@hexa/game";
   import Welcome from "../lib/ui/Welcome.svelte";
+  import AtlasPicker from "../lib/ui/AtlasPicker.svelte";
+  import { geoOf } from "../lib/map.ts";
   import { previewSeance, startSeance } from "../lib/seance.svelte.ts";
   import Map from "../lib/Map.svelte";
   import Mascot from "../lib/ui/Mascot.svelte";
@@ -34,6 +36,13 @@
   const showWelcome = $derived(!welcomed && !p.home && p.stats.games === 0);
   // Prochaine séance (aperçu) et objectif personnel facultatif.
   const seance = $derived(previewSeance());
+  // Monde : la carte entière est deux fois plus large que haute ; un continent remplit la colonne et se lit.
+  // Par défaut celui de la prochaine séance ; « Tout » montre le monde entier.
+  const CONT_SHORT: Record<string, string> = { WEU: "Europe", WAF: "Afrique", WAS: "Asie", WNA: "Am. du Nord", WSA: "Am. du Sud", WOC: "Océanie" };
+  const views = geoOf("monde").views ?? {};
+  let cont = $state<string | null>(null);
+  const shownCont = $derived(cont ?? (seance.region && views[seance.region.code] ? seance.region.code : "WEU"));
+  const frame = $derived(monde && shownCont !== "all" ? views[shownCont] : undefined);
   const km = $derived(p.xp);
   const todayGames = $derived(p.today?.day === dayKey(Date.now()) ? p.today.games : 0);
   let goal = $state((() => { try { return Number(localStorage.getItem("hexa.goal")) || 0; } catch { return 0; } })());
@@ -117,13 +126,7 @@
       </div>
     </div>
     <!-- Un atlas = un monde : on choisit ce qu'on apprend, tout l'accueil suit -->
-    <div class="worlds" role="tablist" aria-label="Ce que tu apprends">
-      {#each world.offered as a (a)}
-        <button role="tab" aria-selected={world.id === a} class="world" class:on={world.id === a} onclick={() => { if (world.id !== a) { profile.setAtlas(a); sound.play("tap"); } }}>
-          {ATLASES[a].nom}<span class="tabnum">{atlasPct[a]} %</span>
-        </button>
-      {/each}
-    </div>
+    {#if world.offered.length > 1}<AtlasPicker pct={atlasPct} />{/if}
     <RoadBar {km} />
 
     <div class="hello"><Mascot mood="happy" size={66} />
@@ -206,7 +209,13 @@
         <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
       </div>
     </div>
-    <Map {fills} marks={p.focus && TOUR.has(p.focus) ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label={fr ? "Ta France : touche une région pour y faire ta prochaine séance" : monde ? "Tes pays : touche un continent pour y faire ta prochaine séance" : "Tes régions : touche la métropole ou l'outre-mer pour y faire ta prochaine séance"} />
+    {#if monde}
+      <div class="conts" role="tablist" aria-label="Continent affiché">
+        {#each Object.keys(CONT_SHORT) as c (c)}<button role="tab" aria-selected={shownCont === c} class:on={shownCont === c} onclick={() => (cont = c)}>{CONT_SHORT[c]}</button>{/each}
+        <button role="tab" aria-selected={shownCont === "all"} class:on={shownCont === "all"} onclick={() => (cont = "all")}>Tout</button>
+      </div>
+    {/if}
+    <Map {fills} {frame} marks={p.focus && TOUR.has(p.focus) && !monde ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label={fr ? "Ta France : touche une région pour y faire ta prochaine séance" : monde ? "Tes pays : touche un continent pour y faire ta prochaine séance" : "Tes régions : touche la métropole ou l'outre-mer pour y faire ta prochaine séance"} />
     <p class="tip">{fr ? "Touche une région pour y faire ta prochaine séance." : monde ? "Touche un continent pour y faire ta prochaine séance." : "Touche la métropole ou l'outre-mer pour y faire ta prochaine séance."}</p>
     <div class="legend">
       <span><i style="background:#eef3f8; box-shadow: inset 0 0 0 1px #c8d4e0"></i>découvert</span><span><i style="background:#b6d6f1"></i>1-2 étoiles</span><span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
@@ -282,6 +291,11 @@
   .me span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row2 .btn { flex-direction: column; gap: 3px; padding: 13px 10px; }
+  /* Carte du monde : jamais plus haute que l'écran (l'Amérique du Sud est plus haute que large) */
+  .right :global(.map.w) { max-height: calc(100dvh - 250px); }
+  .conts { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 2px; }
+  .conts button { border: 0; background: var(--bg-2); border-radius: 999px; padding: 6px 12px; font: inherit; font-weight: 800; font-size: 14px; color: var(--soft); cursor: pointer; }
+  .conts button.on { background: var(--ink); color: #fff; }
   .worlds { display: flex; gap: 6px; background: var(--bg-2); padding: 4px; border-radius: 999px; margin: 2px 0 4px; overflow-x: auto; scrollbar-width: none; }
   .world { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 8px 12px; font-weight: 800; font-size: 15px; color: var(--soft); cursor: pointer; white-space: nowrap; display: inline-flex; gap: 8px; justify-content: center; align-items: baseline; }
   .world span { font-size: 12.5px; font-weight: 700; opacity: .8; }

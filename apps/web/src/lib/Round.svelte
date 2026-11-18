@@ -330,6 +330,7 @@
               placeholder={PLACEHOLDER[f]} bind:value={text[f]} disabled={!!result || submitted} onkeydown={enter} use:focusFirst={i === 0} />
           {/if}
           {#if r && r.score < 1 && f !== "drapeau"}<span class="exp">{expectedLabel(f, r.expected)}</span>{/if}
+          {#if r && f === "prefecture" && d.prefNote}<span class="pnote">{d.prefNote}</span>{/if}
         </div>
       {/each}
 
@@ -400,6 +401,7 @@
                 <b class="ra">{expectedLabel(f.field, f.expected)}</b>
               {/if}
             </li>
+            {#if f.field === "prefecture" && d.prefNote}<li class="rnote">{d.prefNote}</li>{/if}
           {/each}
         </ul>
       {/if}
@@ -464,6 +466,8 @@
   .choices.flags .opt small { font-size: 13px; font-weight: 800; line-height: 1.1; text-align: center; }
   .bigflag { margin: 6px 0 2px; }
   .rflag { display: inline-flex; align-items: center; gap: 6px; }
+  .recap .rnote { font-size: 12.5px; color: var(--soft); font-weight: 600; line-height: 1.3; padding: 2px 0 6px 28px; border: 0; }
+  .pnote { font-size: 13.5px; color: var(--soft); font-weight: 600; line-height: 1.3; }
   .opt { font-weight: 700; font-size: 16px; line-height: 1.15; background: #f6f2ea; border: 0; border-radius: 14px; padding: 12px; text-align: left; cursor: pointer; box-shadow: 0 3px 0 #e2dacb; transition: transform .08s, background .1s; }
   @media (hover: hover) { .opt:hover:not(:disabled):not(.on) { background: #fff4c2; } }
   .opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #e2dacb; }

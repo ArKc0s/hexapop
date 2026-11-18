@@ -70,6 +70,24 @@ Régions. `preview: true` dans `atlas.ts` : le Monde n'apparaît que sur preprod
 - Codes préfixés « W » + code ISO à trois lettres (`WFRA`), comme « R » pour les régions.
 - Hexa porte des lunettes d'aviateur dans ce monde.
 
-**À trancher avant une éventuelle sortie** : Kosovo et Taïwan (absents de la liste, en gris sur la carte) ; Israël
-(capitale « Jérusalem », « Tel Aviv » acceptée) ; Palestine (« Ramallah », « Jérusalem-Est » acceptée) ; Sahara
-occidental en gris (le Maroc et la Mauritanie ne se touchent donc pas).
+**Neutralité géopolitique** (Léo, 2026-11-18 : « on se base sur des faits avérés uniquement », sans prendre position) :
+- **La liste** suit un critère vérifiable : les 193 États membres de l'ONU et ses 2 États observateurs (Saint-Siège,
+  Palestine). Kosovo, Taïwan, Sahara occidental, Somaliland, Chypre du Nord… ne sont pas des pays à apprendre.
+- **La carte** : toute zone que Natural Earth signale comme disputée ou sécessionniste, avec une revendication notée
+  (Crimée, Golan, Cachemire, Aksai Chin, Arunachal Pradesh, Abkhazie, Ossétie du Sud, Transnistrie, Kouriles, Donetsk,
+  Louhansk, Sahara occidental, Somaliland, Chypre du Nord…), est en gris, attribuée à personne, jamais demandée. Règle
+  appliquée sans tri au cas par cas ; deux exceptions factuelles : Bornéo du Nord (aucune revendication notée) et
+  l'Artsakh (république dissoute le 1er janvier 2024).
+- **Les voisins** : frontières terrestres des États reconnus par l'ONU (le Somaliland compte dans la Somalie, qui touche
+  donc Djibouti).
+- **Les capitales contestées sont demandées** (ne rien demander serait aussi une position), avec toutes les réponses
+  défendables acceptées et une note factuelle sur la fiche et à la correction : Israël « Jérusalem » (gouvernement et
+  Parlement y siègent ; statut contesté, la plupart des ambassades à Tel-Aviv, accepté aussi) ; Palestine
+  « Jérusalem-Est » (proclamée en 1988 ; institutions à Ramallah, accepté aussi). Jamais « Jérusalem » et
+  « Jérusalem-Est » dans les mêmes propositions.
+
+**Le sélecteur d'atlas** range les atlas par domaine (France : Départements, Régions ; Monde : Pays du monde), dans un
+menu : une rangée de boutons ne tiendrait pas à 10 atlas et mélangerait les thèmes (remarque de Léo).
+
+**La carte du monde** est deux fois plus large que haute : sur l'accueil et dans l'Album, on l'affiche par continent
+(onglets ; par défaut celui de la prochaine séance), « Tout » pour le monde entier.

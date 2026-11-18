@@ -1,7 +1,8 @@
 <script lang="ts">
   // L'Album : ta collection (médailles), la carte avec la fiche de chaque département (ex-Atlas), et tes succès.
-  import { BADGES, DEPARTEMENTS, ITEM, groupsOf, medalCounts, medalOf, shortCode, starsOf, tarnished, type Facet } from "@hexa/game";
+  import { BADGES, DEPARTEMENTS, ITEM, baseFacetsOf, groupsOf, medalCounts, medalOf, shortCode, starsOf, tarnished, type Facet } from "@hexa/game";
   import { world } from "../lib/world.svelte.ts";
+  import { geoOf } from "../lib/map.ts";
   import Map, { type Mark } from "../lib/Map.svelte";
   import Fiche from "../lib/Fiche.svelte";
   import Vignette from "../lib/ui/Vignette.svelte";
@@ -20,8 +21,8 @@
   const A = world.atlas;
   const fr = A.id === "france";
   const TOUR_REGIONS = groupsOf(A.id);
-  const BASE_FACETS = A.base;
-  const NB = A.base.length;
+  /** Étoiles possibles d'un groupe (un pays sans capitale demandée en a une de moins). */
+  const starsIn = (codes: string[]) => codes.reduce((n, c) => n + baseFacetsOf(c).length, 0);
   let focus = $state(fr ? "75" : A.id === "monde" ? "WFRA" : "R53");
 
   const p = $derived(profile.data);
@@ -47,7 +48,8 @@
   const regionDeps = $derived(region ? TOUR_REGIONS.find((r) => r.code === region)?.deps ?? [] : []);
   const marks = $derived.by(() => {
     const m: Record<string, Mark> = {};
-    for (const c of regionDeps) m[c] = "focus";
+    // Monde : le continent choisi cadre la carte, inutile de cerner ses 50 pays.
+    if (A.id !== "monde") for (const c of regionDeps) m[c] = "focus";
     m[focus] = "sel";
     return m;
   });
@@ -62,7 +64,7 @@
   <div class="mine">
     <span class="tr t{tier}">{TIER[tier]}{tier && tarnished(know, c, now) ? " · à réviser" : ""}</span>
     <ul>
-      {#each BASE_FACETS as f (f)}<li class:on={starred(c, f)}><i>★</i>{FACET[f]}</li>{/each}
+      {#each baseFacetsOf(c) as f (f)}<li class:on={starred(c, f)}><i>★</i>{FACET[f]}</li>{/each}
     </ul>
   </div>
   <Fiche code={c} />
@@ -82,7 +84,7 @@
   {#if cur !== "succes"}
     <div class="tabs">
       <button class="chip" class:on={!region} onclick={() => (region = null)}>Toutes</button>
-      {#each TOUR_REGIONS as r (r.code)}<button class="chip" class:on={region === r.code} onclick={() => (region = r.code)}>{r.nom} <span>{got(r.deps)}/{r.deps.length * NB}</span></button>{/each}
+      {#each TOUR_REGIONS as r (r.code)}<button class="chip" class:on={region === r.code} onclick={() => (region = r.code)}>{r.nom} <span>{got(r.deps)}/{starsIn(r.deps)}</span></button>{/each}
     </div>
   {/if}
 
@@ -99,7 +101,7 @@
     </div>
     {#each shown as r (r.code)}
       <section>
-        <h2>{r.nom} <span>{got(r.deps)}/{r.deps.length * NB}</span></h2>
+        <h2>{r.nom} <span>{got(r.deps)}/{starsIn(r.deps)}</span></h2>
         <div class="grid">
           {#each r.deps as c (c)}
             {@const tier = medalOf(know, c)}
@@ -107,7 +109,7 @@
             <button class="st" class:miss={!tier} class:dull={tier > 0 && tarnished(know, c, now)} onclick={() => (open = c)} aria-label="Fiche {fr ? 'du département' : A.id === 'monde' ? 'du pays' : 'de la région'} {c}">
               <Vignette code={c} {tier} />
               {#if tier}<em class="tr t{tier}">{TIER[tier]}{tarnished(know, c, now) ? " · à réviser" : ""}</em>
-              {:else}<span class="mini" aria-label="{s} étoile{s > 1 ? 's' : ''} sur {NB}">{#each BASE_FACETS as _, k (k)}<i class:on={k < s}>★</i>{/each}</span>{/if}
+              {:else}<span class="mini" aria-label="{s} étoile{s > 1 ? 's' : ''} sur {baseFacetsOf(c).length}">{#each baseFacetsOf(c) as _, k (k)}<i class:on={k < s}>★</i>{/each}</span>{/if}
             </button>
           {/each}
         </div>
@@ -122,7 +124,7 @@
         </div>
       </section>
       <section class="mapcol">
-        <Map atlas={A.id} {fills} {marks} onpick={(c) => (focus = c)} label="Carte de ta collection : touche {fr ? 'un département' : A.id === 'monde' ? 'un pays' : 'une région'} pour voir sa fiche" />
+        <Map atlas={A.id} {fills} {marks} frame={A.id === "monde" && region ? geoOf("monde").views?.[region] : undefined} onpick={(c) => (focus = c)} label="Carte de ta collection : touche {fr ? 'un département' : A.id === 'monde' ? 'un pays' : 'une région'} pour voir sa fiche" />
       </section>
     </div>
   {:else}

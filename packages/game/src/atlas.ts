@@ -10,6 +10,8 @@ export interface Atlas {
   id: AtlasId;
   /** Nom court (sélecteur) et promesse en une phrase. */
   nom: string; promesse: string;
+  /** Domaine, pour ranger les atlas dans le sélecteur (« France », « Monde »…) : ils sont nombreux à terme. */
+  domaine: string;
   /** « département » / « région », pour les phrases (« 3 départements à revoir »). */
   un: string; des: string; feminin: boolean;
   items: readonly Departement[];
@@ -29,19 +31,19 @@ const LABELS_FR: Record<Field, string> = { carte: "Sur la carte", nom: "Nom", nu
 
 export const ATLASES: Record<AtlasId, Atlas> = {
   france: {
-    id: "france", nom: "Départements", promesse: "Les 101 départements par cœur", un: "département", des: "départements", feminin: false,
+    id: "france", nom: "Départements", domaine: "France", promesse: "Les 101 départements par cœur", un: "département", des: "départements", feminin: false,
     items: DEPARTEMENTS, base: ["carte", "numero", "prefecture"], expert: ["sousPrefectures", "limitrophes"],
     hints: ["nom", "numero", "carte", "prefecture"], full: ["carte", "nom", "numero", "prefecture"], labels: LABELS_FR, dailyRounds: 10,
   },
   regions: {
-    id: "regions", nom: "Régions", promesse: "Les 18 régions, leur chef-lieu et ce qu'elles contiennent", un: "région", des: "régions", feminin: true,
+    id: "regions", nom: "Régions", domaine: "France", promesse: "Les 18 régions, leur chef-lieu et ce qu'elles contiennent", un: "région", des: "régions", feminin: true,
     items: REGION_ITEMS, base: ["carte", "prefecture"], expert: ["sousPrefectures", "limitrophes"],
     hints: ["nom", "carte", "prefecture"], full: ["carte", "nom", "prefecture"],
     labels: { ...LABELS_FR, prefecture: "Chef-lieu", sousPrefectures: "Ses départements", limitrophes: "Régions voisines" },
     dailyRounds: 5,
   },
   monde: {
-    id: "monde", nom: "Monde", promesse: "Les 195 pays, leur capitale et leur drapeau", un: "pays", des: "pays", feminin: false,
+    id: "monde", nom: "Pays du monde", domaine: "Monde", promesse: "Les 195 pays, leur capitale et leur drapeau", un: "pays", des: "pays", feminin: false,
     items: WORLD_ITEMS, base: ["carte", "drapeau", "prefecture"], expert: ["limitrophes"],
     hints: ["nom", "carte", "drapeau", "prefecture"], full: ["carte", "nom", "drapeau", "prefecture"],
     labels: { ...LABELS_FR, prefecture: "Capitale", limitrophes: "Pays voisins" },
@@ -56,6 +58,16 @@ export const atlasOf = (code: string): Atlas => (code.startsWith("R") ? ATLASES.
 export const isDepartement = (code: string) => !code.startsWith("R") && !code.startsWith("W");
 /** Atlas proposés aux joueurs : ceux en essai seulement en préprod. */
 export const offeredAtlases = (preview: boolean): AtlasId[] => ATLAS_IDS.filter((a) => preview || !ATLASES[a].preview);
+/** Atlas rangés par domaine, dans l'ordre d'apparition (France d'abord). */
+export function byDomain(ids: readonly AtlasId[]): { domaine: string; atlases: AtlasId[] }[] {
+  const out: { domaine: string; atlases: AtlasId[] }[] = [];
+  for (const a of ids) {
+    const d = ATLASES[a].domaine;
+    const g = out.find((x) => x.domaine === d) ?? out[out.push({ domaine: d, atlases: [] }) - 1];
+    g.atlases.push(a);
+  }
+  return out;
+}
 export const codesOf = (a: AtlasId) => ATLASES[a].items.map((d) => d.code);
 export const inAtlas = (a: AtlasId, code: string) => ITEM.has(code) && atlasOf(code).id === a;
 export { R_METRO, R_OUTRE_MER };

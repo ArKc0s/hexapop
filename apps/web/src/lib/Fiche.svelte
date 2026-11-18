@@ -11,7 +11,7 @@
 <div class="fiche">
   <div class="head">{#if monde}<Flag code={d.code} h={40} label="Drapeau : {d.nom}" />{:else}<span class="title code num">{shortCode(d.code)}</span>{/if}<div><div class="nom">{d.nom}</div><div class="reg">{fr ? REGION.get(d.region)?.nom : monde ? TOUR.get(d.region)?.nom : d.outreMer ? "Région d'outre-mer" : "Région de métropole"}</div></div></div>
   <dl>
-    <dt>{A.labels.prefecture}</dt><dd>{d.prefecture}</dd>
+    <dt>{A.labels.prefecture}</dt><dd>{d.prefecture}{#if d.prefNote}<span class="note"> · {d.prefNote}</span>{/if}</dd>
     {#if expert}
       {#if fr}
         <dt>Sous-préf.</dt><dd>{d.sousPrefectures.length ? d.sousPrefectures.join(", ") : "aucune"}</dd>
@@ -36,5 +36,6 @@
   dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
   dt { color: var(--soft); }
   dd { margin: 0; font-weight: 600; }
+  .note { font-weight: 500; color: var(--soft); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

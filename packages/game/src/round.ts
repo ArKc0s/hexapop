@@ -1,6 +1,6 @@
 import { DEP, ITEM, dep, type Departement } from "./data.ts";
 import { ATLASES, atlasOf, type AtlasId } from "./atlas.ts";
-import { matchSet, sameCode, sameName } from "./answer.ts";
+import { matchSet, normalize, sameCode, sameName } from "./answer.ts";
 import { rng, shuffle, type Rng } from "./random.ts";
 
 /**
@@ -93,10 +93,10 @@ export const DEFAULT_DURATION: Record<Level, number> = { decouverte: 20_000, nor
 /** Champs demandés pour un indice donné ; avec `ask`, seulement ceux-là (jamais l'indice lui-même). */
 export function fieldsFor(d: Departement, hint: Hint, level: Level, ask?: Field[]): Field[] {
   if (ask) {
-    return ask.filter((f) => f !== hint && (f !== "sousPrefectures" || d.sousPrefectures.length > 0) && (f !== "limitrophes" || d.limitrophes.length > 0));
+    return ask.filter((f) => f !== hint && (f !== "sousPrefectures" || d.sousPrefectures.length > 0) && (f !== "limitrophes" || d.limitrophes.length > 0) && (f !== "prefecture" || d.prefecture !== ""));
   }
   const base = atlasOf(d.code).full;
-  const fields = base.filter((f) => f !== hint);
+  const fields = base.filter((f) => f !== hint && (f !== "prefecture" || d.prefecture !== ""));
   if (level === "expert") {
     if (d.sousPrefectures.length) fields.push("sousPrefectures");
     if (d.limitrophes.length) fields.push("limitrophes");
@@ -125,7 +125,12 @@ function easyDistractors(d: Departement, r: Rng): Departement[] {
 function makeChoices(d: Departement, fields: Field[], others: Departement[], r: Rng): Question["choices"] {
   const out: Question["choices"] = {};
   const pick = (f: ChoiceField, get: (x: Departement) => string) => {
-    if (fields.includes(f)) out[f] = shuffle([d, ...others].map(get), r);
+    if (!fields.includes(f)) return;
+    // Pas deux propositions trop proches (« Jérusalem » / « Jérusalem-Est ») : ce serait un piège, pas une question.
+    // Seulement les capitales du Monde : les autres atlas gardent exactement leurs tirages (défi du jour, salons).
+    const mine = normalize(get(d));
+    const close = (x: string) => f === "prefecture" && atlasOf(d.code).id === "monde" && (normalize(x).includes(mine) || mine.includes(normalize(x)));
+    out[f] = shuffle([get(d), ...others.map(get).filter((x) => x && !close(x))], r);
   };
   pick("nom", (x) => x.nom);
   pick("numero", (x) => x.code);
@@ -171,8 +176,10 @@ export function makeGame(cfg: GameConfig): Question[] {
   return codes.map((code, index) => {
     const d = dep(code);
     // Indice tiré au hasard parmi ceux qui laissent quelque chose à trouver pour ce département.
-    const usable = cfg.ask ? hints.filter((h) => fieldsFor(d, h, cfg.level, cfg.ask).length > 0) : hints;
-    const from = usable.length ? usable : hints;
+    // Jamais la capitale en indice quand elle n'est pas demandée (statut contesté).
+    const hintsOk = hints.filter((h) => h !== "prefecture" || d.prefecture !== "");
+    const usable = cfg.ask ? hintsOk.filter((h) => fieldsFor(d, h, cfg.level, cfg.ask).length > 0) : hintsOk;
+    const from = usable.length ? usable : hintsOk.length ? hintsOk : ["nom" as Hint];
     const hint = from[Math.floor(r() * from.length)];
     let fields = fieldsFor(d, hint, cfg.level, cfg.ask);
     if (!fields.length) fields = fieldsFor(d, hint, cfg.level);

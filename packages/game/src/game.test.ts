@@ -186,6 +186,12 @@ test("atlas Monde : 195 pays, capitales, drapeaux toujours en propositions", () 
   assert.equal(grade(q, { nom: "RDC", elapsedMs: 0 }).accuracy, 1);
   const qb = { index: 0, code: "WBOL", hint: "nom" as const, fields: ["prefecture" as const], durationMs: 0 };
   assert.equal(grade(qb, { prefecture: "la paz", elapsedMs: 0 }).accuracy, 1);
+  // Capitales contestées : demandées, réponses défendables acceptées, note factuelle.
+  const qi = { index: 0, code: "WISR", hint: "nom" as const, fields: ["prefecture" as const], durationMs: 0 };
+  assert.equal(grade(qi, { prefecture: "Jérusalem", elapsedMs: 0 }).accuracy, 1);
+  assert.equal(grade(qi, { prefecture: "Tel Aviv", elapsedMs: 0 }).accuracy, 1);
+  assert.equal(grade({ ...qi, code: "WPSX" }, { prefecture: "Ramallah", elapsedMs: 0 }).accuracy, 1);
+  assert.ok(dep("WISR").prefNote && dep("WPSX").prefNote);
   // Séance : l'Europe d'abord, des pays seulement.
   const s = composeSeance({}, { now: Date.now(), seed: 3, start: "29", atlas: "monde" });
   assert.equal(s.region?.code, "WEU");

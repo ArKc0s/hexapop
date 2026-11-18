@@ -13,9 +13,10 @@ export const EXPERT_FACETS: readonly Facet[] = ["sousPrefectures", "limitrophes"
 export const FACETS: readonly Facet[] = [...BASE_FACETS, "drapeau", ...EXPERT_FACETS];
 export const MAX_STARS = DEPARTEMENTS.length * BASE_FACETS.length; // 303
 /** Étoiles possibles dans un atlas (départements : 303 ; régions : 36). */
-export const maxStars = (a: AtlasId = "france") => ATLASES[a].items.length * ATLASES[a].base.length;
+export const maxStars = (a: AtlasId = "france") => ATLASES[a].items.reduce((n, d) => n + baseFacetsOf(d.code).length, 0);
 /** Facettes de base de l'élément de ce code (selon son atlas). */
-export const baseFacetsOf = (code: string): readonly Facet[] => atlasOf(code).base;
+// Sans capitale demandée (statut contesté), le pays a une étoile de moins.
+export const baseFacetsOf = (code: string): readonly Facet[] => (ITEM.get(code)?.prefecture === "" ? atlasOf(code).base.filter((f) => f !== "prefecture") : atlasOf(code).base);
 
 /** Fiche d'une facette : boîte de Leitner, prochaine révision, étoile gagnée, déjà vue en propositions. */
 export interface FacetCard { b: number; d: number; s: 0 | 1; v: 0 | 1 }
