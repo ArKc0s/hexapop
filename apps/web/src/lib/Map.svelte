@@ -237,11 +237,19 @@
     onpick?.(code);
   }
   function wheel(e: WheelEvent) {
-    // Pincement au pavé tactile (ctrl + molette) : zoom ; la molette seule fait défiler la page.
-    if (!zoomable || !e.ctrlKey) return;
+    // Pincement au pavé tactile (ctrl + molette) : zoom. La molette seule zoome sur la carte du monde (trop petite sans) ;
+    // sur la France, elle fait défiler la page.
+    if (!zoomable || (!e.ctrlKey && !isW)) return;
     e.preventDefault();
-    zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
+    const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY; // molette en lignes (Firefox) → pixels
+    zoomAt(e.clientX, e.clientY, Math.exp(-Math.max(-120, Math.min(120, dy)) * (e.ctrlKey ? 0.01 : 0.003)));
   }
+  // Écouteur non passif (Svelte rend « onwheel » passif) : sinon impossible d'empêcher la page de défiler ou de zoomer.
+  $effect(() => {
+    const el = svg;
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => el.removeEventListener("wheel", wheel);
+  });
 
   function pickFrom(e: Event) {
     if (!interactive || zoomable) return; // les cartes zoomables gèrent le toucher elles-mêmes
@@ -261,7 +269,7 @@
 <div class="wrap" class:zoomable bind:clientWidth={cw} bind:clientHeight={ch}>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <svg bind:this={svg} class="map" class:r={geo.atlas === "regions"} class:w={geo.atlas === "monde"} style={isW ? `--sw:${(0.75 / ppu).toFixed(4)}` : undefined} class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
-    onclick={pickFrom} onkeydown={key} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onwheel={wheel}>
+    onclick={pickFrom} onkeydown={key} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up}>
     <defs>
       {#each codes as code (code)}<path id="{uid}-{code}" d={shapes[code]} />{/each}
     </defs>

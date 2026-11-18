@@ -234,7 +234,7 @@
 </script>
 
 
-<div class="round" class:review={!!result} class:placing={!result && mapTarget === "carte" && !sel} class:nudge={nudge && needsPlacing}>
+<div class="round" class:w={monde} class:review={!!result} class:placing={!result && mapTarget === "carte" && !sel} class:nudge={nudge && needsPlacing}>
   <div class="mapwrap">
     {#if mobile && !result && timed}
       <div class="timer top" aria-label="Temps restant">
@@ -425,6 +425,8 @@
      on retire la fiche détaillée pour que tout tienne sans défiler. */
   @media (min-width: 901px) and (max-height: 860px) { .round.review .fichebox { display: none; } }
   .mapwrap { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  /* Monde : la carte est large et basse ; sur ordinateur, on la centre en hauteur face au panneau de réponses. */
+  @media (min-width: 901px) { .round.w .mapwrap { justify-content: center; } }
   .clue { position: relative; }
   .clue.has-sw { padding-right: 118px; }
   .modesw { position: absolute; right: 0; top: 0; border: 0; background: var(--bg); color: var(--ink); font-weight: 800; font-size: 13px; padding: 6px 11px; border-radius: 999px; cursor: pointer; box-shadow: 0 2px 0 var(--line); z-index: 1; }
