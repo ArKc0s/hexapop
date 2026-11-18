@@ -9,7 +9,8 @@
   const HEX = "M36 6 L60 19 Q64 21 64 26 L64 50 Q64 55 60 57 L36 70 Q32 72 28 70 L4 57 Q0 55 0 50 L0 26 Q0 21 4 19 L28 6 Q32 4 36 6Z";
 </script>
 
-<svg class="mascot {mood}" width={size} height={size} viewBox={wear === "none" ? "-4 -2 76 80" : "-9 -12 86 90"} aria-hidden="true">
+<!-- Même cadre avec ou sans tenue : Hexa garde sa taille quand on change d'atlas, le chapeau déborde par le haut. -->
+<svg class="mascot {mood}" width={size} height={size} viewBox="-4 -2 76 80" aria-hidden="true">
   <path d={HEX} transform="translate(4 4)" fill="var(--blue)" />
   <path d={HEX} fill="var(--pink)" />
   <ellipse cx="22" cy="34" rx="7" ry="8" fill="#fff" /><ellipse cx="42" cy="34" rx="7" ry="8" fill="#fff" />
@@ -41,7 +42,7 @@
 </svg>
 
 <style>
-  .mascot { flex: none; display: block; }
+  .mascot { flex: none; display: block; overflow: visible; }
   .happy, .wow { animation: bounce .5s cubic-bezier(.2, 1.6, .4, 1); }
   .sad { animation: shake .35s; }
   @keyframes bounce { 0% { transform: scale(.85) translateY(4px); } 100% { transform: none; } }

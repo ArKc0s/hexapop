@@ -4,6 +4,7 @@
   import { ATLASES, ATLAS_IDS, DEP, type AtlasId } from "@hexa/game";
   import Map from "../Map.svelte";
   import Mascot from "./Mascot.svelte";
+  import AtlasPreview from "./AtlasPreview.svelte";
   import { profile } from "../profile.svelte.ts";
   import { startSeance } from "../seance.svelte.ts";
   import { nav } from "../nav.svelte.ts";
@@ -26,24 +27,28 @@
 </script>
 
 {#if !atlas}
-<main class="welcome">
-  <div class="hello">
-    <Mascot mood="happy" size={72} />
-    <div class="bubble">
-      <b>Salut ! Moi c'est Hexa.</b>
-      <p>On va apprendre la France ensemble, en jouant. <b>Qu'est-ce que tu veux apprendre ?</b></p>
+<main class="welcome first">
+  <header class="hero">
+    <Mascot mood="happy" size={92} />
+    <div>
+      <h1>Apprends la carte de France <em>en jouant.</em></h1>
+      <p>Des parties de 2 minutes, sans compte. Hexa te repose ce que tu oublies, jusqu'à ce que ça rentre.</p>
     </div>
-  </div>
+  </header>
+  <h2 class="ask">Par quoi tu commences ?</h2>
   <div class="atlases">
-    {#each ATLAS_IDS as a (a)}
+    {#each ATLAS_IDS as a, i (a)}
       <button class="atlas" onclick={() => pickAtlas(a)}>
-        <b>{ATLASES[a].nom}</b>
-        <span>{ATLASES[a].promesse}</span>
-        <small>{ATLASES[a].items.length} {ATLASES[a].des}</small>
+        <div class="pic"><AtlasPreview atlas={a} delay={i * 900} /></div>
+        <div class="txt">
+          <b>{ATLASES[a].nom}{#if a === "regions"}<i class="new">Nouveau</i>{/if}</b>
+          <span>{ATLASES[a].promesse}</span>
+          <span class="play">Jouer <span aria-hidden="true">→</span></span>
+        </div>
       </button>
     {/each}
   </div>
-  <p class="hint">Tu pourras changer quand tu veux, en haut de l'accueil.</p>
+  <p class="hint">Gratuit, sans inscription. Tu pourras changer quand tu veux, en haut de l'accueil.</p>
   <div class="links">
     <button class="link" onclick={() => { try { localStorage.setItem("hexa.welcomed", "1"); } catch { /* */ } nav.go({ name: "account", view: "login" }); }}>J'ai déjà un compte</button>
   </div>
@@ -75,13 +80,37 @@
 {/if}
 
 <style>
-  .atlases { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 8px; }
-  .atlas { border: 0; background: #fff; border-radius: 24px; padding: 20px 20px 18px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 5px 0 var(--line); font: inherit; color: inherit; transition: transform .08s, box-shadow .08s; }
+  /* Premier écran : donner envie en un coup d'œil (une promesse, deux cartes qui jouent toutes seules). */
+  .first { justify-content: center; gap: 14px; }
+  .hero { display: flex; gap: 16px; align-items: center; }
+  .hero h1 { font-size: clamp(27px, 6.4vw, 44px); font-weight: 900; line-height: 1.02; letter-spacing: -.01em; }
+  .hero h1 em { font-style: normal; color: var(--pink); }
+  .hero p { margin-top: 8px; font-weight: 600; font-size: 17px; color: var(--soft); max-width: 34em; }
+  .ask { font-size: 20px; font-weight: 900; margin-top: 10px; }
+  .atlases { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .atlas { border: 0; background: #fff; border-radius: 24px; padding: 14px 16px 16px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 5px 0 var(--line); font: inherit; color: inherit; transition: transform .08s, box-shadow .08s; }
   .atlas:hover { box-shadow: 0 5px 0 var(--line), inset 0 0 0 3px var(--yellow); }
   .atlas:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--line); }
-  .atlas b { font-size: 24px; font-weight: 900; }
+  .pic { background: var(--bg); border-radius: 16px; padding: 10px 12px 6px; }
+  .txt { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .atlas b { font-size: 24px; font-weight: 900; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .atlas span { font-weight: 700; }
-  .atlas small { color: var(--soft); font-weight: 700; }
+  .new { font-style: normal; font-size: 13px; font-weight: 800; background: var(--yellow); border-radius: 999px; padding: 2px 9px; }
+  .play { margin-top: auto; position: relative; top: 6px; align-self: flex-start; background: var(--blue); color: #fff; border-radius: 14px; padding: 9px 16px; box-shadow: 0 4px 0 var(--blue-d); font-weight: 800 !important; }
+  .atlas:nth-child(2) .play { background: var(--pink); box-shadow: 0 4px 0 var(--pink-d); }
+  @media (max-width: 640px) {
+    .hero { align-items: flex-start; gap: 12px; }
+    .hero :global(.mascot) { width: 64px; height: 64px; }
+    .hero p { font-size: 15.5px; }
+    .atlases { grid-template-columns: 1fr; gap: 12px; }
+    .atlas { flex-direction: row; align-items: stretch; padding: 10px; gap: 12px; }
+    .pic { width: 44%; flex: none; padding: 6px; display: flex; align-items: center; }
+    .pic :global(.preview) { width: 100%; }
+    .txt { padding: 4px 4px 2px 0; }
+    .atlas b { font-size: 21px; }
+    .atlas span { font-size: 14.5px; line-height: 1.25; }
+    .play { margin-top: 8px; padding: 7px 14px; }
+  }
   .welcome { max-width: 760px; margin: 0 auto; padding: 18px 16px 24px; display: flex; flex-direction: column; gap: 12px; min-height: 100dvh; }
   .hello { display: flex; gap: 12px; align-items: flex-start; }
   .bubble { flex: 1; display: flex; flex-direction: column; gap: 4px; }
