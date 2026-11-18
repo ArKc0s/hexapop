@@ -19,6 +19,8 @@ export interface Departement {
   iso2?: string;
   /** Capitale au statut contesté : la note factuelle (fiche, correction). */
   prefNote?: string;
+  /** Pays : ses plus grandes villes hors capitale (propositions de capitale : « Abidjan ou Yamoussoukro ? »). */
+  villes?: string[];
   /** Pays : notoriété (petit = connu de tous), pour découvrir la France avant le Vatican. */
   rang?: number;
 }
@@ -56,11 +58,11 @@ export const CONTINENTS: readonly { code: string; nom: string }[] = [
   { code: "WEU", nom: "Europe" }, { code: "WAF", nom: "Afrique" }, { code: "WAS", nom: "Asie" },
   { code: "WNA", nom: "Amérique du Nord et centrale" }, { code: "WSA", nom: "Amérique du Sud" }, { code: "WOC", nom: "Océanie" },
 ];
-interface Pays { code: string; iso2: string; rang: number; nom: string; article: string; capitale: string; continent: string; limitrophes: string[]; alias?: string[]; capAlias?: string[]; capNote?: string }
+interface Pays { code: string; iso2: string; rang: number; nom: string; article: string; capitale: string; continent: string; limitrophes: string[]; alias?: string[]; capAlias?: string[]; capNote?: string; villes?: string[] }
 export const WORLD_ITEMS: readonly Departement[] = (monde.items as Pays[]).map((p) => ({
   code: p.code, nom: p.nom, article: p.article, region: "W" + p.continent, prefecture: p.capitale, sousPrefectures: [],
   outreMer: false, limitrophes: p.limitrophes, iso2: p.iso2, rang: p.rang,
-  ...(p.alias ? { alias: p.alias } : {}), ...(p.capAlias ? { prefAlias: p.capAlias } : {}), ...(p.capNote ? { prefNote: p.capNote } : {}),
+  ...(p.alias ? { alias: p.alias } : {}), ...(p.capAlias ? { prefAlias: p.capAlias } : {}), ...(p.capNote ? { prefNote: p.capNote } : {}), ...(p.villes ? { villes: p.villes } : {}),
 }));
 
 /** Tout ce qui s'apprend, tous atlas confondus (départements, régions, pays), par code. */

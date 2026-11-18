@@ -192,6 +192,11 @@ test("atlas Monde : 195 pays, capitales, drapeaux toujours en propositions", () 
   assert.equal(grade(qi, { prefecture: "Tel Aviv", elapsedMs: 0 }).accuracy, 1);
   assert.equal(grade({ ...qi, code: "WPSX" }, { prefecture: "Ramallah", elapsedMs: 0 }).accuracy, 1);
   assert.ok(dep("WISR").prefNote && dep("WPSX").prefNote);
+  // Propositions de capitale : des villes du pays (Abidjan face à Yamoussoukro), jamais une autre réponse acceptée.
+  const civ = makeGame({ seed: 2, level: "normal", input: "choix", atlas: "monde", codes: ["WCIV"], hints: ["nom"], ask: ["prefecture"] })[0];
+  assert.ok(civ.choices?.prefecture?.includes("Yamoussoukro"));
+  assert.ok(civ.choices!.prefecture!.every((c) => c === "Yamoussoukro" || dep("WCIV").villes!.includes(c)));
+  assert.ok(!dep("WISR").villes!.includes("Tel Aviv"), "Tel-Aviv est acceptée : jamais un piège");
   // Séance : l'Europe d'abord, des pays seulement.
   const s = composeSeance({}, { now: Date.now(), seed: 3, start: "29", atlas: "monde" });
   assert.equal(s.region?.code, "WEU");

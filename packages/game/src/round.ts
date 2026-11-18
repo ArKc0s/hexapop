@@ -134,7 +134,10 @@ function makeChoices(d: Departement, fields: Field[], others: Departement[], r: 
   };
   pick("nom", (x) => x.nom);
   pick("numero", (x) => x.code);
-  pick("prefecture", (x) => x.prefecture);
+  // Monde : la capitale parmi les grandes villes du pays (plus dur que parmi d'autres capitales) ; les micro-États,
+  // trop petits pour avoir 3 grandes villes, gardent d'autres capitales.
+  if (fields.includes("prefecture") && d.villes && d.villes.length >= 3) out.prefecture = shuffle([d.prefecture, ...shuffle(d.villes, r).slice(0, 3)], r);
+  else pick("prefecture", (x) => x.prefecture);
   pick("drapeau", (x) => x.code);
   return out;
 }

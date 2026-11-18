@@ -360,10 +360,29 @@ for (const f of JSON.parse(vOut["out.json"]).features) {
   views["W" + f.properties.k] = [r1(b[0]), r1(b[1]), r1(b[2] - b[0]), r1(b[3] - b[1])];
 }
 
+// Villes du pays (propositions de capitale plus dures : « Abidjan ou Yamoussoukro ? ») : les plus peuplées, sans la
+// capitale ni les autres réponses acceptées. Moins de 3 (micro-États) : le jeu propose d'autres capitales.
+const VILLES = JSON.parse(readFileSync(join(root, "data", "sources", "monde", "villes.json"), "utf8")).pays;
+const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[-'’.]/g, " ").replace(/\bsaint\b/g, "st").replace(/\s+/g, " ").trim();
+for (const p of PAYS) {
+  const taken = new Set([p.capitale, ...p.capAlias].map(norm));
+  const villes = [];
+  for (const [nom] of VILLES[p.code] ?? []) {
+    const n = norm(nom);
+    // Même ville sous une autre graphie (« Sri Jayawardenapura ») : un mot long en commun suffit à l'écarter.
+    const long = (s) => s.split(" ").filter((w) => w.length >= 6).map((w) => w.slice(0, 6));
+    if ([...taken].some((t) => t === n || t.includes(n) || n.includes(t) || long(t).some((w) => long(n).includes(w)))) continue;
+    taken.add(n); villes.push(nom);
+    if (villes.length >= 5) break;
+  }
+  p.villes = villes;
+}
+
 const items = PAYS.map((p) => ({
   code: "W" + p.code, iso2: p.iso2, rang: p.rang, nom: p.nom, article: p.article, capitale: p.capitale, continent: p.continent,
   limitrophes: [...voisins.get(p.code)].map((c) => "W" + c).sort(),
   ...(p.alias.length ? { alias: p.alias } : {}), ...(p.capAlias.length ? { capAlias: p.capAlias } : {}), ...(p.capNote ? { capNote: p.capNote } : {}),
+  ...(p.villes.length >= 3 ? { villes: p.villes } : {}),
 })).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
 
 // Deux fichiers : la liste (petite, pour le jeu et le serveur) et la carte (lourde, chargée par l'appli seulement
