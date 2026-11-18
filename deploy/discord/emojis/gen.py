@@ -21,7 +21,7 @@ E = {
   "hexa_mdr": cheeks() + stroke("M16 35 Q22 28 28 35", 3.2) + stroke("M36 35 Q42 28 48 35", 3.2)
      + f'<path d="M21 44 Q32 60 43 44Z" fill="{INK}" stroke="{INK}" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 51 Q32 56 38 51 Q32 53 26 51Z" fill="#ff7cc2"/>'
      + tear(9, 29, 0.9) + tear(55, 29, 0.9),
-  "hexa_bot": f'<path d="M32 6 L32 -7" stroke="{INK}" stroke-width="2.8" stroke-linecap="round"/><circle cx="32" cy="-10.5" r="4.3" fill="{YEL}" stroke="{INK}" stroke-width="2.2"/>'
+  "hexa_bot": f'<path d="M32 6 L32 -3" stroke="{INK}" stroke-width="2.8" stroke-linecap="round"/><circle cx="32" cy="-6.5" r="4.3" fill="{YEL}" stroke="{INK}" stroke-width="2.2"/>'
      + f'<rect x="-4.5" y="30" width="6.5" height="14" rx="2.4" fill="#b4bfcd" stroke="{INK}" stroke-width="1.8"/><rect x="65.5" y="34" width="6.5" height="14" rx="2.4" fill="#8f9bab" stroke="{INK}" stroke-width="1.8"/>'
      + "BODY" + f'<rect x="8" y="25.5" width="48" height="19" rx="8" fill="{INK}"/><rect x="15" y="29.5" width="11" height="11" rx="3.5" fill="#8be9ff"/><rect x="38" y="29.5" width="11" height="11" rx="3.5" fill="#8be9ff"/>'
      + f'<circle cx="12" cy="51" r="3.5" fill="{YEL}" opacity=".9"/><circle cx="52" cy="51" r="3.5" fill="{YEL}" opacity=".9"/>' + stroke("M23.5 50 L27 53.5 L37 53.5 L40.5 50"),
@@ -32,11 +32,11 @@ E = {
   "hexa_gg": eyes() + cheeks() + stroke("M22 45 Q32 57 42 45")
      + f'<path d="M14 6 L20 -6 L26 2 L32 -9 L38 2 L44 -6 L50 6 Z" fill="{YEL}" stroke="{INK}" stroke-width="2" stroke-linejoin="round"/><circle cx="32" cy="-9" r="2.2" fill="{PINK}" stroke="{INK}" stroke-width="1.2"/><circle cx="20" cy="-6" r="1.8" fill="{BLUE}" stroke="{INK}" stroke-width="1"/><circle cx="44" cy="-6" r="1.8" fill="{BLUE}" stroke="{INK}" stroke-width="1"/>',
 }
-# Cadre au plus près (lisible à 32 px) ; de la place en haut seulement pour un chapeau ou une antenne.
-BOX = {"hexa_bob": "-8 -13 86 86", "hexa_gg": "-6 -13 82 85", "hexa_bot": "-8 -17 85 89"}
+# Un seul cadre pour tous : Hexa a la même taille et la même place sur chaque émoji, avec ou sans chapeau.
+BOX = "-10 -13 89 89"
 def mascot(name, inner):
     content = inner.replace("BODY", body()) if "BODY" in inner else body() + inner
-    return f'<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="{BOX.get(name, "-3 -1 74 76")}">{content}</svg>'
+    return f'<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="{BOX}">{content}</svg>'
 for n, inner in E.items(): open(f"{OUT}/{n}.svg", "w").write(mascot(n, inner))
 # Médailles : hexagone métallique, ruban, étoile
 MED = {"medaille_bronze": ("#f2c79f", "#d69a63", "#a86a35"), "medaille_argent": ("#f3f6fa", "#b9c3d0", "#8994a3"), "medaille_or": ("#ffe680", "#f5c518", "#c99a12")}
