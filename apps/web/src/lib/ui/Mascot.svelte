@@ -31,12 +31,13 @@
     <path d="M16 23 L27 27 M48 23 L37 27" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round" />
   {/if}
   {#if wear === "bob"}
-    <!-- Bob d'explorateur, un peu de travers -->
-    <g transform="rotate(-8 32 6)">
-      <ellipse cx="32" cy="9" rx="27" ry="5.5" fill="var(--yellow-d)" />
-      <path d="M13 9 Q14 -8 32 -8 Q50 -8 51 9 Z" fill="var(--yellow)" />
-      <path d="M13.6 3.5 Q32 7 50.4 3.5 L51 9 Q32 12 13 9 Z" fill="var(--blue)" />
-      <ellipse cx="32" cy="7.5" rx="27" ry="4" fill="none" stroke="var(--yellow-d)" stroke-width="1.6" />
+    <!-- Bob d'explorateur, un peu de travers. Dessiné de l'arrière vers l'avant : le bord du fond, le dôme,
+         son ruban, puis le bord de devant qui passe devant le bas du dôme. -->
+    <g transform="rotate(-8 32 8)">
+      <ellipse cx="32" cy="8" rx="26" ry="5.5" fill="var(--yellow-d)" />
+      <path d="M15 8 C15.5 1 16.5 -4 19.5 -5.5 Q32 -10.5 44.5 -5.5 C47.5 -4 48.5 1 49 8 A17 3 0 0 1 15 8 Z" fill="var(--yellow)" />
+      <path d="M16 1.5 A16.4 3 0 0 0 48.2 1.5 L48.9 6.6 A16.9 3 0 0 1 15.2 6.6 Z" fill="var(--blue)" />
+      <path d="M6 8 A26 5.5 0 0 0 58 8 L49 8 A17 3 0 0 1 15 8 Z" fill="var(--yellow)" />
     </g>
   {/if}
 </svg>
