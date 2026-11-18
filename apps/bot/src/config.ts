@@ -10,6 +10,8 @@ export const config = {
   site: env("PUBLIC_URL", "https://hexapop.app"),
   github: { token: env("GITHUB_TOKEN"), repo: env("GITHUB_REPO", "ArKc0s/hexapop") },
   state: env("BOT_STATE", "/data/bot.json"),
+  /** Chaîne Twitch ou YouTube pour le statut « En direct » pendant une soirée publique (Discord n'accepte que celles-là). */
+  stream: env("STREAM_URL"),
   /** Heure de Paris des rendez-vous du jour. */
   at: { defi: 8, question: 12, podium: 21 },
   channels: {

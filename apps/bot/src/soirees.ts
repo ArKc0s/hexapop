@@ -20,12 +20,25 @@ function card(r: PublicRoom, again: boolean) {
 }
 
 let lastStatus = "";
+const ABOUT = `Le bot d'Hexa, le jeu pour apprendre la carte de France : défi du jour chaque matin, question du jour à midi, soirées publiques.\n👉 ${config.site}`;
+const about = (r?: PublicRoom) => (r
+  ? `🎮 Soirée publique ${r.phase === "lobby" ? "ouverte" : "en cours"} : rejoins le salon ${r.code}\n👉 ${link(r.code)}\n\n${ABOUT}`
+  : ABOUT).slice(0, 400);
+/** Statut du bot : pendant une soirée publique, « En direct » (si une chaîne Twitch/YouTube est configurée : Discord
+ *  n'accepte que ces liens pour ce statut) ou « Joue à Soirée Hexa · salon ABCD » ; sinon il fait la promo du site. */
 function status(client: Client, rooms: PublicRoom[]) {
   const r = rooms.find((x) => x.phase === "lobby") ?? rooms[0];
-  const text = r ? `🎮 Soirée publique : ${link(r.code).replace("https://", "")}` : "🗺️ Apprends la France en jouant · hexapop.app";
-  if (text === lastStatus) return;
-  lastStatus = text;
-  client.user?.setPresence({ activities: [{ type: ActivityType.Custom, name: "Hexa", state: text }], status: "online" });
+  const key = r ? `${r.code}:${r.phase === "lobby"}` : "";
+  if (key === lastStatus) return;
+  lastStatus = key;
+  // Le statut d'un bot n'a pas de lien cliquable ; son « À propos de moi » (profil) oui : il donne le lien de la soirée.
+  void client.application?.edit({ description: about(r) }).catch((e) => console.error("[profil]", e.message));
+  if (!r) return void client.user?.setPresence({ activities: [{ type: ActivityType.Custom, name: "Hexa", state: "🗺️ Apprends la France en jouant · hexapop.app" }], status: "online" });
+  const name = r.phase === "lobby" ? `Soirée Hexa · rejoins le salon ${r.code}` : `Soirée Hexa · salon ${r.code} en cours`;
+  client.user?.setPresence({
+    activities: [config.stream ? { type: ActivityType.Streaming, name, url: config.stream } : { type: ActivityType.Playing, name, state: link(r.code).replace("https://", "") }],
+    status: "online",
+  });
 }
 
 export async function tickSoirees(client: Client) {
