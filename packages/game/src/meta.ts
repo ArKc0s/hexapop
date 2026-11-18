@@ -1,7 +1,7 @@
 // Méta-jeu v1.1 : XP et niveaux, série quotidienne, quêtes du jour, Tour de France (étoiles par
 // région), album de plaques et badges. Fonctions pures : le client les applique (invité ou compte),
 // le serveur fusionne les profils synchronisés.
-import { DEPARTEMENTS, DEP, REGIONS, REGION_ITEMS, R_METRO, R_OUTRE_MER } from "./data.ts";
+import { CONTINENTS, DEPARTEMENTS, DEP, REGIONS, REGION_ITEMS, WORLD_ITEMS, R_METRO, R_OUTRE_MER } from "./data.ts";
 import { ATLASES, isAtlas, type AtlasId } from "./atlas.ts";
 import { rng, shuffle } from "./random.ts";
 import type { InputMode, Level, RoundResult } from "./round.ts";
@@ -176,10 +176,16 @@ export const REGION_GROUPS: TourRegion[] = [
   { code: R_METRO, nom: "Métropole", deps: REGION_ITEMS.filter((r) => !r.outreMer).map((r) => r.code), neighbors: [R_OUTRE_MER] },
   { code: R_OUTRE_MER, nom: "Outre-mer", deps: REGION_ITEMS.filter((r) => r.outreMer).map((r) => r.code), neighbors: [] },
 ];
+/** Atlas Monde : un groupe par continent, l'Europe d'abord (le plus proche), puis de proche en proche. */
+export const WORLD_GROUPS: TourRegion[] = CONTINENTS.map((c, i) => ({
+  code: c.code, nom: c.nom, deps: WORLD_ITEMS.filter((p) => p.region === c.code).map((p) => p.code),
+  neighbors: CONTINENTS[i + 1] ? [CONTINENTS[i + 1].code] : [],
+}));
 /** Groupes de séance d'un atlas (départements : les régions et l'outre-mer). */
-export const groupsOf = (a: AtlasId): TourRegion[] => (a === "regions" ? REGION_GROUPS : TOUR_REGIONS);
-export const TOUR = new Map([...TOUR_REGIONS, ...REGION_GROUPS].map((r) => [r.code, r]));
-export const tourRegionOf = (code: string) => [...TOUR_REGIONS, ...REGION_GROUPS].find((r) => r.deps.includes(code))!;
+export const groupsOf = (a: AtlasId): TourRegion[] => (a === "regions" ? REGION_GROUPS : a === "monde" ? WORLD_GROUPS : TOUR_REGIONS);
+const ALL_GROUPS = [...TOUR_REGIONS, ...REGION_GROUPS, ...WORLD_GROUPS];
+export const TOUR = new Map(ALL_GROUPS.map((r) => [r.code, r]));
+export const tourRegionOf = (code: string) => ALL_GROUPS.find((r) => r.deps.includes(code))!;
 export const totalStars = (p: Profile) => Object.values(p.stars).reduce((n, s) => n + s, 0);
 
 export type TourState = "locked" | "open" | "done";
@@ -273,6 +279,11 @@ export const BADGES: BadgeDef[] = [
   { id: "regions-18", nom: "Les 18 régions", desc: "Toutes les régions en bronze", test: (_c, p) => medalCount(p, 1, "regions") >= 18 },
   { id: "regions-argent", nom: "Régions en argent", desc: "Toutes les régions au moins en argent", test: (_c, p) => medalCount(p, 2, "regions") >= 18 },
   { id: "regions-or", nom: "Régions en or", desc: "Toutes les régions en or", test: (_c, p) => medalCount(p, 3, "regions") >= 18 },
+  // Atlas Monde
+  { id: "monde-50", nom: "Globe-trotteur", desc: "50 pays en bronze", test: (_c, p) => medalCount(p, 1, "monde") >= 50 },
+  { id: "monde-195", nom: "Le tour du monde", desc: "Les 195 pays en bronze", test: (_c, p) => medalCount(p, 1, "monde") >= 195 },
+  { id: "monde-argent", nom: "Le monde en argent", desc: "Les 195 pays au moins en argent", test: (_c, p) => medalCount(p, 2, "monde") >= 195 },
+  { id: "monde-or", nom: "Le monde en or", desc: "Les 195 pays en or", test: (_c, p) => medalCount(p, 3, "monde") >= 195 },
   { id: "region-3", nom: "Chez soi", desc: "Une région entière en bronze", test: (_c, p) => TOUR_REGIONS.some((r) => r.deps.every((c) => medal(p, c) >= 1)) },
   { id: "tour-complet", nom: "Tour de France", desc: "Au moins une étoile dans chaque région", test: (_c, p) => TOUR_REGIONS.every((r) => r.deps.some((c) => (p.know?.[c] ? Object.values(p.know[c]).some((x) => x?.s) : false))) },
   { id: "serie-7", nom: "Une semaine", desc: "Jouer 7 jours d'affilée", test: (_c, p) => p.streak.count >= 7 },

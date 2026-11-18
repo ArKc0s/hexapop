@@ -44,3 +44,32 @@ sa création (base, puis expert pour l'or), bronze / argent / or, rien de verrou
   à son niveau dans cet atlas) ; Hall of Fame par atlas (Légendes Régions, Marathon réservé aux départements) ;
   pages de référencement (/france/regions, /quiz/regions, /quiz/chefs-lieux-des-regions) ; Hexa en bob d'explorateur
   dans l'atlas Régions ; rappels (notifications) aux mots de l'atlas du joueur ; stats Grafana du défi Régions.
+
+## Atlas 3 : Monde (en essai, préprod seulement)
+Demandé par Léo le 2026-11-18 « pour voir ce que ça donnerait » ; la première sortie des atlas ne proposera que
+Régions. `preview: true` dans `atlas.ts` : le Monde n'apparaît que sur preprod.hexapop.app (et en local), jamais en prod.
+
+| | |
+|---|---|
+| Promesse | « Les 195 pays, leur capitale et leur drapeau » |
+| Choses à apprendre | 195 pays : les 193 membres de l'ONU, plus le Vatican et la Palestine (États observateurs) |
+| Facettes de base (étoiles) | le placer, son drapeau, sa capitale |
+| Facettes expert (or) | ses pays voisins (frontières terrestres ; les îles n'en ont pas) |
+| Indices | le nom, la carte, le drapeau, la capitale |
+| Séances | un continent à la fois : Europe, Afrique, Asie, Amérique du Nord et centrale, Amérique du Sud, Océanie ; les pays connus d'abord |
+| Défi du jour | 10 pays, mêmes règles de niveau |
+
+- **Le drapeau** est une facette à part entière : on le reconnaît (indice) ou on le retrouve parmi 4 (toujours en
+  propositions, même au clavier : on ne dessine pas un drapeau). Fichiers SVG de flag-icons (licence MIT),
+  `apps/web/public/drapeaux/`, chargés à la demande et gardés hors ligne par le service worker.
+- **La carte** : Natural Earth 1:50m (domaine public), projection Natural Earth, sans l'Antarctique. Les pays trop
+  petits pour le doigt ont un rond cliquable. Les terres qui ne se jouent pas (Groenland, Sahara occidental, Kosovo,
+  Taïwan, territoires d'outre-mer des autres pays…) sont en gris. À la correction, la carte zoome sur le pays.
+- **Données** : `pnpm data:monde` (`data/scripts/build-monde.mjs`) ; noms, articles et capitales en français écrits à la
+  main dans le script, avec les autres réponses acceptées (« RDC », « Myanmar », « La Paz »…).
+- Codes préfixés « W » + code ISO à trois lettres (`WFRA`), comme « R » pour les régions.
+- Hexa porte des lunettes d'aviateur dans ce monde.
+
+**À trancher avant une éventuelle sortie** : Kosovo et Taïwan (absents de la liste, en gris sur la carte) ; Israël
+(capitale « Jérusalem », « Tel Aviv » acceptée) ; Palestine (« Ramallah », « Jérusalem-Est » acceptée) ; Sahara
+occidental en gris (le Maroc et la Mauritanie ne se touchent donc pas).

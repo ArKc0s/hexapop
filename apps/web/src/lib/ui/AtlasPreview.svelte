@@ -6,18 +6,21 @@
   import { ATLASES, type AtlasId } from "@hexa/game";
   import Map, { type Mark } from "../Map.svelte";
   import { MEDAL_FILL, STAR_FILL } from "../knowFills.ts";
+  import { geoOf } from "../map.ts";
 
   let { atlas, delay = 0 }: { atlas: AtlasId; delay?: number } = $props();
 
   // Pas d'or : il se confondrait avec le jaune de la question qui clignote.
   const PALETTE = [STAR_FILL[1], STAR_FILL[2], STAR_FILL[2], MEDAL_FILL[1], MEDAL_FILL[2]];
-  const codes = ATLASES[atlas].items.filter((d) => !d.outreMer).map((d) => d.code);
+  // Seulement ce qui se voit en petit : ni l'outre-mer, ni les micro-États du Monde (des ronds).
+  const dots = geoOf(atlas).dots ?? {};
+  const codes = ATLASES[atlas].items.filter((d) => !d.outreMer && !dots[d.code]).map((d) => d.code);
   const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)];
 
   /** Point de départ : un tiers de la carte déjà coloré, pour qu'on voie tout de suite à quoi ça ressemble. */
   function seed(): Record<string, string> {
     const f: Record<string, string> = {};
-    for (const c of codes) if (Math.random() < 0.3) f[c] = pick(PALETTE);
+    for (const c of codes) if (Math.random() < (atlas === "monde" ? 0.45 : 0.3)) f[c] = pick(PALETTE);
     return f;
   }
   let fills = $state<Record<string, string>>(seed());

@@ -17,8 +17,10 @@
     candidates?: string[];
     /** Atlas dessiné (défaut : celui affiché) : départements, régions… */
     atlas?: AtlasId;
+    /** Cadrer la vue sur ces éléments (Monde : la correction zoome sur le pays, sinon il est trop petit pour être vu). */
+    zoomTo?: string[];
   }
-  let { marks = {}, fills, interactive = true, zoomable = false, onpick, label = "Carte des départements", candidates, atlas }: Props = $props();
+  let { marks = {}, fills, interactive = true, zoomable = false, onpick, label = "Carte des départements", candidates, atlas, zoomTo }: Props = $props();
   const geo = $derived(geoOf(atlas ?? world.id));
   const cand = $derived(candidates ? new Set(candidates) : null);
   const allowed = (code: string) => !cand || cand.has(code);
@@ -45,12 +47,15 @@
   const shiftOf = (code: string) => (narrow && insetShift[code] ? `translate(${insetShift[code].dx} ${insetShift[code].dy})` : undefined);
   const FULL_WIDE: number[] = [...MAP.viewBox];
   const FULL_NARROW = [-10, -10, 1020, STRIP_Y + MAP.insets[0].h + 20];
-  const full = $derived(narrow ? FULL_NARROW : FULL_WIDE);
+  // Carte à cadre propre (Monde) : le même sur mobile et sur ordinateur, un peu de marge autour.
+  const full = $derived(geo.viewBox ? [geo.viewBox[0] - 6, geo.viewBox[1] - 6, geo.viewBox[2] + 12, geo.viewBox[3] + 12] : narrow ? FULL_NARROW : FULL_WIDE);
 
   // ---------- vue (zoom) ----------
   let view = $state<number[] | null>(null); // null = vue complète
   const vb = $derived((view ?? full).map((n) => n.toFixed(1)).join(" "));
   const zoomed = $derived(!!view);
+  // Ombre rose : 4 unités sur la France. Monde : plus fine (les pays sont petits), et constante à l'écran quand on zoome.
+  const shadow = $derived(geo.atlas === "monde" ? +(1.4 * ((view ?? full)[2] / full[2])).toFixed(2) : 4);
   let anim = 0;
   function animateTo(target: number[] | null) {
     cancelAnimationFrame(anim);
@@ -97,6 +102,27 @@
     if (w >= full[2] * 0.8) return null;
     return [(x0 + x1) / 2 - w / 2, (y0 + y1) / 2 - h / 2, w, h];
   }
+  /** Cadre englobant ces éléments, au ratio de la vue complète, au moins `min` de sa largeur. */
+  function fitBox(list: string[], min: number): number[] {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const c of list) for (const [, x, y] of (geo.paths[c] ?? "").matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) {
+      x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y);
+    }
+    const ratio = full[3] / full[2];
+    let w = Math.max((x1 - x0) * 1.6, full[2] * min), h = (y1 - y0) * 1.6;
+    if (h / w > ratio) w = h / ratio; else h = w * ratio;
+    return clamp([(x0 + x1) / 2 - w / 2, (y0 + y1) / 2 - h / 2, w, h]);
+  }
+  let zoomedFor = "";
+  $effect(() => {
+    const key = zoomTo?.join(",") ?? "";
+    if (key === zoomedFor) return;
+    zoomedFor = key;
+    if (!key) { if (view) animateTo(null); return; }
+    const box = fitBox(zoomTo!, 0.28);
+    // Déjà assez grand dans la vue complète (Russie, Brésil…) : on ne zoome pas.
+    animateTo(box[2] >= full[2] * 0.9 ? null : box);
+  });
   // Au doigt, on zoome tout de suite sur les 4 propositions quand elles sont proches.
   $effect(() => {
     if (!zoomable || !candidates?.length || !narrow) return;
@@ -218,7 +244,7 @@
 
 <div class="wrap" class:zoomable>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <svg bind:this={svg} class="map" class:r={geo.atlas === "regions"} class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
+  <svg bind:this={svg} class="map" class:r={geo.atlas === "regions"} class:w={geo.atlas === "monde"} class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
     onclick={pickFrom} onkeydown={key} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onwheel={wheel}>
     <defs>
       {#each codes as code (code)}<path id="{uid}-{code}" d={geo.paths[code]} />{/each}
@@ -233,8 +259,9 @@
       <rect class="src" x={IDF_SOURCE.x - 3} y={IDF_SOURCE.y - 3} width={IDF_SOURCE.w + 6} height={IDF_SOURCE.h + 6} rx="3" />
     {/if}
 
+    {#if geo.fond}<path class="fond" d={geo.fond} aria-hidden="true" />{/if}
     <!-- Ombre rose : un léger décalage de la silhouette, la seule touche riso de la carte -->
-    <g class="shadow" transform="translate(4 4)" aria-hidden="true">
+    <g class="shadow" transform="translate({shadow} {shadow})" aria-hidden="true">
       {#each codes as code (code)}<use href="#{uid}-{code}" transform={shiftOf(code)} />{/each}
     </g>
 
@@ -242,7 +269,7 @@
       {#each codes as code (code)}
         <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
         <use href="#{uid}-{code}" data-code={code} class="{marks[code] ?? ''} {OM.has(code) ? 'om' : ''} {cand?.has(code) ? 'cand' : ''}" style={fills?.[code] ? `--f:${fills[code]}` : undefined}
-          transform={shiftOf(code)} tabindex={interactive && allowed(code) ? 0 : -1} role={interactive ? "button" : undefined} aria-label={interactive ? (geo.atlas === "regions" ? "région" : "département") : undefined} />
+          transform={shiftOf(code)} tabindex={interactive && allowed(code) ? 0 : -1} role={interactive ? "button" : undefined} aria-label={interactive ? (geo.atlas === "regions" ? "région" : geo.atlas === "monde" ? "pays" : "département") : undefined} />
       {/each}
     </g>
     {#if geo.inner.length}
@@ -277,6 +304,9 @@
   /* Carte des régions : contours de région plus marqués */
   .map.r .deps use:not(.om) { stroke: var(--ink); stroke-width: 1.4; }
   .shadow use { fill: var(--pink); }
+  /* Monde : traits fins (les pays sont petits), l'ombre plus courte, les terres hors jeu en gris. */
+  .map.w .deps use { stroke-width: .5; }
+  .fond { fill: #e4ddcd; stroke: #c9bfa9; stroke-width: .4; vector-effect: non-scaling-stroke; }
   .frame { fill: #fffdf8; stroke: #d6cdb9; stroke-width: 1.5; }
   .cap { font: 700 13px var(--f-ui); fill: var(--soft); }
   .src { fill: none; stroke: var(--soft); stroke-width: 1; stroke-dasharray: 2 2; }

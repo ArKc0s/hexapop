@@ -10,10 +10,11 @@ import { rng, shuffle, type Rng } from "./random.ts";
 export type Level = "decouverte" | "normal" | "expert";
 export type InputMode = "choix" | "libre";
 /** Ce qu'on montre au joueur pour lancer le tour. */
-export type Hint = "nom" | "numero" | "carte" | "prefecture";
+export type Hint = "nom" | "numero" | "carte" | "prefecture" | "drapeau";
 /** Ce que le joueur doit retrouver. */
-export type Field = "carte" | "nom" | "numero" | "prefecture" | "sousPrefectures" | "limitrophes";
-export type ChoiceField = "nom" | "numero" | "prefecture";
+export type Field = "carte" | "nom" | "numero" | "prefecture" | "drapeau" | "sousPrefectures" | "limitrophes";
+/** Le drapeau se choisit toujours parmi 4 (on ne dessine pas un drapeau au clavier) : ses propositions sont des codes. */
+export type ChoiceField = "nom" | "numero" | "prefecture" | "drapeau";
 
 export interface Question {
   index: number;
@@ -42,6 +43,8 @@ export interface Answer {
   nom?: string;
   numero?: string;
   prefecture?: string;
+  /** Code du pays dont on a choisi le drapeau. */
+  drapeau?: string;
   sousPrefectures?: string[];
   limitrophes?: string[];
   elapsedMs: number;
@@ -127,6 +130,7 @@ function makeChoices(d: Departement, fields: Field[], others: Departement[], r: 
   pick("nom", (x) => x.nom);
   pick("numero", (x) => x.code);
   pick("prefecture", (x) => x.prefecture);
+  pick("drapeau", (x) => x.code);
   return out;
 }
 
@@ -162,7 +166,7 @@ export function makeGame(cfg: GameConfig): Question[] {
   // Découverte : on donne toujours quelque chose qu'on peut connaître (le nom, ou le département qui clignote).
   const easy = cfg.level === "decouverte";
   const known = (cfg.hints ?? ["nom", "carte"]).filter((h) => h === "nom" || h === "carte");
-  const hints = easy ? (known.length ? known : ["nom", "carte"] as Hint[]) : cfg.hints ?? (atlas.id === "france" ? ["nom", "numero", "carte"] : ["nom", "carte"]);
+  const hints = easy ? (known.length ? known : ["nom", "carte"] as Hint[]) : cfg.hints ?? (atlas.id === "france" ? ["nom", "numero", "carte"] : atlas.hints.filter((h) => h !== "prefecture"));
   const duration = cfg.durationMs ?? DEFAULT_DURATION[cfg.level];
   return codes.map((code, index) => {
     const d = dep(code);
@@ -184,6 +188,9 @@ export function makeGame(cfg: GameConfig): Question[] {
       q.choices = makeChoices(d, fields, others, r);
       // Réservé à l'entraînement : ne change pas les tirages du défi du jour ni des salons.
       if (cfg.switchable && fields.includes("carte")) q.mapChoices = shuffle([d.code, ...others.map((x) => x.code)], r);
+    } else if (fields.includes("drapeau")) {
+      // Au clavier aussi, le drapeau se choisit parmi 4 (Monde seulement : les autres tirages ne changent pas).
+      q.choices = { drapeau: shuffle([d, ...distractors(d, r)].map((x) => x.code), r) };
     }
     return q;
   });
@@ -197,6 +204,7 @@ export function clueFor(q: Question): string {
   if (q.hint === "nom") return d.nom;
   if (q.hint === "numero") return d.code;
   if (q.hint === "prefecture") return d.prefecture;
+  if (q.hint === "drapeau") return d.iso2 ?? "";
   return d.code; // indice carte : le client surligne ce département
 }
 
@@ -218,11 +226,12 @@ export function grade(q: Question, a: Answer): RoundResult {
   const fields: FieldResult[] = q.fields.map((field) => {
     switch (field) {
       case "carte": return { field, score: a.carte === d.code ? 1 : 0, expected: d.code };
-      case "nom": return { field, score: a.nom && sameName(a.nom, d.nom) ? 1 : 0, expected: d.nom };
+      case "nom": return { field, score: a.nom && [d.nom, ...(d.alias ?? [])].some((n) => sameName(a.nom!, n)) ? 1 : 0, expected: d.nom };
       case "numero": return { field, score: a.numero && sameCode(a.numero, d.code) ? 1 : 0, expected: d.code };
-      case "prefecture": return { field, score: a.prefecture && [d.prefecture, ...(PREFECTURE_ALIASES[d.code] ?? [])].some((p) => sameName(a.prefecture!, p)) ? 1 : 0, expected: d.prefecture };
+      case "prefecture": return { field, score: a.prefecture && [d.prefecture, ...(PREFECTURE_ALIASES[d.code] ?? []), ...(d.prefAlias ?? [])].some((p) => sameName(a.prefecture!, p)) ? 1 : 0, expected: d.prefecture };
       // Régions : « ses départements », par leur nom ou leur numéro.
       case "sousPrefectures": return { field, score: gradeList(d.code.startsWith("R") ? a.sousPrefectures?.map((x) => DEP.get(x.trim().toUpperCase().padStart(2, "0"))?.nom ?? x) : a.sousPrefectures, d.sousPrefectures, true), expected: d.sousPrefectures };
+      case "drapeau": return { field, score: a.drapeau === d.code ? 1 : 0, expected: d.code };
       case "limitrophes": return { field, score: gradeList(a.limitrophes, d.limitrophes, false), expected: d.limitrophes };
     }
   });

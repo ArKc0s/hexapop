@@ -22,7 +22,7 @@
   const TOUR_REGIONS = groupsOf(A.id);
   const BASE_FACETS = A.base;
   const NB = A.base.length;
-  let focus = $state(fr ? "75" : "R53");
+  let focus = $state(fr ? "75" : A.id === "monde" ? "WFRA" : "R53");
 
   const p = $derived(profile.data);
   const know = $derived(p.know ?? {});
@@ -32,15 +32,15 @@
   const counts = $derived(medalCounts(know, A.id));
   const owned = $derived(counts[1] + counts[2] + counts[3]);
   const TIER = ["À découvrir", "Bronze", "Argent", "Or"];
-  const FACET: Record<string, string> = { carte: "La placer", numero: "Son numéro", prefecture: fr ? "Sa préfecture" : "Son chef-lieu" };
-  if (fr) FACET.carte = "Le placer";
+  const FACET: Record<string, string> = { carte: "La placer", numero: "Son numéro", prefecture: fr ? "Sa préfecture" : A.id === "monde" ? "Sa capitale" : "Son chef-lieu", drapeau: "Son drapeau" };
+  if (!A.feminin) FACET.carte = "Le placer";
   const fmt = (t: number) => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   const starred = (c: string, f: Facet) => !!know[c]?.[f]?.s;
   /** Page de référence du département (générée par scripts/seo.ts, même adresse). */
   const slug = (n: string) => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const depPage = (c: string) => { const d = DEPARTEMENTS.find((x) => x.code === c);
     // Région : sa page (/france/regions/…).
-    if (!d) { const r = ITEM.get(c); return r ? `/france/regions/${slug(r.nom)}` : null; } return `/france/departements/${c.toLowerCase()}-${d.nom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`; };
+    if (!d) { const r = ITEM.get(c); return r && c.startsWith("R") ? `/france/regions/${slug(r.nom)}` : null; } return `/france/departements/${c.toLowerCase()}-${d.nom.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`; };
 
   // Onglet Carte
   const fills = $derived(knowFills(know, now, A.id));
@@ -91,6 +91,8 @@
       <div><span class="k">Ton album {fr ? "" : `des ${A.des} `}· {counts[1]} bronze · {counts[2]} argent · {counts[3]} or</span><div class="riso big" data-t="{owned} / {A.items.length}">{owned} / {A.items.length}</div></div>
       {#if fr}
         <p>Chaque département a 3 étoiles : le placer, son numéro, sa préfecture, gagnées en répondant juste sans aide. <b>Bronze</b> avec les 3, <b>argent</b> quand tu les as retenues sur plusieurs jours, <b>or</b> avec en plus ses sous-préfectures et ses voisins. Touche un département pour voir sa fiche.</p>
+      {:else if A.id === "monde"}
+        <p>Chaque pays a 3 étoiles : le placer, son drapeau et sa capitale, gagnées en répondant juste sans aide. <b>Bronze</b> avec les 3, <b>argent</b> quand tu les as retenues sur plusieurs jours, <b>or</b> avec en plus ses pays voisins (pour ceux qui en ont). Touche un pays pour voir sa fiche.</p>
       {:else}
         <p>Chaque région a 2 étoiles : la placer et son chef-lieu, gagnées en répondant juste sans aide. <b>Bronze</b> avec les 2, <b>argent</b> quand tu les as retenues sur plusieurs jours, <b>or</b> avec en plus ses départements et ses régions voisines. Touche une région pour voir sa fiche.</p>
       {/if}
@@ -102,7 +104,7 @@
           {#each r.deps as c (c)}
             {@const tier = medalOf(know, c)}
             {@const s = starsOf(know, c)}
-            <button class="st" class:miss={!tier} class:dull={tier > 0 && tarnished(know, c, now)} onclick={() => (open = c)} aria-label="Fiche {fr ? 'du département' : 'de la région'} {c}">
+            <button class="st" class:miss={!tier} class:dull={tier > 0 && tarnished(know, c, now)} onclick={() => (open = c)} aria-label="Fiche {fr ? 'du département' : A.id === 'monde' ? 'du pays' : 'de la région'} {c}">
               <Vignette code={c} {tier} />
               {#if tier}<em class="tr t{tier}">{TIER[tier]}{tarnished(know, c, now) ? " · à réviser" : ""}</em>
               {:else}<span class="mini" aria-label="{s} étoile{s > 1 ? 's' : ''} sur {NB}">{#each BASE_FACETS as _, k (k)}<i class:on={k < s}>★</i>{/each}</span>{/if}
@@ -120,7 +122,7 @@
         </div>
       </section>
       <section class="mapcol">
-        <Map atlas={A.id} {fills} {marks} onpick={(c) => (focus = c)} label="Carte de ta collection : touche {fr ? 'un département' : 'une région'} pour voir sa fiche" />
+        <Map atlas={A.id} {fills} {marks} onpick={(c) => (focus = c)} label="Carte de ta collection : touche {fr ? 'un département' : A.id === 'monde' ? 'un pays' : 'une région'} pour voir sa fiche" />
       </section>
     </div>
   {:else}

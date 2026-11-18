@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { sameName, sameCode, matchSet, normalize } from "./answer.ts";
 import { makeGame, grade, fieldsFor } from "./round.ts";
-import { dep, DEPARTEMENTS, REGION_ITEMS } from "./data.ts";
+import { dep, DEPARTEMENTS, REGION_ITEMS, WORLD_ITEMS } from "./data.ts";
 import { composeSeance } from "./seance.ts";
 import { medalOf, taFrance } from "./knowledge.ts";
 import { review, pickSession } from "./srs.ts";
@@ -172,4 +172,30 @@ test("atlas Régions : 18 régions, codes à part, séances et questions sans nu
   assert.equal(medalOf(know, "R53"), 2, "argent avec 2 étoiles retenues ; l'or demande l'expert");
   assert.equal(taFrance(know, "regions"), Math.floor((2 / 36) * 100));
   assert.equal(taFrance(know), 0, "les régions ne comptent pas dans les départements");
+});
+
+test("atlas Monde : 195 pays, capitales, drapeaux toujours en propositions", () => {
+  assert.equal(WORLD_ITEMS.length, 195);
+  const fr = dep("WFRA");
+  assert.equal(fr.prefecture, "Paris");
+  assert.ok(fr.limitrophes.includes("WESP") && fr.limitrophes.includes("WBRA"), "la Guyane touche le Brésil");
+  assert.equal(dep("WJPN").limitrophes.length, 0);
+  assert.equal(dep("WCOD").region, "WAF");
+  // Autres noms et autres capitales acceptés.
+  const q = { index: 0, code: "WCOD", hint: "carte" as const, fields: ["nom" as const], durationMs: 0 };
+  assert.equal(grade(q, { nom: "RDC", elapsedMs: 0 }).accuracy, 1);
+  const qb = { index: 0, code: "WBOL", hint: "nom" as const, fields: ["prefecture" as const], durationMs: 0 };
+  assert.equal(grade(qb, { prefecture: "la paz", elapsedMs: 0 }).accuracy, 1);
+  // Séance : l'Europe d'abord, des pays seulement.
+  const s = composeSeance({}, { now: Date.now(), seed: 3, start: "29", atlas: "monde" });
+  assert.equal(s.region?.code, "WEU");
+  assert.ok(s.plan.every((it) => it.code.startsWith("W")));
+  // Au clavier, le drapeau a quand même ses 4 propositions (des codes de pays, dont le bon).
+  const qs = makeGame({ seed: 4, level: "normal", input: "libre", atlas: "monde", rounds: 40 });
+  const withFlag = qs.filter((x) => x.fields.includes("drapeau"));
+  assert.ok(withFlag.length > 0);
+  for (const x of withFlag) { assert.equal(x.choices?.drapeau?.length, 4); assert.ok(x.choices!.drapeau!.includes(x.code)); }
+  assert.ok(qs.some((x) => x.hint === "drapeau"));
+  const g = withFlag[0];
+  assert.equal(grade({ ...g, fields: ["drapeau"] }, { drapeau: g.code, elapsedMs: 0 }).accuracy, 1);
 });

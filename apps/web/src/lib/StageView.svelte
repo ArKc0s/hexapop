@@ -1,7 +1,8 @@
 <script lang="ts">
   // Grand écran (streamer, soirée projetée, joueurs éliminés) : ne révèle rien avant la fin du tour.
   import { onDestroy } from "svelte";
-  import { dep } from "@hexa/game";
+  import { atlasOf, dep } from "@hexa/game";
+  import Flag from "./ui/Flag.svelte";
   import Map, { type Mark } from "./Map.svelte";
   import Fiche from "./Fiche.svelte";
   import { live } from "./socket.svelte.ts";
@@ -49,7 +50,8 @@
         {#if q.hint === "numero"}<span class="riso num" data-t={q.code}>{q.code}</span>
         {:else if q.hint === "nom"}<span class="qname">{dep(q.code).nom}</span>
         {:else if q.hint === "prefecture"}<span class="qname">{dep(q.code).prefecture}</span>
-        {:else}<span class="qname">{q.code.startsWith("R") ? "Cette région ?" : "Ce département ?"}</span>{/if}
+        {:else if q.hint === "drapeau"}<Flag code={q.code} h={110} />
+        {:else}<span class="qname">{atlasOf(q.code).feminin ? "Cette" : "Ce"} {atlasOf(q.code).un} ?</span>{/if}
         {#if !s}<span class="timer tabnum">{remaining}</span>{/if}
       </div>
       {#if !s}

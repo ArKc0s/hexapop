@@ -5,6 +5,7 @@
   import { onDestroy, type Snippet } from "svelte";
   import Mascot from "./ui/Mascot.svelte";
   import Icon from "./ui/Icon.svelte";
+  import Flag from "./ui/Flag.svelte";
   import { sound } from "./sound.svelte.ts";
 
   interface Props {
@@ -37,7 +38,8 @@
   /** Le choix clavier / propositions n'a de sens que s'il y a autre chose que des sous-préfectures ou des voisins (toujours au clavier). */
   const canSwitch = $derived(q.fields.some((f) => f !== "sousPrefectures" && f !== "limitrophes"));
   const usesChoices = $derived(answerMode ? answerMode === "choix" : !!q.choices);
-  const choicesOf = (f: ChoiceField) => (usesChoices ? q.choices?.[f] : undefined);
+  // Le drapeau se choisit toujours parmi 4, même au clavier.
+  const choicesOf = (f: ChoiceField) => (usesChoices || f === "drapeau" ? q.choices?.[f] : undefined);
   const candidates = $derived(usesChoices && !result ? q.mapChoices : undefined);
   const timed = $derived(q.durationMs > 0);
 
@@ -65,12 +67,13 @@
   const nameOf = (x: { nom: string; code: string }) => (fr ? `${x.nom} (${x.code})` : x.nom);
   const le = $derived(A.feminin ? "la" : "le");
   const ce = $derived(A.feminin ? "cette" : "ce");
-  const target = $derived(q.hint === "numero" ? `le ${d.code}` : q.hint === "prefecture" ? `${le} ${A.un} de ${d.prefecture}` : d.nom);
+  const target = $derived(q.hint === "numero" ? `le ${d.code}` : q.hint === "prefecture" ? `${le} ${A.un} de ${d.prefecture}` : q.hint === "drapeau" ? "le pays de ce drapeau" : d.nom);
+  const monde = $derived(A.id === "monde");
   const has = (f: Field) => q.fields.includes(f);
 
   let sel = $state<string | null>(null);
   let near = $state<string[]>([]);
-  let text = $state<Record<ChoiceField, string>>({ nom: "", numero: "", prefecture: "" });
+  let text = $state<Record<ChoiceField, string>>({ nom: "", numero: "", prefecture: "", drapeau: "" });
   let sousPrefs = $state<string[]>([]);
   let spDraft = $state("");
   let submitted = $state(false);
@@ -139,6 +142,7 @@
     if (has("nom")) a.nom = text.nom;
     if (has("numero")) a.numero = text.numero;
     if (has("prefecture")) a.prefecture = text.prefecture;
+    if (has("drapeau")) a.drapeau = text.drapeau || undefined;
     if (has("sousPrefectures")) a.sousPrefectures = sousPrefs;
     if (has("limitrophes")) a.limitrophes = near;
     onsubmit(a);
@@ -184,8 +188,8 @@
 
   const fieldResult = (f: Field) => result?.fields.find((x) => x.field === f);
   const LABELS = $derived(A.labels);
-  const PLACEHOLDER = $derived<Record<ChoiceField, string>>({ nom: `Nom ${A.feminin ? "de la" : "du"} ${A.un}`, numero: "Numéro", prefecture: A.labels.prefecture });
-  const textFields = $derived((["nom", "numero", "prefecture"] as ChoiceField[]).filter(has));
+  const PLACEHOLDER = $derived<Record<ChoiceField, string>>({ nom: `Nom ${A.feminin ? "de la" : "du"} ${A.un}`, numero: "Numéro", prefecture: A.labels.prefecture, drapeau: "" });
+  const textFields = $derived((["nom", "numero", "prefecture", "drapeau"] as ChoiceField[]).filter(has));
 
   // Mobile + 4 propositions : une question à la fois, pour répondre sans faire défiler.
   let mobile = $state(typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches);
@@ -220,10 +224,13 @@
   function expectedLabel(f: Field, v: string | string[]) {
     if (f === "limitrophes" && Array.isArray(v)) return v.map((c) => nameOf(dep(c))).join(", ");
     if (f === "carte") return nameOf(d);
+    if (f === "drapeau") return `Celui ${A.feminin ? "de la" : "du"} ${A.un} : ${d.nom}`;
     return Array.isArray(v) ? (v.length ? v.join(", ") : "aucune") : v;
   }
   const coarse = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-  const mapHelp = $derived(result ? "" : mapTarget !== "carte" ? "" : sel ? `Placé ! Tu peux changer en ${coarse ? "touchant" : "cliquant"} ${A.feminin ? "une autre" : "un autre"} ${A.un}.` : !fr ? `${coarse ? "Touche" : "Clique"} la région sur la carte.` : coarse ? "Touche la région, puis le département. Pince pour zoomer." : "Clique le département sur la carte.");
+  /** Comment toucher la bonne chose sur la carte, selon l'atlas. */
+  const howTo = $derived(monde ? (coarse ? "Touche le continent, puis le pays. Pince pour zoomer" : "Clique le pays (molette pour zoomer)") : !fr ? `${coarse ? "Touche" : "Clique"} la région` : coarse ? "Touche la région, puis le département" : "Clique le département");
+  const mapHelp = $derived(result ? "" : mapTarget !== "carte" ? "" : sel ? `Placé ! Tu peux changer en ${coarse ? "touchant" : "cliquant"} ${A.feminin ? "une autre" : "un autre"} ${A.un}.` : `${howTo}.`);
 </script>
 
 
@@ -243,7 +250,7 @@
             <span>{nudge ? "Tu n'as pas placé" : "Place"} <b>{target}</b>{nudge ? " !" : " sur la carte"}</span>
           </div>
         {/key}
-        <span class="help sub">{candidates ? `Choisis parmi les 4 ${A.des} surlignés${A.feminin ? "es" : ""}` : !fr ? `${coarse ? "Touche" : "Clique"} la région` : coarse ? "Touche la région, puis le département" : "Clique le département"}</span>
+        <span class="help sub">{candidates ? `Choisis parmi les 4 ${A.des} surlignés${A.feminin ? "es" : ""}` : howTo}</span>
       {:else if legend.length}
         <ul class="legend" aria-label="Légende de la carte">
           {#each legend as l (l.cls)}<li><i class="sw {l.cls}"></i>{l.text}</li>{/each}
@@ -252,7 +259,8 @@
         <span class="help">{mapHelp}</span>
       {/if}
     </div>
-    <Map atlas={A.id} {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} {candidates} />
+    <Map atlas={A.id} {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} {candidates}
+      zoomTo={result && monde ? [q.code, ...(sel && sel !== q.code ? [sel] : []), ...(has("limitrophes") ? d.limitrophes : [])] : undefined} />
   </div>
 
   <section class="panel">
@@ -271,8 +279,11 @@
         <span class="kicker">{rev}Le département numéro</span>
         <span class="riso bignum" data-t={d.code}>{d.code}</span>
       {:else if q.hint === "prefecture"}
-        <span class="kicker">{rev}{fr ? "Le département de" : "La région dont le chef-lieu est"}</span>
+        <span class="kicker">{rev}{fr ? "Le département de" : monde ? "Le pays dont la capitale est" : "La région dont le chef-lieu est"}</span>
         <h2 class="qname">{d.prefecture}</h2>
+      {:else if q.hint === "drapeau"}
+        <span class="kicker">{rev}Le pays de ce drapeau</span>
+        <div class="bigflag"><Flag code={q.code} h={92} label="Drapeau à reconnaître" /></div>
       {:else if q.hint === "nom"}
         <span class="kicker">{q.tag === "new" ? "Nouveau · devine !" : q.tag === "expert" ? "Expert · tu les connais ?" : q.tag === "home" ? "Chez toi" : q.tag === "review" ? "À revoir" : "Trouve"}</span>
         <h2 class="qname">{d.nom}</h2>
@@ -295,7 +306,7 @@
         <div class="steps" role="tablist" aria-label="Questions">
           {#each choiceFields as f, k (f)}
             <button role="tab" aria-selected={step === k} class="st" class:on={step === k} class:done={!!text[f]} onclick={() => (step = k)}>
-              <span>{LABELS[f]}</span><b>{text[f] || "…"}</b>
+              <span>{LABELS[f]}</span>{#if f === "drapeau" && text[f]}<Flag code={text[f]} h={18} />{:else}<b>{text[f] || "…"}</b>{/if}
             </button>
           {/each}
         </div>
@@ -305,11 +316,12 @@
         <div class="f" class:ok={r?.score === 1} class:ko={r && r.score < 1} class:hidden={stepped && !!choicesOf(f) && choiceFields.indexOf(f) !== step}>
           <label class="label" class:hidden={stepped && !!choicesOf(f)} for="in-{f}">{LABELS[f]}</label>
           {#if choicesOf(f)}
-            <div class="choices" role="radiogroup" aria-label={LABELS[f]}>
-              {#each choicesOf(f)! as opt (opt)}
+            <div class="choices" class:flags={f === "drapeau"} role="radiogroup" aria-label={LABELS[f]}>
+              {#each choicesOf(f)! as opt, k (opt)}
                 <button role="radio" aria-checked={text[f] === opt} class="opt" class:on={text[f] === opt}
                   class:right={r && opt === r.expected && text[f] === opt} class:fix={r && opt === r.expected && text[f] !== opt} class:wrong={r && text[f] === opt && opt !== r.expected}
-                  disabled={!!result || submitted} onclick={() => choose(f, opt)}>{opt}</button>
+                  aria-label={f === "drapeau" ? `Drapeau ${k + 1}` : undefined}
+                  disabled={!!result || submitted} onclick={() => choose(f, opt)}>{#if f === "drapeau"}<Flag code={opt} h={54} />{#if result}<small>{dep(opt).nom}</small>{/if}{:else}{opt}{/if}</button>
               {/each}
             </div>
           {:else}
@@ -317,7 +329,7 @@
               inputmode={f === "numero" ? "text" : undefined}
               placeholder={PLACEHOLDER[f]} bind:value={text[f]} disabled={!!result || submitted} onkeydown={enter} use:focusFirst={i === 0} />
           {/if}
-          {#if r && r.score < 1}<span class="exp">{expectedLabel(f, r.expected)}</span>{/if}
+          {#if r && r.score < 1 && f !== "drapeau"}<span class="exp">{expectedLabel(f, r.expected)}</span>{/if}
         </div>
       {/each}
 
@@ -382,6 +394,8 @@
                 <b class="ra">{#each d.sousPrefectures as x, k (x)}{k ? ", " : ""}<span class:hit={!spCheck.missed.includes(x)}>{x}</span>{/each}{#each [...spCheck.wrong] as w (w)}, <s>{w}</s>{/each}</b>
               {:else if f.field === "limitrophes" && result && !good}
                 <b class="ra">{#each d.limitrophes as c, k (c)}{k ? ", " : ""}<span class:hit={near.includes(c)}>{dep(c).nom}</span>{/each}{#each near.filter((c) => !d.limitrophes.includes(c)) as w (w)}, <s>{dep(w).nom}</s>{/each}</b>
+              {:else if f.field === "drapeau"}
+                <b class="ra rflag"><Flag code={q.code} h={20} />{d.nom}</b>
               {:else}
                 <b class="ra">{expectedLabel(f.field, f.expected)}</b>
               {/if}
@@ -445,6 +459,11 @@
   .f.ko .state { color: var(--fix-d); }
   .exp::before { content: "Réponse : "; color: var(--soft); font-weight: 600; }
   .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  /* Drapeaux : quatre images, nommées à la correction */
+  .choices.flags .opt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 6px; }
+  .choices.flags .opt small { font-size: 13px; font-weight: 800; line-height: 1.1; text-align: center; }
+  .bigflag { margin: 6px 0 2px; }
+  .rflag { display: inline-flex; align-items: center; gap: 6px; }
   .opt { font-weight: 700; font-size: 16px; line-height: 1.15; background: #f6f2ea; border: 0; border-radius: 14px; padding: 12px; text-align: left; cursor: pointer; box-shadow: 0 3px 0 #e2dacb; transition: transform .08s, background .1s; }
   @media (hover: hover) { .opt:hover:not(:disabled):not(.on) { background: #fff4c2; } }
   .opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #e2dacb; }

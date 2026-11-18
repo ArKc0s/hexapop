@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ATLASES, ATLAS_IDS, LEVELS, LEVEL_NAMES } from "@hexa/game";
+  import { ATLASES, LEVELS, LEVEL_NAMES } from "@hexa/game";
   import { world } from "../lib/world.svelte.ts";
   import { REGIONS, type RoomSettings } from "@hexa/game";
   import { live } from "../lib/socket.svelte.ts";
@@ -112,7 +112,7 @@
       <section class="card rules">
         <h2 class="k">Règles{isHost ? "" : " · choisies par l'hôte"}</h2>
         <div class="rule"><span>Atlas</span><div class="seg">
-          {#each ATLAS_IDS as a (a)}<button class:on={roomAtlas.id === a} disabled={!isHost} onclick={() => set({ atlas: a, rounds: a === "france" ? 10 : Math.min(room.settings.rounds, ATLASES[a].items.length) })}>{ATLASES[a].nom}</button>{/each}</div></div>
+          {#each world.offered as a (a)}<button class:on={roomAtlas.id === a} disabled={!isHost} onclick={() => set({ atlas: a, rounds: a === "france" ? 10 : Math.min(room.settings.rounds, ATLASES[a].items.length) })}>{ATLASES[a].nom}</button>{/each}</div></div>
         <div class="rule"><span>Réponses</span><div class="seg">
           <button class:on={room.settings.input === "libre"} disabled={!isHost} onclick={() => set({ input: "libre" })}>Au clavier</button>
           <button class:on={room.settings.input === "choix"} disabled={!isHost} onclick={() => set({ input: "choix" })}>4 choix</button></div></div>

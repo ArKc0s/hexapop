@@ -8,7 +8,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "data": "node data/scripts/build.mjs"
+    "data": "node data/scripts/build.mjs",
+    "data:monde": "node data/scripts/build-monde.mjs"
   },
   "devDependencies": {
     "mapshaper": "^0.7.101",

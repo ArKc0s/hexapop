@@ -1,4 +1,5 @@
 import map from "@hexa/data/map.json";
+import monde from "@hexa/data/monde.json";
 import { DEPARTEMENTS } from "@hexa/game";
 
 export interface Box { x: number; y: number; w: number; h: number }
@@ -57,7 +58,19 @@ export interface Geo {
   outlines: string[];
   /** Traits fins en filigrane (les départements, sur la carte des régions). */
   inner: string[];
+  /** Cadre de la carte (défaut : celui de la France, avec l'outre-mer en bandeau sur mobile). */
+  viewBox?: [number, number, number, number];
+  /** Terres qui ne se jouent pas (Monde : Groenland, Sahara occidental, territoires…), en fond. */
+  fond?: string;
+  /** Monde : les pays trop petits pour le doigt ont un rond cliquable (centre). */
+  dots?: Record<string, [number, number]>;
 }
+const W = monde as unknown as { viewBox: [number, number, number, number]; paths: Record<string, string>; dots: Record<string, [number, number]>; fond: string };
+/** Un rond ajouté au tracé du pays : il se colore et se touche comme le pays. En polygone (16 côtés) et en coordonnées
+ *  absolues, pour que les calculs de cadre (zoom sur un continent) lisent des points de la carte. */
+const DOT_R = 3.6;
+const circle = ([x, y]: [number, number]) =>
+  "M" + Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2; return `${(x + DOT_R * Math.cos(a)).toFixed(1)},${(y + DOT_R * Math.sin(a)).toFixed(1)}`; }).join("L") + "Z";
 const REGIONS_OUTLINE = (map as unknown as { regions: Record<string, string> }).regions;
 /** Outre-mer : une région = un département, même encart. */
 const OM_REGION: Record<string, string> = { "971": "R01", "972": "R02", "973": "R03", "974": "R04", "976": "R06" };
@@ -72,6 +85,11 @@ const GEO: Record<AtlasId, Geo> = {
     insets: MAP.insets.map((b) => ({ ...b, code: OM_REGION[b.code] ?? b.code })),
     zoom: false, outlines: [],
     inner: DEPARTEMENTS.filter((d) => !d.outreMer).map((d) => MAP.paths[d.code]),
+  },
+  monde: {
+    atlas: "monde",
+    paths: Object.fromEntries(Object.entries(W.paths).map(([c, d]) => [c, W.dots[c] ? d + circle(W.dots[c]) : d])),
+    insets: [], zoom: false, outlines: [], inner: [], viewBox: W.viewBox, fond: W.fond, dots: W.dots,
   },
 };
 export const geoOf = (a: AtlasId): Geo => GEO[a];

@@ -6,10 +6,11 @@ import { ATLASES, atlasOf, type AtlasId } from "./atlas.ts";
 import type { Field, Hint, Level, RoundResult } from "./round.ts";
 import { INTERVALS, type Progress } from "./srs.ts";
 
-export type Facet = "carte" | "numero" | "prefecture" | "sousPrefectures" | "limitrophes";
+export type Facet = "carte" | "numero" | "prefecture" | "drapeau" | "sousPrefectures" | "limitrophes";
 export const BASE_FACETS: readonly Facet[] = ["carte", "numero", "prefecture"];
 export const EXPERT_FACETS: readonly Facet[] = ["sousPrefectures", "limitrophes"];
-export const FACETS: readonly Facet[] = [...BASE_FACETS, ...EXPERT_FACETS];
+/** Toutes les facettes, tous atlas confondus (le drapeau : Monde). */
+export const FACETS: readonly Facet[] = [...BASE_FACETS, "drapeau", ...EXPERT_FACETS];
 export const MAX_STARS = DEPARTEMENTS.length * BASE_FACETS.length; // 303
 /** Étoiles possibles dans un atlas (départements : 303 ; régions : 36). */
 export const maxStars = (a: AtlasId = "france") => ATLASES[a].items.length * ATLASES[a].base.length;

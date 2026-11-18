@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DEPARTEMENTS, REGIONS, REGION_ITEMS, playable, randomSeed, type Field, type GameConfig, type GameMode, type Hint, type InputMode } from "@hexa/game";
+  import { CONTINENTS, DEPARTEMENTS, REGIONS, REGION_ITEMS, WORLD_ITEMS, playable, randomSeed, type Field, type GameConfig, type GameMode, type Hint, type InputMode } from "@hexa/game";
   import { nav } from "../lib/nav.svelte.ts";
   import { world } from "../lib/world.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
@@ -13,12 +13,19 @@
   if (linkAtlas && world.id !== linkAtlas) profile.setAtlas(linkAtlas);
   /** Atlas Régions : ses propres indices, questions et zones (un atlas = un monde). */
   const R = world.id === "regions";
+  /** Atlas Monde : drapeaux et capitales, un continent à la fois ou le monde entier. */
+  const M = world.id === "monde";
   /** Révisions dues : la même séance que celle proposée sur l'accueil. */
   const due = previewSeance("revision").reviews;
 
   // ---------- options ----------
   type Zone = "france" | "region" | "om";
-  const GIVE: { id: Hint; label: string }[] = R ? [
+  const GIVE: { id: Hint; label: string }[] = M ? [
+    { id: "nom", label: "Le nom" },
+    { id: "carte", label: "La carte" },
+    { id: "drapeau", label: "Le drapeau" },
+    { id: "prefecture", label: "La capitale" },
+  ] : R ? [
     { id: "nom", label: "Le nom" },
     { id: "carte", label: "La carte" },
     { id: "prefecture", label: "Le chef-lieu" },
@@ -28,7 +35,13 @@
     { id: "numero", label: "Le numéro" },
     { id: "prefecture", label: "La préfecture" },
   ];
-  const ASK: { id: Field; label: string; expert?: boolean }[] = R ? [
+  const ASK: { id: Field; label: string; expert?: boolean }[] = M ? [
+    { id: "carte", label: "Le placer" },
+    { id: "nom", label: "Le nom" },
+    { id: "drapeau", label: "Le drapeau" },
+    { id: "prefecture", label: "La capitale" },
+    { id: "limitrophes", label: "Les pays voisins", expert: true },
+  ] : R ? [
     { id: "carte", label: "La placer" },
     { id: "nom", label: "Le nom" },
     { id: "prefecture", label: "Le chef-lieu" },
@@ -42,7 +55,13 @@
     { id: "sousPrefectures", label: "Les sous-préfectures", expert: true },
     { id: "limitrophes", label: "Les voisins", expert: true },
   ];
-  const PRESETS: { nom: string; desc: string; give: Hint[]; ask: Field[] }[] = R ? [
+  const PRESETS: { nom: string; desc: string; give: Hint[]; ask: Field[] }[] = M ? [
+    { nom: "Apprendre la carte", desc: "On te donne le nom, tu le places", give: ["nom"], ask: ["carte"] },
+    { nom: "Les drapeaux", desc: "Un drapeau → le pays", give: ["drapeau"], ask: ["nom"] },
+    { nom: "Les capitales", desc: "Nom ou carte → capitale", give: ["nom", "carte"], ask: ["prefecture"] },
+    { nom: "Fiche complète", desc: "Carte, drapeau et capitale à la fois", give: ["nom", "carte", "drapeau"], ask: ["carte", "nom", "drapeau", "prefecture"] },
+    { nom: "Expert", desc: "Les pays voisins", give: ["nom"], ask: ["limitrophes"] },
+  ] : R ? [
     { nom: "Apprendre la carte", desc: "On te donne le nom, tu la places", give: ["nom"], ask: ["carte"] },
     { nom: "Les chefs-lieux", desc: "Nom ou carte → chef-lieu", give: ["nom", "carte"], ask: ["prefecture"] },
     { nom: "Fiche complète", desc: "Tout à la fois, le « à moitié bon » compte", give: ["nom", "carte"], ask: ["carte", "nom", "prefecture"] },
@@ -54,10 +73,11 @@
     { nom: "Fiche complète", desc: "Tout à la fois, le « à moitié bon » compte", give: ["nom", "numero", "carte"], ask: ["carte", "nom", "numero", "prefecture"] },
     { nom: "Expert", desc: "Sous-préfectures et voisins", give: ["nom", "carte"], ask: ["sousPrefectures", "limitrophes"] },
   ];
-  const METRO_REGIONS = REGIONS.filter((r) => DEPARTEMENTS.some((d) => d.region === r.code && !d.outreMer));
+  // Zones « une région » : les régions de métropole, ou les continents dans le Monde.
+  const METRO_REGIONS = M ? [...CONTINENTS] : REGIONS.filter((r) => DEPARTEMENTS.some((d) => d.region === r.code && !d.outreMer));
 
   // ---------- réglages (mémorisés) ----------
-  const KEY = R ? "hexa.training.regions" : "hexa.training";
+  const KEY = M ? "hexa.training.monde" : R ? "hexa.training.regions" : "hexa.training";
   interface Settings { zone: Zone; region: string; give: Hint[]; ask: Field[]; length: number | "all"; input: InputMode }
   const DEFAULTS: Settings = { zone: "france", region: METRO_REGIONS[0].code, give: ["nom"], ask: ["carte"], length: 10, input: "choix" };
   function load(): Settings {
@@ -65,7 +85,7 @@
       const s = JSON.parse(localStorage.getItem(KEY) ?? "null") as Partial<Settings> | null;
       if (!s) return DEFAULTS;
       return {
-        zone: s.zone === "region" || s.zone === "om" ? s.zone : "france",
+        zone: s.zone === "region" || (s.zone === "om" && !M) ? s.zone : "france",
         region: METRO_REGIONS.some((r) => r.code === s.region) ? s.region! : DEFAULTS.region,
         give: (s.give ?? []).filter((g) => GIVE.some((x) => x.id === g)),
         ask: (s.ask ?? []).filter((a) => ASK.some((x) => x.id === a)),
@@ -77,7 +97,7 @@
   const init = load();
   // Arrivée depuis une page de quiz (hexapop.app/quiz/…) : le raccourci correspondant, sur toute la France.
   // svelte-ignore state_referenced_locally
-  const fromLink = (R ? { "regions-carte": 0, "regions-chefs-lieux": 1, "regions-fiche": 2, "regions-expert": 3 } : { carte: 0, numeros: 1, prefectures: 2, fiche: 3, expert: 4 } as Record<string, number>)[linkPreset ?? ""];
+  const fromLink = (M ? ({} as Record<string, number>) : R ? { "regions-carte": 0, "regions-chefs-lieux": 1, "regions-fiche": 2, "regions-expert": 3 } : { carte: 0, numeros: 1, prefectures: 2, fiche: 3, expert: 4 } as Record<string, number>)[linkPreset ?? ""];
   if (fromLink !== undefined) { init.give = [...PRESETS[fromLink].give]; init.ask = [...PRESETS[fromLink].ask]; init.zone = "france"; history.replaceState(null, "", location.pathname + "#entrainement"); }
   let zone = $state<Zone>(init.zone);
   let region = $state(init.region);
@@ -94,7 +114,8 @@
   // ---------- dérivés ----------
   const ITEMS = R ? REGION_ITEMS : DEPARTEMENTS;
   const pool = $derived(
-    R ? ITEMS.filter((d) => (zone === "om" ? d.outreMer : zone === "region" ? !d.outreMer : true)).map((d) => d.code)
+    M ? WORLD_ITEMS.filter((d) => zone !== "region" || d.region === region).map((d) => d.code)
+    : R ? ITEMS.filter((d) => (zone === "om" ? d.outreMer : zone === "region" ? !d.outreMer : true)).map((d) => d.code)
     : zone === "om" ? DEPARTEMENTS.filter((d) => d.outreMer).map((d) => d.code)
     : zone === "region" ? DEPARTEMENTS.filter((d) => d.region === region).map((d) => d.code)
     : DEPARTEMENTS.map((d) => d.code),
@@ -122,8 +143,9 @@
       seed: randomSeed(), atlas: world.id, level: expert ? "expert" : "normal", input,
       codes: pool, rounds: count, hints: [...give], ask: [...ask], durationMs: 0, switchable: true,
     };
-    const mode: GameMode = !R && zone === "france" && count >= 101 ? "marathon" : !R && zone === "region" ? "region" : "eclair";
-    const where = R ? `Régions${zone === "region" ? " · métropole" : zone === "om" ? " · outre-mer" : ""}` : zone === "region" ? REGIONS.find((r) => r.code === region)!.nom : zone === "om" ? "Outre-mer" : "France";
+    const fr = !R && !M;
+    const mode: GameMode = fr && zone === "france" && count >= 101 ? "marathon" : fr && zone === "region" ? "region" : "eclair";
+    const where = M ? (zone === "region" ? METRO_REGIONS.find((r) => r.code === region)!.nom : "Monde") : R ? `Régions${zone === "region" ? " · métropole" : zone === "om" ? " · outre-mer" : ""}` : zone === "region" ? REGIONS.find((r) => r.code === region)!.nom : zone === "om" ? "Outre-mer" : "France";
     nav.go({ name: "play", mode, config, title: preset ? `${preset.nom} · ${where}` : `Entraînement · ${where}`, learn: true });
   }
 </script>
@@ -132,12 +154,12 @@
   <button class="back" onclick={() => nav.go({ name: "home" })}>← Accueil</button>
   <div class="head">
     <Mascot mood="think" size={58} />
-    <div><h1 class="title">Entraînement{R ? " · Régions" : ""}</h1><p>Choisis exactement ce que tu veux réviser. Sans chrono.</p></div>
+    <div><h1 class="title">Entraînement{R || M ? ` · ${world.atlas.nom}` : ""}</h1><p>Choisis exactement ce que tu veux réviser. Sans chrono.</p></div>
   </div>
 
   {#if due}
     <button class="btn yellow revise" onclick={() => startSeance("revision")}>
-      <b>Réviser {due} {due > 1 ? world.atlas.des : world.atlas.un}</b><small>{R ? "Celles dont une étoile est à revoir." : "Ceux dont une étoile est à revoir, partout en France."}</small>
+      <b>Réviser {due} {due > 1 ? world.atlas.des : world.atlas.un}</b><small>{R ? "Celles dont une étoile est à revoir." : M ? "Ceux dont une étoile est à revoir, partout dans le monde." : "Ceux dont une étoile est à revoir, partout en France."}</small>
     </button>
   {/if}
 
@@ -156,7 +178,7 @@
       <div class="chips">
         {#each GIVE as g (g.id)}<button class="chip" class:on={give.includes(g.id)} aria-pressed={give.includes(g.id)} onclick={() => (give = toggle(give, g.id))}>{g.label}</button>{/each}
       </div>
-      <p class="hint">« La carte » : {R ? "la région clignote" : "le département clignote"}, à toi de le reconnaître. Avec plusieurs choix, l'indice change d'une question à l'autre.</p>
+      <p class="hint">« La carte » : {R ? "la région clignote" : M ? "le pays clignote" : "le département clignote"}, à toi de le reconnaître. Avec plusieurs choix, l'indice change d'une question à l'autre.</p>
     </div>
     <div class="row">
       <h2 class="label">On te demande</h2>
@@ -175,9 +197,9 @@
     <div class="row">
       <h2 class="label">Zone</h2>
       <div class="seg">
-        <button class:on={zone === "france"} onclick={() => (zone = "france")}>{R ? "Toutes" : "France"}</button>
-        <button class:on={zone === "region"} onclick={() => (zone = "region")}>{R ? "Métropole" : "Une région"}</button>
-        <button class:on={zone === "om"} onclick={() => (zone = "om")}>Outre-mer</button>
+        <button class:on={zone === "france"} onclick={() => (zone = "france")}>{R ? "Toutes" : M ? "Le monde" : "France"}</button>
+        <button class:on={zone === "region"} onclick={() => (zone = "region")}>{R ? "Métropole" : M ? "Un continent" : "Une région"}</button>
+        {#if !M}<button class:on={zone === "om"} onclick={() => (zone = "om")}>Outre-mer</button>{/if}
       </div>
       {#if zone === "region" && !R}
         <div class="chips">
@@ -190,7 +212,7 @@
       <div class="seg">
         {#if pool.length > 10}<button class:on={length === 10} onclick={() => (length = 10)}>10</button>{/if}
         {#if pool.length > 20}<button class:on={length === 20} onclick={() => (length = 20)}>20</button>{/if}
-        <button class:on={length === "all" || pool.length <= (length as number)} onclick={() => (length = "all")}>{zone === "france" && !R ? "Les 101 · Marathon" : `Toute la zone (${pool.length})`}</button>
+        <button class:on={length === "all" || pool.length <= (length as number)} onclick={() => (length = "all")}>{zone === "france" && !R && !M ? "Les 101 · Marathon" : `Toute la zone (${pool.length})`}</button>
       </div>
     </div>
     <div class="row">
@@ -199,7 +221,7 @@
         <button class:on={input === "choix"} onclick={() => (input = "choix")}>Propositions</button>
         <button class:on={input === "libre"} onclick={() => (input = "libre")}>Au clavier</button>
       </div>
-      <p class="hint">Changeable à tout moment pendant la partie. En propositions, pour placer sur la carte, tu choisis parmi 4 {R ? "régions surlignées" : "départements surlignés"}.</p>
+      <p class="hint">Changeable à tout moment pendant la partie. En propositions, pour placer sur la carte, tu choisis parmi 4 {R ? "régions surlignées" : M ? "pays surlignés" : "départements surlignés"}.{M ? " Le drapeau se choisit toujours parmi 4." : ""}</p>
     </div>
   </section>
 

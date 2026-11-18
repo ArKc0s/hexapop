@@ -1,7 +1,8 @@
 <script lang="ts">
   // Premier lancement : « Qu'est-ce que tu veux apprendre ? » (docs/atlas.md), puis pour les départements
   // « Tu viens d'où ? », et la première séance tout de suite (docs/conception.md, section 6).
-  import { ATLASES, ATLAS_IDS, DEP, type AtlasId } from "@hexa/game";
+  import { ATLASES, DEP, type AtlasId } from "@hexa/game";
+  import { world } from "../world.svelte.ts";
   import Map from "../Map.svelte";
   import Mascot from "./Mascot.svelte";
   import AtlasPreview from "./AtlasPreview.svelte";
@@ -27,7 +28,7 @@
 </script>
 
 {#if !atlas}
-<main class="welcome first">
+<main class="welcome first" style="--n:{world.offered.length}">
   <header class="hero">
     <Mascot mood="happy" size={92} />
     <div>
@@ -37,11 +38,11 @@
   </header>
   <h2 class="ask">Par quoi tu commences ?</h2>
   <div class="atlases">
-    {#each ATLAS_IDS as a, i (a)}
+    {#each world.offered as a, i (a)}
       <button class="atlas" onclick={() => pickAtlas(a)}>
         <div class="pic"><AtlasPreview atlas={a} delay={i * 900} /></div>
         <div class="txt">
-          <b>{ATLASES[a].nom}{#if a === "regions"}<i class="new">Nouveau</i>{/if}</b>
+          <b>{ATLASES[a].nom}{#if ATLASES[a].preview}<i class="new essai">Essai</i>{:else if a === "regions"}<i class="new">Nouveau</i>{/if}</b>
           <span>{ATLASES[a].promesse}</span>
           <span class="play">Jouer <span aria-hidden="true">→</span></span>
         </div>
@@ -81,13 +82,13 @@
 
 <style>
   /* Premier écran : donner envie en un coup d'œil (une promesse, deux cartes qui jouent toutes seules). */
-  .first { justify-content: center; gap: 14px; }
+  .first { justify-content: center; gap: 14px; max-width: max(760px, calc(var(--n, 2) * 340px)); }
   .hero { display: flex; gap: 16px; align-items: center; }
   .hero h1 { font-size: clamp(27px, 6.4vw, 44px); font-weight: 900; line-height: 1.02; letter-spacing: -.01em; }
   .hero h1 em { font-style: normal; color: var(--pink); }
   .hero p { margin-top: 8px; font-weight: 600; font-size: 17px; color: var(--soft); max-width: 34em; }
   .ask { font-size: 20px; font-weight: 900; margin-top: 10px; }
-  .atlases { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .atlases { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 14px; }
   .atlas { border: 0; background: #fff; border-radius: 24px; padding: 14px 16px 16px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 5px 0 var(--line); font: inherit; color: inherit; transition: transform .08s, box-shadow .08s; }
   .atlas:hover { box-shadow: 0 5px 0 var(--line), inset 0 0 0 3px var(--yellow); }
   .atlas:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--line); }
@@ -98,6 +99,8 @@
   .new { font-style: normal; font-size: 13px; font-weight: 800; background: var(--yellow); border-radius: 999px; padding: 2px 9px; }
   .play { margin-top: auto; position: relative; top: 6px; align-self: flex-start; background: var(--blue); color: #fff; border-radius: 14px; padding: 9px 16px; box-shadow: 0 4px 0 var(--blue-d); font-weight: 800 !important; }
   .atlas:nth-child(2) .play { background: var(--pink); box-shadow: 0 4px 0 var(--pink-d); }
+  .atlas:nth-child(3) .play { background: var(--green); box-shadow: 0 4px 0 var(--green-d); }
+  .new.essai { background: var(--ink); color: #fff; }
   @media (max-width: 640px) {
     .hero { align-items: flex-start; gap: 12px; }
     .hero :global(.mascot) { width: 64px; height: 64px; }

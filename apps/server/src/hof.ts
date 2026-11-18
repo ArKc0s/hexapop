@@ -55,6 +55,7 @@ const LEGENDS = { france: "album-101", argent: "argent-101", or: "or-101" } as c
 const LEGENDS_OF: Record<AtlasId, Record<keyof typeof LEGENDS, string>> = {
   france: LEGENDS,
   regions: { france: "regions-18", argent: "regions-argent", or: "regions-or" },
+  monde: { france: "monde-195", argent: "monde-argent", or: "monde-or" },
 };
 type LegendRow = { name: string; home: string | null; at: number };
 const legendsCache = new Map<AtlasId, { at: number; data: Record<keyof typeof LEGENDS, LegendRow[]> }>();

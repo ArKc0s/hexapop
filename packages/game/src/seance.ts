@@ -4,6 +4,7 @@ import { ATLASES, inAtlas, R_METRO, type AtlasId } from "./atlas.ts";
 import { EXPERT_FACETS, FACETS, baseFacetsOf, expertFacetsOf, medalOf, type Facet, type Knowledge } from "./knowledge.ts";
 import { OUTRE_MER, TOUR, groupsOf, type TourRegion } from "./meta.ts";
 import { rng, shuffle } from "./random.ts";
+import { ITEM } from "./data.ts";
 import type { Field, Hint, PlanItem } from "./round.ts";
 
 export const SEANCE_SIZE = 12;
@@ -83,7 +84,9 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   const atlas = o.atlas ?? "france";
   const A = ATLASES[atlas];
   const BASE = A.base as Field[];
-  const full = (c: string): PlanItem => ({ code: c, hint: pick<Hint>(["nom", "carte"]), ask: [...A.full] });
+  // Indices d'une fiche complète : le nom ou la carte (Monde : ou le drapeau).
+  const FULL_HINTS: Hint[] = atlas === "monde" ? ["nom", "carte", "drapeau"] : ["nom", "carte"];
+  const full = (c: string): PlanItem => ({ code: c, hint: pick<Hint>(FULL_HINTS), ask: [...A.full] });
   const review = (x: { code: string; facets: Facet[] }): PlanItem => {
     const base = x.facets.filter((f) => A.base.includes(f));
     const exp = x.facets.filter((f) => EXPERT_FACETS.includes(f)) as Field[];
@@ -98,7 +101,7 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   const consolidate = (codes: string[], n: number) => {
     const known = codes.filter((c) => inAtlas(atlas, c) && !used.has(c) && A.base.some((f) => starred(k, c, f)))
       .sort((a, b) => medalOf(k, a) - medalOf(k, b) || (k[a].carte?.b ?? 0) - (k[b].carte?.b ?? 0));
-    for (const c of known.slice(0, Math.max(0, n))) add({ code: c, hint: pick<Hint>(atlas === "france" && starred(k, c, "numero") ? ["nom", "carte", "numero"] : ["nom", "carte"]), ask: [...A.full], tag: "review" });
+    for (const c of known.slice(0, Math.max(0, n))) add({ code: c, hint: pick<Hint>(atlas === "france" && starred(k, c, "numero") ? ["nom", "carte", "numero"] : atlas === "monde" && starred(k, c, "drapeau") ? FULL_HINTS : ["nom", "carte"]), ask: [...A.full], tag: "review" });
   };
 
   const due = dueOf(k, o.now, atlas);
@@ -146,6 +149,11 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     const deps = shuffle(region.deps.filter((c) => unfinished(k, c) && !used.has(c)), r);
     const started = deps.filter((c) => A.base.some((f) => seen(k, c, f)));
     let fresh = deps.filter((c) => !started.includes(c));
+    // Monde : les pays connus d'abord (la France avant le Vatican), avec un peu de hasard entre voisins de notoriété.
+    if (atlas === "monde") {
+      const key = new Map(fresh.map((c) => [c, (ITEM.get(c)?.rang ?? 100) + r() * 25]));
+      fresh = fresh.sort((a, b) => key.get(a)! - key.get(b)!);
+    }
     // Départements commencés : ce qui reste à trouver, ou la fiche complète si tout a été vu.
     const steps: PlanItem[] = [];
     for (const c of started) {

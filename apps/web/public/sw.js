@@ -57,7 +57,8 @@ self.addEventListener("fetch", (event) => {
     const hit = await caches.match(req);
     if (hit) return hit;
     const res = await fetch(req);
-    if (res.ok && url.pathname.startsWith("/assets/")) { const cache = await caches.open(SHELL); cache.put(req, res.clone()); }
+    // Drapeaux (atlas Monde) : gardés une fois vus, pour jouer hors ligne.
+    if (res.ok && (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/drapeaux/"))) { const cache = await caches.open(SHELL); cache.put(req, res.clone()); }
     return res;
   })());
 });

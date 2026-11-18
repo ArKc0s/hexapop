@@ -24,6 +24,7 @@
   // Un atlas = un monde (docs/atlas.md) : tout l'accueil parle de l'atlas affiché.
   const A = $derived(world.atlas);
   const fr = $derived(world.id === "france");
+  const monde = $derived(world.id === "monde");
   const plural = (n: number) => `${n} ${n > 1 ? A.des : A.un}`;
   const rank = $derived(titleFor(know, world.id).name);
   const streak = $derived(liveStreak(p, Date.now()));
@@ -69,9 +70,9 @@
     if (!p.stats.games) return "Salut ! Moi c'est Hexa. Ta première séance t'attend : 2 minutes, promis.";
     if (seance.kind === "revision") return `${plural(seance.reviews)} à revoir sur ta carte : on fait une séance de révisions ?`;
     if (streak > 0 && !playedToday) return `Une séance aujourd'hui pour garder ta série de ${streak} jour${streak > 1 ? "s" : ""} !`;
-    if (seance.expert && seance.region) return fr ? `Toute la région ${seance.region.nom} a ses étoiles : place à l'expert (sous-préfectures et voisins), pour l'or !` : `${seance.region.nom} : toutes les régions ont leurs étoiles. Place à l'expert (leurs départements et leurs voisines), pour l'or !`;
+    if (seance.expert && seance.region) return fr ? `Toute la région ${seance.region.nom} a ses étoiles : place à l'expert (sous-préfectures et voisins), pour l'or !` : monde ? `${seance.region.nom} : tous les pays ont leurs étoiles. Place à l'expert (leurs voisins), pour l'or !` : `${seance.region.nom} : toutes les régions ont leurs étoiles. Place à l'expert (leurs départements et leurs voisines), pour l'or !`;
     if (seance.discover.length) return `Au programme : ${names(seance.discover)}.`;
-    if (seance.region) return fr ? `On continue en ${seance.region.nom} ?` : `On continue les régions (${seance.region.nom.toLowerCase()}) ?`;
+    if (seance.region) return fr || monde ? `On continue en ${seance.region.nom} ?` : `On continue les régions (${seance.region.nom.toLowerCase()}) ?`;
     return fr ? `Ta France est à ${pct} %. On consolide ?` : `Tes ${A.des} sont à ${pct} %. On consolide ?`;
   });
 
@@ -117,7 +118,7 @@
     </div>
     <!-- Un atlas = un monde : on choisit ce qu'on apprend, tout l'accueil suit -->
     <div class="worlds" role="tablist" aria-label="Ce que tu apprends">
-      {#each ATLAS_IDS as a (a)}
+      {#each world.offered as a (a)}
         <button role="tab" aria-selected={world.id === a} class="world" class:on={world.id === a} onclick={() => { if (world.id !== a) { profile.setAtlas(a); sound.play("tap"); } }}>
           {ATLASES[a].nom}<span class="tabnum">{atlasPct[a]} %</span>
         </button>
@@ -157,7 +158,7 @@
       </div>
       <div class="row2">
         <button class="btn pink" disabled={!session.online} onclick={() => nav.go({ name: "daily" })}>Défi du jour<small>nouveau dans {countdown}</small></button>
-        <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>{fr ? "duel, équipe ou soirée" : "sur les départements"}</small></button>
+        <button class="btn blue" disabled={!session.online} onclick={() => nav.go({ name: "lobby" })}>Entre amis<small>{fr ? "duel, équipe ou soirée" : `sur les ${A.des}`}</small></button>
       </div>
       <button class="btn white train" onclick={() => nav.go({ name: "training" })}>
         <span><b>Entraînement</b><small>Choisis la zone et les questions, sans chrono</small></span>
@@ -205,8 +206,8 @@
         <button class="snd" onclick={() => sound.toggle()} aria-label={sound.on ? "Couper le son" : "Activer le son"}><Icon name={sound.on ? "sound" : "mute"} /></button>
       </div>
     </div>
-    <Map {fills} marks={p.focus && TOUR.has(p.focus) ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label={fr ? "Ta France : touche une région pour y faire ta prochaine séance" : "Tes régions : touche la métropole ou l'outre-mer pour y faire ta prochaine séance"} />
-    <p class="tip">{fr ? "Touche une région pour y faire ta prochaine séance." : "Touche la métropole ou l'outre-mer pour y faire ta prochaine séance."}</p>
+    <Map {fills} marks={p.focus && TOUR.has(p.focus) ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label={fr ? "Ta France : touche une région pour y faire ta prochaine séance" : monde ? "Tes pays : touche un continent pour y faire ta prochaine séance" : "Tes régions : touche la métropole ou l'outre-mer pour y faire ta prochaine séance"} />
+    <p class="tip">{fr ? "Touche une région pour y faire ta prochaine séance." : monde ? "Touche un continent pour y faire ta prochaine séance." : "Touche la métropole ou l'outre-mer pour y faire ta prochaine séance."}</p>
     <div class="legend">
       <span><i style="background:#eef3f8; box-shadow: inset 0 0 0 1px #c8d4e0"></i>découvert</span><span><i style="background:#b6d6f1"></i>1-2 étoiles</span><span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
       <span><i style="background:var(--tint-ko)"></i>à réviser</span>

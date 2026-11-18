@@ -3,7 +3,7 @@
 // mêmes pour tous ce jour-là : les réponses restent cachées derrière un avertissement tant que le défi est en cours.
 // Créé par le serveur à la fin du défi, à partir de ce qu'il a lui-même noté : on ne peut pas inventer un résultat.
 import { randomBytes } from "node:crypto";
-import { ATLASES, dep, LEVEL_NAMES, shortCode, type AtlasId, type Answer, type Field, type Level, type Question, type RoundResult } from "@hexa/game";
+import { ATLASES, dep, isDepartement, LEVEL_NAMES, shortCode, type AtlasId, type Answer, type Field, type Level, type Question, type RoundResult } from "@hexa/game";
 import { db, now } from "./db.ts";
 import { dailyNumber, dayOfKey, today } from "./daily.ts";
 
@@ -48,17 +48,30 @@ export function shareOf(day: string, who: string): string | null {
 
 // ---------- la page ----------
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-const LABEL: Record<Field, string> = { carte: "Sur la carte", nom: "Nom", numero: "Numéro", prefecture: "Préfecture", sousPrefectures: "Sous-préfectures", limitrophes: "Voisins" };
-const HINT: Record<Question["hint"], string> = { nom: "On lui donnait le nom", numero: "On lui donnait le numéro", prefecture: "On lui donnait la préfecture", carte: "Le département clignotait sur la carte" };
+const LABEL: Record<Field, string> = { carte: "Sur la carte", nom: "Nom", numero: "Numéro", prefecture: "Préfecture", sousPrefectures: "Sous-préfectures", limitrophes: "Voisins", drapeau: "Drapeau" };
+const HINT: Record<Question["hint"], string> = { nom: "On lui donnait le nom", numero: "On lui donnait le numéro", prefecture: "On lui donnait la préfecture", carte: "Il clignotait sur la carte", drapeau: "On lui donnait le drapeau" };
+/** « Finistère (29) » pour un département, le nom seul ailleurs (région, pays). */
+const named = (code: string) => { const d = dep(code); return isDepartement(code) ? `${d.nom} (${code})` : d.nom; };
 const MARK = ["✗", "~", "✓"];
 const fmtDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const value = (f: Field, v: string | string[]) => {
-  if (Array.isArray(v)) return v.length ? v.map((x) => (f === "limitrophes" ? (x.startsWith("R") ? dep(x)?.nom ?? x : `${dep(x)?.nom ?? x} (${x})`) : x)).join(", ") : "rien";
+  if (Array.isArray(v)) return v.length ? v.map((x) => (f === "limitrophes" ? named(x) : x)).join(", ") : "rien";
   if (!v) return "rien";
-  if (f === "carte") { const d = dep(v); return d ? (d.code.startsWith("R") ? d.nom : `${d.nom} (${d.code})`) : v; }
+  // Carte et drapeau : la réponse est un code ; le drapeau se dit « celui du Pérou ».
+  if (f === "carte") return named(v);
+  if (f === "drapeau") return `celui ${withDe(v)}`;
   return v;
 };
 
+/** « du Pérou », « de la France », « des Fidji », « d'Israël ». */
+function withDe(code: string): string {
+  const d = dep(code);
+  if (d.article === "le") return `du ${d.nom}`;
+  if (d.article === "les") return `des ${d.nom}`;
+  if (d.article === "la") return `de la ${d.nom}`;
+  if (d.article === "l'") return `de l'${d.nom}`;
+  return /^[aeiouyéèêâîôûœh]/i.test(d.nom) ? `d'${d.nom}` : `de ${d.nom}`;
+}
 const empty = (v: string | string[]) => (Array.isArray(v) ? v.length === 0 : !v);
 
 export function sharePage(id: string): string | null {
@@ -72,14 +85,15 @@ export function sharePage(id: string): string | null {
   const sec = Math.round(s.elapsedMs / 1000);
   const title = `${s.name} : ${s.points.toLocaleString("fr-FR")} points au défi Hexa n° ${s.number}`;
   const desc = `${ok} juste${ok > 1 ? "s" : ""}, ${mid} à moitié, ${ko} raté${ko > 1 ? "s" : ""} en ${LEVEL_NAMES[s.level]}${s.rank ? ` · ${s.rank}${s.rank === 1 ? "er" : "e"} sur ${s.players}` : ""}. À toi de faire mieux !`;
+  const A = s.atlas && s.atlas in ATLASES ? ATLASES[s.atlas as AtlasId] : null;
+  const labels = A?.labels ?? LABEL;
   const rounds = s.rounds.map((r, i) => {
-    const d = dep(r.code);
     const g = s.grid[i] ?? 0;
     const fields = r.fields.map((f) => {
       const good = f.score >= 0.999;
-      return `<li class="${good ? "ok" : "ko"}"><span class="l">${LABEL[f.field]}</span><span class="v">${good ? esc(value(f.field, f.given)) : `${empty(f.given) ? `<span class="none">pas répondu</span>` : `<s>${esc(value(f.field, f.given))}</s>`} → <b class="fix">${esc(value(f.field, f.expected))}</b>`}</span></li>`;
+      return `<li class="${good ? "ok" : "ko"}"><span class="l">${labels[f.field]}</span><span class="v">${good ? esc(value(f.field, f.given)) : `${empty(f.given) ? `<span class="none">pas répondu</span>` : `<s>${esc(value(f.field, f.given))}</s>`} → <b class="fix">${esc(value(f.field, f.expected))}</b>`}</span></li>`;
     }).join("");
-    return `<li class="round g${g}"><div class="rh"><i class="m">${MARK[g]}</i><b>${esc(d?.nom ?? r.code)}${r.code.startsWith("R") ? "" : ` (${esc(r.code)})`}</b><span>${HINT[r.hint]}</span></div><ul>${fields}</ul></li>`;
+    return `<li class="round g${g}"><div class="rh"><i class="m">${MARK[g]}</i><b>${esc(named(r.code))}</b><span>${HINT[r.hint]}</span></div><ul>${fields}</ul></li>`;
   }).join("");
   return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -126,11 +140,11 @@ summary small { display: block; color: var(--soft); font-weight: 600; }
     <div class="score">${s.points.toLocaleString("fr-FR")}</div>
     <span class="k">points · ${sec} s${s.rank ? ` · ${s.rank}${s.rank === 1 ? "er" : "e"} sur ${s.players}` : ""}</span>
     <div class="grid">${s.grid.map((g) => `<i class="g${g}">${MARK[g]}</i>`).join("")}</div>
-    <p class="legend">✓ juste · ~ à moitié · ✗ raté (une case par département)</p>
+    <p class="legend">✓ juste · ~ à moitié · ✗ raté (une case par ${A?.un ?? "département"})</p>
     <div class="go"><a class="btn" href="/#defi">${live ? "Fais mieux : joue le défi du jour" : "Joue le défi d'aujourd'hui"}</a><span class="legend">Gratuit, sans inscription, 2 minutes.</span></div>
   </div>
   <details${live ? "" : " open"}>
-    <summary>Voir ses réponses${live ? "<small>Attention : ça dévoile les départements du défi d'aujourd'hui. Joue d'abord !</small>" : ""}</summary>
+    <summary>Voir ses réponses${live ? `<small>Attention : ça dévoile les ${A?.des ?? "départements"} du défi d'aujourd'hui. Joue d'abord !</small>` : ""}</summary>
     <ol class="rounds">${rounds}</ol>
   </details>
 </main>

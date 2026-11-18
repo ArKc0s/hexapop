@@ -1,5 +1,6 @@
 import deps from "@hexa/data/departements.json" with { type: "json" };
 import regs from "@hexa/data/regions.json" with { type: "json" };
+import monde from "@hexa/data/monde.json" with { type: "json" };
 
 export interface Departement {
   code: string;
@@ -10,6 +11,14 @@ export interface Departement {
   sousPrefectures: string[];
   outreMer: boolean;
   limitrophes: string[];
+  /** Autres noms acceptés (« RDC », « Myanmar »). */
+  alias?: string[];
+  /** Autres réponses acceptées pour la préfecture / capitale (« La Paz » pour la Bolivie). */
+  prefAlias?: string[];
+  /** Pays : code ISO à deux lettres, pour son drapeau. */
+  iso2?: string;
+  /** Pays : notoriété (petit = connu de tous), pour découvrir la France avant le Vatican. */
+  rang?: number;
 }
 export interface Region { code: string; nom: string; chefLieu: string }
 
@@ -39,8 +48,21 @@ export const REGION_ITEMS: readonly Departement[] = REGIONS.map((r) => {
     outreMer: om, limitrophes: [...near].sort(),
   };
 });
-/** Tout ce qui s'apprend, tous atlas confondus (départements et régions), par code. */
-export const ITEM = new Map<string, Departement>([...DEPARTEMENTS, ...REGION_ITEMS].map((d) => [d.code, d]));
+// ---------- Atlas Monde : les 195 pays (data/scripts/build-monde.mjs), codes préfixés « W » (WFRA = France) ----------
+/** Continents : les groupes de séance du Monde. */
+export const CONTINENTS: readonly { code: string; nom: string }[] = [
+  { code: "WEU", nom: "Europe" }, { code: "WAF", nom: "Afrique" }, { code: "WAS", nom: "Asie" },
+  { code: "WNA", nom: "Amérique du Nord et centrale" }, { code: "WSA", nom: "Amérique du Sud" }, { code: "WOC", nom: "Océanie" },
+];
+interface Pays { code: string; iso2: string; rang: number; nom: string; article: string; capitale: string; continent: string; limitrophes: string[]; alias?: string[]; capAlias?: string[] }
+export const WORLD_ITEMS: readonly Departement[] = (monde.items as Pays[]).map((p) => ({
+  code: p.code, nom: p.nom, article: p.article, region: "W" + p.continent, prefecture: p.capitale, sousPrefectures: [],
+  outreMer: false, limitrophes: p.limitrophes, iso2: p.iso2, rang: p.rang,
+  ...(p.alias ? { alias: p.alias } : {}), ...(p.capAlias ? { prefAlias: p.capAlias } : {}),
+}));
+
+/** Tout ce qui s'apprend, tous atlas confondus (départements, régions, pays), par code. */
+export const ITEM = new Map<string, Departement>([...DEPARTEMENTS, ...REGION_ITEMS, ...WORLD_ITEMS].map((d) => [d.code, d]));
 
 /** Un département ou, pour les autres atlas, la chose à apprendre de ce code (même forme). */
 export function dep(code: string): Departement {

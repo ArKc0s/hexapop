@@ -26,7 +26,7 @@
   let teamNow = $state({ lives: TEAM_LIVES, accuracy: 0, score: 0, lostLife: false });
   $effect(() => { if (s?.team) teamNow = s.team; });
   $effect(() => { if (room?.phase === "countdown") teamNow = { lives: TEAM_LIVES, accuracy: 0, score: 0, lostLife: false }; });
-  const FIELD = { carte: "carte", nom: "nom", numero: "numéro", prefecture: "préfecture", sousPrefectures: "sous-préf.", limitrophes: "voisins" } as const;
+  const FIELD = { carte: "carte", nom: "nom", numero: "numéro", prefecture: "préfecture", sousPrefectures: "sous-préf.", limitrophes: "voisins", drapeau: "drapeau" } as const;
   const duel = $derived(!!room && room.players.length === 2 && room.players.every((p) => p.hp !== undefined));
   const duo = $derived(duel && room && me ? [me, room.players.find((p) => p.id !== live.you)!].filter(Boolean) : []);
 

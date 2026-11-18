@@ -1,4 +1,4 @@
-import { ATLASES } from "@hexa/game";
+import { ATLASES, isAtlas } from "@hexa/game";
 // Notifications (Web Push) : rappel du défi, série en danger, retour en douceur.
 // Opt-in par appareil, réglable par type, une notification par jour au maximum.
 import { life } from "./life.ts";
@@ -62,7 +62,7 @@ export interface Message { title: string; body: string; url: string; tag: string
 /** Quelle notification envoyer maintenant à cet appareil (ou aucune). Pure : testable. */
 export function decide(s: Pick<Sub, "last_played_day" | "streak" | "fading" | "comeback_stage" | "last_sent_day"> & { atlas?: string | null }, prefs: PushPrefs, day: string, hour: number): { msg: Message; stage?: number } | null {
   // Les mots de l'atlas du joueur (un atlas = un monde).
-  const A = s.atlas === "regions" ? ATLASES.regions : ATLASES.france;
+  const A = isAtlas(s.atlas) ? ATLASES[s.atlas] : ATLASES.france;
   const what = `${A.dailyRounds} ${A.des}`;
   if (s.last_sent_day === day) return null; // une par jour au maximum
   const played = s.last_played_day;

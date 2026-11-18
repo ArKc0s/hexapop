@@ -13,7 +13,7 @@
   import { nav, type PlayScreen } from "../lib/nav.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
-  import { ITEM, MEDAL_NAMES, atlasOf, shortCode, taFrance, titleFor, type Facet } from "@hexa/game";
+  import { ATLASES, ITEM, MEDAL_NAMES, atlasOf, shortCode, taFrance, titleFor, type Facet } from "@hexa/game";
   import SaveCard from "../lib/ui/SaveCard.svelte";
   import { signup } from "../lib/signup.svelte.ts";
   import PushCard from "../lib/ui/PushCard.svelte";
@@ -51,10 +51,11 @@
   const resAtlas = atlasOf(results[0]?.code ?? "75").id;
   const rank = titleFor(profile.data.know ?? {}, resAtlas).name;
   // Étoiles gagnées, regroupées par département (« Finistère : placer, numéro »).
-  const regionsAtlas = results.some((x) => atlasOf(x.code).id === "regions");
-  const FACET_LABEL: Record<Facet, string> = regionsAtlas
-    ? { carte: "placer", numero: "numéro", prefecture: "chef-lieu", sousPrefectures: "départements", limitrophes: "voisines" }
-    : { carte: "placer", numero: "numéro", prefecture: "préfecture", sousPrefectures: "sous-préfectures", limitrophes: "voisins" };
+  const FACET_LABEL: Record<Facet, string> = resAtlas === "regions"
+    ? { carte: "placer", numero: "numéro", prefecture: "chef-lieu", drapeau: "drapeau", sousPrefectures: "départements", limitrophes: "voisines" }
+    : resAtlas === "monde"
+    ? { carte: "placer", numero: "numéro", prefecture: "capitale", drapeau: "drapeau", sousPrefectures: "", limitrophes: "voisins" }
+    : { carte: "placer", numero: "numéro", prefecture: "préfecture", drapeau: "drapeau", sousPrefectures: "sous-préfectures", limitrophes: "voisins" };
   const starList = (() => {
     const by = new globalThis.Map<string, Facet[]>();
     for (const s of r.knowledge?.stars ?? []) by.set(s.code, [...(by.get(s.code) ?? []), s.facet]);
@@ -140,7 +141,7 @@
           <div class="pl">{#each r.knowledge.medals.slice(0, 8) as m (m.code)}<span class="md"><Vignette code={m.code} tier={m.medal} size="s" /><small>{MEDAL_NAMES[m.medal]}</small></span>{/each}{#if r.knowledge.medals.length > 8}<span class="more">+{r.knowledge.medals.length - 8}</span>{/if}</div></div></div>
       {/if}
       {#if newStars}
-        <div class="rw"><span class="ico star"><Icon name="star" size={28} /></span><div><span class="k">+{newStars} étoile{newStars > 1 ? "s" : ""} · {resAtlas === "france" ? "Ta France" : "Tes régions"} {pctNow} %</span>
+        <div class="rw"><span class="ico star"><Icon name="star" size={28} /></span><div><span class="k">+{newStars} étoile{newStars > 1 ? "s" : ""} · {resAtlas === "france" ? "Ta France" : `Tes ${ATLASES[resAtlas].des}`} {pctNow} %</span>
           <ul class="sl">{#each starList.slice(0, 6) as s (s.code)}<li><b>{ITEM.get(s.code)?.nom}</b> {s.facets.map((f) => FACET_LABEL[f]).join(", ")}</li>{/each}{#if starList.length > 6}<li class="more">et {starList.length - 6} autre{starList.length - 6 > 1 ? "s" : ""}</li>{/if}</ul></div></div>
       {:else if play.learn && r.knowledge}
         <div class="rw"><span class="ico star dim"><Icon name="star" size={28} /></span><div><span class="k">Pas de nouvelle étoile</span><small>Une étoile se gagne en répondant juste sans qu'on t'aide : au clavier, sur la carte, ou parmi des propositions qui se ressemblent. La première rencontre avec un département ne compte pas encore.</small></div></div>
