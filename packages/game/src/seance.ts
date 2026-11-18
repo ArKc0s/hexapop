@@ -96,9 +96,10 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   };
   /** Consolidation (fiche complète), les moins solides d'abord. Jamais deux inconnues : le numéro ne sert d'indice que s'il est connu. */
   const consolidate = (codes: string[], n: number) => {
-    const known = codes.filter((c) => DEP.has(c) && !used.has(c) && BASE_FACETS.some((f) => starred(k, c, f)))
+    // Les moins solides d'abord ; à égalité, au hasard (sinon l'ordre des numéros : « 89, 90, 91… »), puis mélangés.
+    const known = shuffle(codes.filter((c) => DEP.has(c) && !used.has(c) && BASE_FACETS.some((f) => starred(k, c, f))), r)
       .sort((a, b) => medalOf(k, a) - medalOf(k, b) || (k[a].carte?.b ?? 0) - (k[b].carte?.b ?? 0));
-    for (const c of known.slice(0, Math.max(0, n))) add({ code: c, hint: pick<Hint>(starred(k, c, "numero") ? ["nom", "carte", "numero"] : ["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"], tag: "review" });
+    for (const c of shuffle(known.slice(0, Math.max(0, n)), r)) add({ code: c, hint: pick<Hint>(starred(k, c, "numero") ? ["nom", "carte", "numero"] : ["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"], tag: "review" });
   };
 
   const due = dueOf(k, o.now, r);

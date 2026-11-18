@@ -159,3 +159,12 @@ test("séance de révisions : les départements à revoir ne sortent pas dans l'
   }
   assert.ok(orders.size > 1, "l'ordre change d'une séance à l'autre");
 });
+
+test("séance de consolidation : pas l'ordre des numéros non plus", () => {
+  const now = Date.now();
+  const card = { b: 3, d: now + 86_400_000 * 5, s: 1 as const, v: 1 as const }; // rien à réviser
+  const know = Object.fromEntries(DEPARTEMENTS.filter((d) => !d.outreMer).map((d) => [d.code, { carte: card, numero: card, prefecture: card }]));
+  const got = composeSeance(know, { now, seed: 3, start: "29" }).plan.map((p) => p.code);
+  assert.ok(got.length > 4);
+  assert.notEqual(got.join(","), [...got].sort().join(","), got.join(" "));
+});
