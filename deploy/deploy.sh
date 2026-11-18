@@ -59,6 +59,8 @@ docker update --restart=no "hexapop-$ACTIVE" >/dev/null
 docker update --restart=unless-stopped "hexapop-$NEW" >/dev/null
 docker image prune -f >/dev/null
 echo "En ligne : $NEW. $ACTIVE finit ses parties en cours puis s'arrête seule."
+# Bot Discord : reconstruit et relancé (quelques secondes hors ligne, sans effet sur le jeu).
+if grep -q '^DISCORD_TOKEN=.' .env; then docker compose up -d --build --no-deps bot >/dev/null 2>&1 && echo "Bot Discord relancé." || echo "Bot Discord : échec du lancement (voir docker logs hexapop-bot)."; fi
 REMOTE
 
 # Moteurs de recherche (IndexNow) : signale les pages du site qui ont changé, sans bloquer le déploiement.

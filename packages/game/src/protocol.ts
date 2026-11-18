@@ -23,6 +23,8 @@ export interface RoomSettings {
   levels: Record<string, Level>;
   /** Atlas joué (défi du jour : un par atlas) ; absent = départements. */
   atlas?: AtlasId;
+  /** Soirée publique (plateau, lancée par un admin) : annoncée sur le Discord d'Hexa, ouverte à tous. */
+  public?: boolean;
 }
 
 export interface PlayerInfo {

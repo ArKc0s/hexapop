@@ -16,6 +16,26 @@ COPY apps/web apps/web
 COPY BUILD_COMMI[T] ./
 RUN pnpm --filter @hexa/game test && pnpm --filter @hexa/web build
 
+# Bot Discord (image à part, cible « bot ») : défi du jour, question du jour, soirées publiques, nouveautés, GitHub.
+FROM node:24-slim AS bot
+WORKDIR /app
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/data/package.json packages/data/
+COPY packages/game/package.json packages/game/
+COPY apps/bot/package.json apps/bot/
+RUN pnpm install --prod --frozen-lockfile --filter @hexa/bot... && rm -rf /root/.cache /root/.local/share/pnpm
+COPY packages/data/src packages/data/src
+COPY packages/game/src packages/game/src
+COPY apps/bot/src apps/bot/src
+# Ce que le bot republie tel quel : la page Nouveautés du jeu et la feuille de route publique.
+COPY apps/web/src/lib/news.ts apps/web/src/lib/news.ts
+COPY docs/roadmap-publique.md docs/roadmap-publique.md
+ENV NODE_ENV=production BOT_STATE=/data/bot.json HEXA_URL=http://router:8787 PUBLIC_URL=https://hexapop.app
+USER node
+CMD ["node", "--max-old-space-size=96", "apps/bot/src/index.ts"]
+
+# Image du jeu (cible par défaut)
 FROM node:24-slim
 WORKDIR /app
 RUN corepack enable

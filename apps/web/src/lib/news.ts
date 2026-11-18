@@ -4,12 +4,20 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
-    id: 14, version: "1.16", date: "2026-11-18", title: "Nouveau : les régions",
+    id: 15, version: "1.16", date: "2026-11-18", title: "Nouveau : les régions",
     items: [
       "Un deuxième atlas : les 18 régions, leur chef-lieu, puis en expert leurs départements et leurs voisines.",
       "Choisis ce que tu apprends en haut de l'accueil : tout suit (Continuer, la carte, l'Album, l'Entraînement, le défi du jour).",
       "Chaque atlas a son défi du jour, son classement et son Hall of Fame. Entre amis, l'hôte choisit l'atlas, et chacun joue à son niveau.",
       "Ta série et les kilomètres d'Hexa restent communs. Et dans les régions, Hexa sort son bob d'explorateur.",
+    ],
+  },
+  {
+    id: 14, version: "1.15.2", date: "2026-11-18", title: "Hexa a son Discord",
+    items: [
+      "Rejoins le Discord d'Hexa (lien en bas de l'accueil) : le défi du jour chaque matin, le podium du soir et une question du jour à quatre choix.",
+      "Les soirées publiques y sont annoncées : rejoins la partie en un clic, ou regarde-la en spectateur et joue la suivante.",
+      "Une idée, un bug ? Ouvre un fil dans #idées ou #bugs : c'est suivi sur GitHub, et la réponse revient dans ton fil.",
     ],
   },
   {

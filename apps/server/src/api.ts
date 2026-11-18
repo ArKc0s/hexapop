@@ -8,7 +8,7 @@ import {
 } from "./auth.ts";
 import { resetMail, sendMail, verifyMail } from "./mail.ts";
 import { adoptGuest, dailyKey, dailyNumber, isGuestId, leaderboard, rankOf, redeemClaim, today } from "./daily.ts";
-import { stats } from "./rooms.ts";
+import { publicRooms, stats } from "./rooms.ts";
 import { life } from "./life.ts";
 import { hallOfFame, saveMarathon } from "./hof.ts";
 import { CLIENT_EVENTS, bump, report, visit } from "./stats.ts";
@@ -68,7 +68,7 @@ const clearCookie = `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secu
 const publicUser = (u: User) => {
   const links = (db.prepare("SELECT provider FROM oauth_identities WHERE user_id = ?").all(u.id) as { provider: string }[]).map((r) => r.provider);
   const pw = db.prepare("SELECT pass_hash FROM users WHERE id = ?").get(u.id) as { pass_hash: string } | undefined;
-  return { id: u.id, pseudo: u.pseudo, email: u.email, emailVerified: !!u.email_verified, home: u.home_dep, providers: links, hasPassword: !!pw?.pass_hash };
+  return { id: u.id, pseudo: u.pseudo, email: u.email, emailVerified: !!u.email_verified, home: u.home_dep, providers: links, hasPassword: !!pw?.pass_hash, ...(config.admins.has(u.id) ? { admin: true } : {}) };
 };
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
@@ -316,6 +316,9 @@ const routes: Record<string, Handler> = {
     json(res, 200, { ok: true });
   },
   "GET /api/auth/providers": (_req, res) => json(res, 200, { providers: enabledProviders() }),
+
+  /** Soirées publiques en cours (lues par le bot Discord pour les annoncer). */
+  "GET /api/rooms/public": (_req, res) => json(res, 200, { rooms: publicRooms() }),
 
   /** Réponses d'un résultat partagé : pendant le défi, seulement pour qui l'a déjà joué (voir share.ts). */
   "GET /api/share/answers": (req, res, user) => {

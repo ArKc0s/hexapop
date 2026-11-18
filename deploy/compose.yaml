@@ -47,3 +47,18 @@ services:
     environment:
       PUBLIC_URL: https://hexapop.app
       COLOR: green
+
+  # Bot Discord : un seul exemplaire, relancé à chaque mise en ligne (il reprend son état dans data/bot.json).
+  # Sans DISCORD_TOKEN dans .env, il s'arrête aussitôt (on-failure ne le relance pas).
+  bot:
+    image: hexapop-bot:latest
+    build: { context: ./src, target: bot }
+    container_name: hexapop-bot
+    restart: on-failure
+    env_file: .env
+    volumes:
+      - ./data:/data
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

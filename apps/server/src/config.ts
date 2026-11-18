@@ -9,6 +9,8 @@ export const config = {
   dailySecret: process.env.DAILY_SECRET ?? "dev-secret",
   /** « preprod » : bandeau dans le jeu (voir deploy/compose.preprod.yaml). */
   env: process.env.HEXA_ENV ?? "prod",
+  /** Comptes admins (identifiants séparés par des virgules) : soirées publiques annoncées sur Discord. */
+  admins: new Set((process.env.HEXA_ADMINS ?? "").split(",").map((x) => Number(x.trim())).filter((n) => n > 0)),
   /** Jeton de lecture des statistiques (Grafana) ; sans jeton, la route est fermée. */
   statsToken: process.env.STATS_TOKEN ?? "",
   smtp: {
