@@ -27,6 +27,8 @@ RUN pnpm install --prod --frozen-lockfile --filter @hexa/server... && rm -rf /ro
 COPY packages/data/src packages/data/src
 COPY packages/game/src packages/game/src
 COPY apps/server/src apps/server/src
+# Polices de l'image d'aperçu des résultats partagés (share.ts)
+COPY apps/server/fonts apps/server/fonts
 COPY --from=web /app/apps/web/dist /app/web
 RUN mkdir -p /data && chown node:node /data
 ENV NODE_ENV=production PORT=8787 DB_PATH=/data/hexa.db WEB_DIR=/app/web

@@ -187,6 +187,9 @@ importers:
       '@hexa/game':
         specifier: workspace:*
         version: link:../../packages/game
+      '@resvg/resvg-js':
+        specifier: ^2.6.2
+        version: 2.6.2
       nodemailer:
         specifier: ^10.5.0
         version: 10.5.0

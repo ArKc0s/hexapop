@@ -116,23 +116,11 @@
   async function share() {
     try {
       if (navigator.share && coarse) {
-        // Téléphone : l'image et le texte ensemble quand l'appareil le permet, sinon le texte seul.
-        const f = await cardFile().catch(() => null);
-        if (f && navigator.canShare?.({ files: [f] })) await navigator.share({ files: [f], text: shareText });
-        else await navigator.share({ text: shareText });
+        // Téléphone : le texte et le lien, comme une appli. L'image du score arrive par l'aperçu du lien (la page partagée
+        // a la sienne) : envoyer l'image avec le texte laissait Snapchat sur un écran noir (testé sur iPhone : seuls
+        // « texte + lien » ou « image seule » passent partout, et l'image seule perd le lien).
+        await navigator.share({ text: shareText });
       } else { await navigator.clipboard.writeText(shareText); copied = true; setTimeout(() => (copied = false), 2000); }
-    } catch { /* partage annulé */ }
-  }
-  /** Image seule (Snapchat, Instagram…) : leur partage iOS reste sur un écran vide quand on leur envoie l'image et le
-   *  texte ensemble. On envoie l'image seule, et le texte (avec le lien) part dans le presse-papier, à coller en légende. */
-  let imageOnly = $state(false);
-  const canShare = typeof navigator !== "undefined" && "share" in navigator;
-  async function shareImage() {
-    try {
-      await navigator.clipboard?.writeText(shareText).catch(() => {});
-      const f = await cardFile().catch(() => null);
-      if (f && navigator.canShare?.({ files: [f] })) { await navigator.share({ files: [f] }); imageOnly = true; setTimeout(() => (imageOnly = false), 4000); }
-      else await navigator.share({ text: shareText });
     } catch { /* partage annulé */ }
   }
   /** Ordinateur : télécharger l'image à poster. */
@@ -197,9 +185,7 @@
         {/if}
         {#if rewards}<p class="xp">+{rewards.xp} km</p>{/if}
         <button class="btn pink big" onclick={share}>{copied ? "Copié !" : coarse ? "Partager" : "Copier le résultat"}</button>
-        {#if !coarse}<button class="link" onclick={download}>Télécharger l'image à poster</button>
-        {:else if canShare}<button class="link" onclick={shareImage}>Image seule (Snapchat, Instagram)</button>
-          {#if imageOnly}<small class="hint">Le texte et le lien sont copiés : colle-les en légende.</small>{/if}{/if}
+        {#if !coarse}<button class="link" onclick={download}>Télécharger l'image à poster</button>{/if}
         {#if outcome?.share ?? info?.mine?.share ?? guestToday?.share}<a class="link" href="/d/{outcome?.share ?? info?.mine?.share ?? guestToday?.share}" target="_blank" rel="noopener">Voir ma page de résultat (ce que voient tes amis)</a>{/if}
       </div>
     </section>

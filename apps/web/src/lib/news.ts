@@ -17,7 +17,7 @@ export const NEWS: News[] = [
     items: [
       "Les réponses d'un ami à son défi du jour ne s'ouvrent qu'une fois que tu as joué le tien : plus moyen de se gâcher le défi (ni de tricher) en regardant avant.",
       "Après une inscription avec Google (ou un autre service), tu peux maintenant effacer complètement le prénom proposé pour taper ton pseudo.",
-      "Partager vers Snapchat ou Instagram : un nouveau bouton « Image seule » envoie l'image de ton score, et copie le texte et le lien pour les coller en légende (ces applis restaient sur un écran vide).",
+      "Le partage marche partout, Snapchat compris (il restait sur un écran noir) : un seul bouton, ton score et ton lien, et l'image de ton résultat s'affiche dans l'aperçu du lien.",
     ],
   },
   {

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hexa/game": "workspace:*",
+    "@resvg/resvg-js": "^2.6.2",
     "nodemailer": "^10.5.0",
     "web-push": "^4.0.0",
     "ws": "^8.23.0"
