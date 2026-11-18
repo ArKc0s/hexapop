@@ -30,3 +30,10 @@ Lit seulement les adresses publiques du jeu (via l'aiguilleur), garde son état 
 - `GITHUB_TOKEN` : jeton GitHub avec **Issues : lecture et écriture** sur ArKc0s/hexapop. Sans lui, pas de lien forums ↔ GitHub.
 - Portail Discord, onglet Bot : activer **Message Content Intent** pour que le bot lise le premier message d'un fil (sinon
   l'issue ne contient que le titre et le lien).
+
+## Émojis et avatar
+`deploy/discord/emojis/` : `gen.py` dessine les émojis du serveur en SVG (mêmes expressions et tenues que la mascotte du
+jeu : bob des Régions, lunettes d'aviateur du Monde), convertis en PNG 128 × 128 avec resvg ; envoyés sur le serveur par
+l'API (`POST /guilds/{id}/emojis`). `:hexa:` `:hexa_wow:` `:hexa_hmm:` `:hexa_triste:` `:hexa_love:` `:hexa_cool:`
+`:hexa_mdr:` `:hexa_gg:` `:hexa_bot:` `:hexa_bob:` `:hexa_aviateur:` `:medaille_bronze:` `:medaille_argent:` `:medaille_or:`.
+Avatar du bot : `deploy/discord/hexa-robot.svg` (Hexa en robot : antenne, visière à LED, boulons).
