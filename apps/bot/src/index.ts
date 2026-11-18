@@ -3,7 +3,7 @@
 import { ApplicationCommandOptionType, Client, Events, GatewayIntentBits, type ApplicationCommandDataResolvable, type ChatInputCommandInteraction } from "discord.js";
 import { config } from "./config.ts";
 import { cmdClassement, cmdDefi, tickDaily } from "./daily.ts";
-import { onThread, tickGithub } from "./github.ts";
+import { onMessage, onThread, tickGithub } from "./github.ts";
 import { syncNews, syncRoadmap } from "./posts.ts";
 import { onAnswer, tickQuestion } from "./question.ts";
 import { tickSoirees } from "./soirees.ts";
@@ -11,7 +11,9 @@ import { LEVELS, LEVEL_NAMES, type Level } from "./text.ts";
 
 // Sans jeton, on s'arrête proprement (le conteneur n'est pas relancé en boucle).
 if (!config.token) { console.error("DISCORD_TOKEN absent : bot désactivé."); process.exit(0); }
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// Messages et leur contenu : pour recopier les réponses des fils #bugs / #idées sur GitHub (option « Message Content
+// Intent » cochée dans le portail Discord).
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 /** Une tâche qui plante (Hexa en mise à jour, Discord lent…) ne doit jamais arrêter le bot. */
 const safe = (name: string, f: () => Promise<unknown>) => () => f().catch((e) => console.error(`[${name}]`, e?.message ?? e));
@@ -57,6 +59,7 @@ client.on(Events.InteractionCreate, async (i) => {
   }
 });
 client.on(Events.ThreadCreate, (t, newly) => void safe("github", () => onThread(t, newly))());
+client.on(Events.MessageCreate, (m) => void safe("github", () => onMessage(m))());
 
 process.on("SIGTERM", () => { client.destroy(); process.exit(0); });
 client.login(config.token);

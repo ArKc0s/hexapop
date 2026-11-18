@@ -18,9 +18,11 @@ Lit seulement les adresses publiques du jeu (via l'aiguilleur), garde son état 
 - **Soirées publiques** : un admin (`HEXA_ADMINS` = identifiants de compte, dans le `.env`) coche « Soirée publique » dans une
   soirée plateau ; le bot l'annonce dans #entre-amis (mention Soirées Entre amis au plus une fois par heure), la réannonce à
   chaque nouvelle partie, et son statut affiche le lien. Liste lue sur `GET /api/rooms/public`.
-- **Forums ↔ GitHub** : chaque nouveau fil de #bugs / #idées devient une issue (texte et pièces jointes, étiquettes, lien du
-  fil, jamais le pseudo : le dépôt est public) ; les réponses de l'équipe sur GitHub reviennent dans le fil, la fermeture aussi
-  (étiquette « Corrigé »).
+- **Forums ↔ GitHub, dans les deux sens** : un nouveau fil de #bugs / #idées devient une issue (texte et pièces jointes,
+  étiquettes, lien du fil, jamais le pseudo : le dépôt est public) ; une issue ouverte sur GitHub devient un fil (#bugs si
+  étiquette « bug », sinon #idées) ; les messages du fil deviennent des commentaires (« Sur Discord », sans pseudo) et les
+  commentaires GitHub reviennent dans le fil ; fermeture (étiquette « Corrigé ») et réouverture annoncées. Une marque
+  invisible `<!-- hexa-discord -->` empêche les échos. Vérification toutes les 5 minutes.
 - Commandes : `/défi`, `/classement [niveau] [période]`.
 
 ## Secrets (dans `/home/infra/hexapop/.env`, jamais dans le dépôt)

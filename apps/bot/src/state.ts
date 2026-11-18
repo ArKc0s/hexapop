@@ -13,7 +13,9 @@ export interface State {
   /** Message épinglé de la roadmap et empreinte de son texte. */
   roadmap?: { message: string; hash: string };
   /** Fils des forums #bugs / #idées → issue GitHub. */
-  issues: Record<string, { number: number; url: string; closed?: boolean; lastComment?: number }>;
+  issues: Record<string, { number: number; url: string; closed?: boolean; lastComment?: number; /** Premier message du fil (déjà le corps de l'issue). */ starter?: string }>;
+  /** Les issues ouvertes sur GitHub après cette date deviennent des fils (pas l'historique). */
+  ghSince?: string;
   /** Soirées publiques annoncées : code → message et dernier état vu. */
   soirees: Record<string, { message: string; phase: string; pinged: number }>;
 }
