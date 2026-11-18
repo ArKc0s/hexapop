@@ -65,11 +65,25 @@
   let cw = $state(0), ch = $state(0);
   const ppu = $derived.by(() => { const v = view ?? full; return cw && ch ? Math.min(cw / v[2], ch / v[3]) : cw ? cw / v[2] : 1; });
   const isW = $derived(geo.atlas === "monde");
+  /** Épaisseurs (en unités de la carte) qui font N pixels à l'écran. Calculées ici plutôt qu'avec vector-effect :
+   *  sur le trait de côte du monde, vector-effect divisait la fluidité par quatre (15 images/s en glissant la carte). */
+  const px = (n: number) => (n / ppu).toFixed(4);
+  const wStyle = $derived(`--sw:${px(0.75)};--w06:${px(0.6)};--w12:${px(1.2)};--w14:${px(1.4)};--w18:${px(1.8)};--w2:${px(2)};--w22:${px(2.2)};--w24:${px(2.4)};--w25:${px(2.5)}`);
   const shadow = $derived(isW ? +(3 / ppu).toFixed(3) : 4);
+  /** Taille (plus grand côté, en unités) des petits pays : leur rond s'efface dès qu'ils se voient assez, zoomés. */
+  const dotSize = $derived.by(() => {
+    const out: Record<string, number> = {};
+    for (const c of Object.keys(geo.dots ?? {})) {
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const [, x, y] of (geo.paths[c] ?? "").matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) { x0 = Math.min(x0, +x); x1 = Math.max(x1, +x); y0 = Math.min(y0, +y); y1 = Math.max(y1, +y); }
+      out[c] = x1 > x0 ? Math.max(x1 - x0, y1 - y0) : 0;
+    }
+    return out;
+  });
   const shapes = $derived.by(() => {
     if (!geo.dots) return geo.paths;
     const r = 5 / ppu, out: Record<string, string> = { ...geo.paths };
-    for (const [c, p] of Object.entries(geo.dots)) out[c] = (out[c] ?? "") + circle(p, r);
+    for (const [c, p] of Object.entries(geo.dots)) if (dotSize[c] * ppu < 16) out[c] = (out[c] ?? "") + circle(p, r);
     return out;
   });
   let anim = 0;
@@ -162,6 +176,10 @@
   }
   function zoomAt(cx: number, cy: number, factor: number, base = view ?? full) {
     const p = toSvg(cx, cy);
+    // Bornes du zoom appliquées au facteur lui-même : au zoom maximal, continuer la molette ne décale plus la vue.
+    const minW = full[2] * 0.1;
+    factor = Math.min(factor, base[2] / minW);
+    if (Math.abs(factor - 1) < 1e-3) return;
     const w = base[2] / factor, h = base[3] / factor;
     const nx = p.x - (p.x - base[0]) / factor, ny = p.y - (p.y - base[1]) / factor;
     const v = clamp([nx, ny, w, h]);
@@ -191,10 +209,18 @@
     }
     if (Math.hypot(e.clientX - gesture.x, e.clientY - gesture.y) > 8) gesture.moved = true;
     if (gesture.moved && view && pointers.size === 1) {
+      // Les mouvements rapprochés sont regroupés : une seule mise à jour de la carte par image.
       const a = toSvg(prev.x, prev.y), b = toSvg(e.clientX, e.clientY);
-      view = clamp([view[0] - (b.x - a.x), view[1] - (b.y - a.y), view[2], view[3]]);
+      panX += b.x - a.x; panY += b.y - a.y;
+      if (!panRaf) panRaf = requestAnimationFrame(() => {
+        panRaf = 0;
+        if (view) view = clamp([view[0] - panX, view[1] - panY, view[2], view[3]]);
+        panX = 0; panY = 0;
+      });
     }
   }
+  let panX = 0, panY = 0, panRaf = 0;
+  onDestroy(() => cancelAnimationFrame(panRaf));
   function up(e: PointerEvent) {
     if (!gesture) return;
     pointers.delete(e.pointerId);
@@ -268,7 +294,7 @@
 
 <div class="wrap" class:zoomable bind:clientWidth={cw} bind:clientHeight={ch}>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <svg bind:this={svg} class="map" class:r={geo.atlas === "regions"} class:w={geo.atlas === "monde"} style={isW ? `--sw:${(0.75 / ppu).toFixed(4)}` : undefined} class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
+  <svg bind:this={svg} class="map" class:r={geo.atlas === "regions"} class:w={geo.atlas === "monde"} style={isW ? wStyle : undefined} class:interactive class:zoomable class:choosing={!!cand} viewBox={vb} role="img" aria-label={label}
     onclick={pickFrom} onkeydown={key} onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up}>
     <defs>
       {#each codes as code (code)}<path id="{uid}-{code}" d={shapes[code]} />{/each}
@@ -333,7 +359,19 @@
   /* Monde, même direction artistique que la carte de France : pays blancs, frontières fines, côtes à l'encre
      (le contour épais des « régions »), ombre rose ; les zones hors jeu (disputées, territoires) en gris clair. */
   .map.w .deps use { stroke-width: var(--sw); }
-  .map.w .regions path { stroke-width: 1.4; }
+  .map.w .regions path, .map.w .fond { vector-effect: none; }
+  /* Coins droits : à cette épaisseur ça ne se voit pas, et le trait de côte se redessine deux fois plus vite */
+  .map.w .regions path { stroke-width: var(--w14); stroke-linejoin: miter; }
+  .map.w .fond { stroke-width: var(--w06); }
+  /* Surlignages : mêmes épaisseurs à l'écran que sur la carte de France, quel que soit le zoom */
+  .map.w .deps use.sel, .map.w .deps use.cand.sel { stroke-width: var(--w25) !important; }
+  .map.w .deps use.hint, .map.w .deps use.subject { stroke-width: var(--w2); }
+  .map.w .deps use.ok, .map.w .deps use.ko, .map.w .deps use.near { stroke-width: var(--w12); }
+  .map.w .deps use.miss { stroke-width: var(--w24); }
+  .map.w .deps use.cand { stroke-width: var(--w18); }
+  .map.w .deps use.focus { stroke-width: var(--w22); }
+  .map.w.interactive .deps use:focus-visible { stroke-width: var(--w12); }
+  @media (hover: hover) { .map.w.interactive:not(.choosing) .deps use:hover, .map.w.interactive.choosing .deps use.cand:not(.sel):hover { stroke-width: var(--w12); } }
   .fond { fill: #e6dfd0; stroke: #b9af9a; stroke-width: .6; vector-effect: non-scaling-stroke; }
   .frame { fill: #fffdf8; stroke: #d6cdb9; stroke-width: 1.5; }
   .cap { font: 700 13px var(--f-ui); fill: var(--soft); }

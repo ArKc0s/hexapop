@@ -77,7 +77,11 @@ const EMPTY_MONDE: Geo = { atlas: "monde", paths: {}, insets: [], zoom: false, o
 function monde(): Geo {
   const W = mondeCarte.data as MondeCarte | null; // lu ici : la carte se redessine quand le fichier arrive
   if (!W) return EMPTY_MONDE;
-  return (mondeGeo ??= { atlas: "monde", paths: W.paths, insets: [], zoom: false, outlines: [W.cote], inner: [], viewBox: W.viewBox, fond: W.fond, dots: W.dots, views: W.views });
+  // Le trait de côte en morceaux (un par île / continent, regroupés par 40) : un seul tracé géant se redessine en entier
+  // à chaque déplacement de la carte (15 images/s mesurées) ; en morceaux, le navigateur ne redessine que ce qui se voit.
+  const rings = W.cote.split(/(?=M)/), chunks: string[] = [];
+  for (let i = 0; i < rings.length; i += 40) chunks.push(rings.slice(i, i + 40).join(""));
+  return (mondeGeo ??= { atlas: "monde", paths: W.paths, insets: [], zoom: false, outlines: chunks, inner: [], viewBox: W.viewBox, fond: W.fond, dots: W.dots, views: W.views });
 }
 const REGIONS_OUTLINE = (map as unknown as { regions: Record<string, string> }).regions;
 /** Outre-mer : une région = un département, même encart. */
