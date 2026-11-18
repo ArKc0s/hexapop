@@ -126,6 +126,7 @@
   /** Image seule (Snapchat, Instagram…) : leur partage iOS reste sur un écran vide quand on leur envoie l'image et le
    *  texte ensemble. On envoie l'image seule, et le texte (avec le lien) part dans le presse-papier, à coller en légende. */
   let imageOnly = $state(false);
+  const canShare = typeof navigator !== "undefined" && "share" in navigator;
   async function shareImage() {
     try {
       await navigator.clipboard?.writeText(shareText).catch(() => {});
@@ -197,7 +198,7 @@
         {#if rewards}<p class="xp">+{rewards.xp} km</p>{/if}
         <button class="btn pink big" onclick={share}>{copied ? "Copié !" : coarse ? "Partager" : "Copier le résultat"}</button>
         {#if !coarse}<button class="link" onclick={download}>Télécharger l'image à poster</button>
-        {:else if navigator.share}<button class="link" onclick={shareImage}>Image seule (Snapchat, Instagram)</button>
+        {:else if canShare}<button class="link" onclick={shareImage}>Image seule (Snapchat, Instagram)</button>
           {#if imageOnly}<small class="hint">Le texte et le lien sont copiés : colle-les en légende.</small>{/if}{/if}
         {#if outcome?.share ?? info?.mine?.share ?? guestToday?.share}<a class="link" href="/d/{outcome?.share ?? info?.mine?.share ?? guestToday?.share}" target="_blank" rel="noopener">Voir ma page de résultat (ce que voient tes amis)</a>{/if}
       </div>
