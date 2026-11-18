@@ -57,11 +57,17 @@ export interface Seance {
 export const REVISION_MIN = 3;
 
 /** Départements dont une étoile est à revoir, les plus en retard d'abord. */
-function dueOf(k: Knowledge, now: number) {
-  return Object.entries(k)
+/**
+ * Les plus en retard d'abord, à la journée près ; au sein d'une même journée, au hasard. (Trié à la milliseconde, les
+ * départements révisés ensemble revenaient dans l'ordre de la séance précédente, et les ex aequo dans l'ordre des
+ * numéros : « 74, 75, 76, 78, 80… », remarque de Léo.)
+ */
+function dueOf(k: Knowledge, now: number, r: () => number) {
+  const DAY_MS = 86_400_000;
+  return shuffle(Object.entries(k)
     .map(([code, dep]) => ({ code, facets: FACETS.filter((f) => dep[f]?.s && dep[f]!.d <= now), late: Math.min(...FACETS.map((f) => (dep[f]?.s ? dep[f]!.d : Infinity))) }))
-    .filter((x) => x.facets.length && DEP.has(x.code))
-    .sort((a, b) => a.late - b.late);
+    .filter((x) => x.facets.length && DEP.has(x.code)), r)
+    .sort((a, b) => Math.floor(a.late / DAY_MS) - Math.floor(b.late / DAY_MS));
 }
 
 /**
@@ -95,7 +101,7 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     for (const c of known.slice(0, Math.max(0, n))) add({ code: c, hint: pick<Hint>(starred(k, c, "numero") ? ["nom", "carte", "numero"] : ["nom", "carte"]), ask: ["carte", "nom", "numero", "prefecture"], tag: "review" });
   };
 
-  const due = dueOf(k, o.now);
+  const due = dueOf(k, o.now, r);
   const focus = o.focus && TOUR.has(o.focus) ? TOUR.get(o.focus)! : null;
   const order = regionOrder(o.start);
   // La région choisie, sinon la suivante à découvrir ; tout découvert : la première dont l'expert n'est pas fini.
@@ -108,14 +114,14 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
 
   // Séance de révisions : demandée, ou des révisions accumulées ailleurs (sauf si le joueur a choisi sa région), ou plus rien à travailler.
   if (o.kind === "revision" || !region || (!focus && elsewhere.length >= REVISION_MIN)) {
-    for (const x of due.slice(0, size)) add(review(x));
+    for (const x of shuffle(due.slice(0, size), r)) add(review(x));
     const reviews = plan.length;
     if (plan.length < size && o.kind !== "revision" && !region) consolidate(Object.keys(k), size - plan.length);
     return { kind: "revision", plan, region: null, reviews, discover: [], elsewhere: 0, expert: false, experts: [], expertRegion };
   }
 
   // Séance de région. 1. Ses révisions échues (la moitié de la séance au plus).
-  for (const x of due.filter((x) => inRegion(x.code)).slice(0, Math.ceil(size / 2))) add(review(x));
+  for (const x of shuffle(due.filter((x) => inRegion(x.code)).slice(0, Math.ceil(size / 2)), r)) add(review(x));
   const reviews = plan.length;
   const discover: string[] = [];
   const experts: string[] = [];

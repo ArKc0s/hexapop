@@ -4,6 +4,7 @@ import { sameName, sameCode, matchSet, normalize } from "./answer.ts";
 import { makeGame, grade, fieldsFor } from "./round.ts";
 import { dep, DEPARTEMENTS } from "./data.ts";
 import { review, pickSession } from "./srs.ts";
+import { composeSeance } from "./seance.ts";
 
 test("noms tolérants", () => {
   assert.ok(sameName("bouches du rhone", "Bouches-du-Rhône"));
@@ -141,4 +142,20 @@ test("préfecture : variantes acceptées (Cergy, Cergy-Pontoise pour le 95)", ()
   const q = makeGame({ seed: 1, level: "normal", input: "libre", plan: [{ code: "95", hint: "nom", ask: ["prefecture"] }] })[0];
   for (const p of ["Pontoise", "Cergy", "cergy pontoise", "Cergy-Pontoise"]) assert.equal(grade(q, { prefecture: p, elapsedMs: 0 }).accuracy, 1, p);
   assert.equal(grade(q, { prefecture: "Argenteuil", elapsedMs: 0 }).accuracy, 0);
+});
+
+test("séance de révisions : les départements à revoir ne sortent pas dans l'ordre des numéros", () => {
+  const now = Date.now();
+  const card = { b: 2, d: now - 1000, s: 1 as const, v: 1 as const };
+  const codes = ["74", "75", "76", "78", "80", "81", "82", "83", "84", "85", "86", "87"];
+  const know = Object.fromEntries(codes.map((c) => [c, { carte: card, numero: card, prefecture: card }]));
+  const orders = new Set<string>();
+  for (let seed = 1; seed <= 5; seed++) {
+    const s = composeSeance(know, { now, seed, start: "29", kind: "revision" });
+    const got = s.plan.map((p) => p.code);
+    assert.equal(new Set(got).size, got.length);
+    orders.add(got.join(","));
+    assert.notEqual(got.join(","), [...got].sort().join(","), `graine ${seed} : ordre des numéros`);
+  }
+  assert.ok(orders.size > 1, "l'ordre change d'une séance à l'autre");
 });
