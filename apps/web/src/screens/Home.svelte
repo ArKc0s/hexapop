@@ -215,7 +215,7 @@
         <button role="tab" aria-selected={shownCont === "all"} class:on={shownCont === "all"} onclick={() => (cont = "all")}>Tout</button>
       </div>
     {/if}
-    <Map {fills} {frame} marks={p.focus && TOUR.has(p.focus) && !monde ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label={fr ? "Ta France : touche une région pour y faire ta prochaine séance" : monde ? "Tes pays : touche un continent pour y faire ta prochaine séance" : "Tes régions : touche la métropole ou l'outre-mer pour y faire ta prochaine séance"} />
+    <div class="mapbox" class:fixed={monde}>    <Map {fills} {frame} marks={p.focus && TOUR.has(p.focus) && !monde ? Object.fromEntries(TOUR.get(p.focus)!.deps.map((c) => [c, "focus"])) : {}} onpick={focusOn} label={fr ? "Ta France : touche une région pour y faire ta prochaine séance" : monde ? "Tes pays : touche un continent pour y faire ta prochaine séance" : "Tes régions : touche la métropole ou l'outre-mer pour y faire ta prochaine séance"} /></div>
     <p class="tip">{fr ? "Touche une région pour y faire ta prochaine séance." : monde ? "Touche un continent pour y faire ta prochaine séance." : "Touche la métropole ou l'outre-mer pour y faire ta prochaine séance."}</p>
     <div class="legend">
       <span><i style="background:#eef3f8; box-shadow: inset 0 0 0 1px #c8d4e0"></i>découvert</span><span><i style="background:#b6d6f1"></i>1-2 étoiles</span><span><i style="background:#e6b98e"></i>bronze</span><span><i style="background:#b4bfcd"></i>argent</span><span><i style="background:#f5c518"></i>or</span>
@@ -292,7 +292,12 @@
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .row2 .btn { flex-direction: column; gap: 3px; padding: 13px 10px; }
   /* Carte du monde : jamais plus haute que l'écran (l'Amérique du Sud est plus haute que large) */
-  .right :global(.map.w) { max-height: calc(100dvh - 250px); }
+  /* Monde : une zone de carte de hauteur fixe, le continent centré dedans (on voit ce qui l'entoure sur les bords) :
+     la légende ne bouge pas d'un onglet à l'autre. */
+  .mapbox.fixed { height: min(112vw, 62dvh); }
+  .mapbox.fixed :global(.wrap) { width: 100%; height: 100%; }
+  .mapbox.fixed :global(svg.map) { width: 100%; height: 100%; max-height: none; }
+  @media (min-width: 861px) { .mapbox.fixed { height: calc(100dvh - 250px); } }
   .conts { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 2px; }
   .conts button { border: 0; background: var(--bg-2); border-radius: 999px; padding: 6px 12px; font: inherit; font-weight: 800; font-size: 14px; color: var(--soft); cursor: pointer; }
   .conts button.on { background: var(--ink); color: #fff; }
