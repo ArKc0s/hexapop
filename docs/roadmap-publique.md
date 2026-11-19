@@ -4,11 +4,11 @@ Publiée et épinglée par le bot dans le salon #roadmap du Discord, à chaque m
 Une section `## Titre` = un encart. Rester court, dans les mots des joueurs, sans date promise.
 
 ## ✅ Arrivé récemment
+• **Moins de répétitions** : le défi du jour, l'entraînement et les parties entre amis évitent les départements tombés récemment.
 • **Le Discord d'Hexa** : le défi du jour chaque matin et son podium le soir, une question du jour à midi, les soirées publiques annoncées ici, et des émojis Hexa (`:hexa_salut:` !).
 • **Bugs et idées suivis sur GitHub** : un fil dans #bugs ou #idées est recopié dans les deux sens, la réponse de l'équipe revient dans le fil.
 • **Défi du jour sans spoil** : les réponses d'un ami ne s'ouvrent qu'une fois ton défi joué.
 • **Partage partout, Snapchat compris** : ton score et ton lien, avec l'image de ton résultat en aperçu.
-• **Page de résultat partagée** : ton score, ta grille et tes réponses question par question.
 
 ## 🛠️ En cours
 • **Les régions** : un deuxième atlas avec les 18 régions, leur chef-lieu, puis leurs départements et leurs voisines. Choisis ce que tu apprends en haut de l'accueil ; chaque atlas a son défi du jour et son classement.

@@ -4,6 +4,13 @@ export interface News { id: number; version: string; date: string; title: string
 
 export const NEWS: News[] = [
   {
+    id: 15, version: "1.15.3", date: "2026-11-19", title: "Moins de répétitions",
+    items: [
+      "Le défi du jour évite les départements des jours précédents : ils peuvent revenir, mais rarement dès le lendemain. Tu en verras beaucoup plus de différents chaque semaine.",
+      "Même chose à l'entraînement et entre amis : quand tu enchaînes les parties, les départements tournent au lieu de revenir sans cesse.",
+    ],
+  },
+  {
     id: 14, version: "1.15.2", date: "2026-11-18", title: "Hexa a son Discord",
     items: [
       "Rejoins le Discord d'Hexa (lien en bas de l'accueil) : le défi du jour chaque matin, le podium du soir et une question du jour à quatre choix.",
