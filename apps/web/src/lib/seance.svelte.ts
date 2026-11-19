@@ -34,5 +34,5 @@ export function startSeance(kind?: SeanceKind) {
   const s = composeSeance(profile.data.know ?? {}, { now: Date.now(), seed, start: startRegion(), focus: profile.data.focus, home: profile.data.home, kind, atlas: world.id, skill: profile.data.skill?.[world.id]?.t });
   if (!s.plan.length) return nav.go({ name: "training" });
   const config: GameConfig = { seed, atlas: world.id, level: "normal", input: answerMode(), plan: s.plan, durationMs: 0, switchable: true };
-  nav.go({ name: "play", mode: "seance", config, title: seanceTitle(s), learn: true, adapt: world.id === "monde" && s.region ? s.region.code : undefined });
+  nav.go({ name: "play", mode: "seance", config, title: seanceTitle(s), learn: true, adapt: s.region && !s.expert ? s.region.code : undefined });
 }

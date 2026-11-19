@@ -7,10 +7,42 @@ import { ITEM } from "./data.ts";
 export interface Skill { /** Niveau, de 0 (débutant) à 1 (tout connaître). */ t: number; /** Réponses prises en compte. */ n: number }
 export const NEW_SKILL: Skill = { t: 0.25, n: 0 };
 
-/** Difficulté a priori (0 facile à 1 difficile) : la notoriété du pays ; undefined si on n'en sait rien (départements). */
+/**
+ * Difficulté a priori (0 facile à 1 difficile), avant d'avoir des réponses : la notoriété pour les pays ; pour les
+ * départements et les régions, une estimation simple (l'outre-mer et la petite couronne sont plus durs à placer).
+ */
+export function prior(code: string): number | undefined {
+  const it = ITEM.get(code);
+  if (!it) return undefined;
+  if (it.rang !== undefined) return Math.min(1, Math.max(0, (it.rang - 22) / 96));
+  if (code.startsWith("R")) return it.outreMer ? 0.45 : 0.25;
+  if (it.outreMer) return 0.55;
+  if (code === "75") return 0.1;
+  if (["92", "93", "94", "91", "95", "78", "77"].includes(code)) return 0.5;
+  return 0.4;
+}
+
+/** Difficulté apprise des erreurs de tous les joueurs (GET /api/difficulty), qui remplace l'a priori quand elle existe. */
+let learned: Record<string, number> = {};
+export function setDifficulties(table: Record<string, number>) {
+  learned = {};
+  for (const [c, d] of Object.entries(table ?? {})) if (ITEM.has(c) && Number.isFinite(d)) learned[c] = Math.min(1, Math.max(0, d));
+}
+
+/** Difficulté d'un élément (0 facile à 1 difficile), tous atlas. */
 export function difficulty(code: string): number | undefined {
-  const rang = ITEM.get(code)?.rang;
-  return rang === undefined ? undefined : Math.min(1, Math.max(0, (rang - 22) / 96));
+  return learned[code] ?? prior(code);
+}
+
+/**
+ * Mélange de l'a priori et du taux d'erreur observé, pondéré par le nombre de réponses (20 réponses comptent autant
+ * que l'a priori) : peu de données, on bouge peu ; beaucoup, on suit les joueurs.
+ */
+export function blendDifficulty(code: string, seen: number, correct: number): number | undefined {
+  const p = prior(code);
+  if (p === undefined || seen <= 0) return p;
+  const err = 1 - Math.min(seen, correct) / seen;
+  return Math.round(((p * 20 + err * seen) / (20 + seen)) * 1000) / 1000;
 }
 
 /** Chance de réussir un élément de difficulté d pour un joueur de niveau t. */

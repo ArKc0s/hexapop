@@ -36,7 +36,7 @@ export interface Question {
 }
 
 /** Question imposée (séance composée) : département, indice, ce qu'on demande. */
-export interface PlanItem { code: string; hint: Hint; ask: Field[]; tag?: "new" | "home" | "review" | "expert"; recall?: boolean; easy?: boolean }
+export interface PlanItem { code: string; hint: Hint; ask: Field[]; tag?: "new" | "home" | "review" | "expert"; recall?: boolean; easy?: boolean; /** Joueur fort sur du connu : propositions pièges (voir trapDistractors). */ hard?: boolean }
 
 export interface Answer {
   carte?: string;
@@ -113,6 +113,21 @@ function distractors(d: Departement, r: Rng): Departement[] {
   return [...near.slice(0, 2), ...region.slice(0, 1), ...rest].slice(0, 3);
 }
 
+/** Mots trop courants pour rapprocher deux noms (« Haute-Loire » et « Haute-Savoie » ne se ressemblent pas pour autant). */
+const COMMON = new Set(["haute", "haut", "hautes", "hauts", "basse", "bas", "nord", "sud", "est", "ouest", "saint", "sainte", "sur", "val", "les", "des", "et", "de", "du", "la", "le", "republique", "royaume", "iles", "ile", "etats"]);
+const tokens = (s: string) => normalize(s).split(/[^a-z]+/).filter((w) => w.length >= 4 && !COMMON.has(w));
+/**
+ * Leurres pièges, pour un joueur fort sur ce qu'il connaît déjà : les noms qui se ressemblent (Loire / Haute-Loire,
+ * Haut-Rhin / Bas-Rhin, Guinée / Guinée-Bissau), puis les voisins, puis la même région.
+ */
+function trapDistractors(d: Departement, r: Rng): Departement[] {
+  const all = atlasOf(d.code).items.filter((x) => x.code !== d.code), mine = new Set(tokens(d.nom));
+  const twins = shuffle(all.filter((x) => tokens(x.nom).some((w) => mine.has(w)) || (d.nom.includes("Rhin") && x.nom.includes("Rhin"))), r);
+  const near = shuffle(all.filter((x) => d.limitrophes.includes(x.code)), r);
+  const region = shuffle(all.filter((x) => x.region === d.region), r);
+  return [...new Set([...twins.slice(0, 2), ...near, ...region, ...shuffle(all, r)])].slice(0, 3);
+}
+
 /** Leurres lointains (autres régions, pas de voisin) : pour la première rencontre. */
 function easyDistractors(d: Departement, r: Rng): Departement[] {
   const all = atlasOf(d.code).items;
@@ -122,7 +137,7 @@ function easyDistractors(d: Departement, r: Rng): Departement[] {
   return shuffle(pool.length >= 3 ? pool : all.filter((x) => x.code !== d.code), r).slice(0, 3);
 }
 
-function makeChoices(d: Departement, fields: Field[], others: Departement[], r: Rng): Question["choices"] {
+function makeChoices(d: Departement, fields: Field[], others: Departement[], r: Rng, trap = false): Question["choices"] {
   const out: Question["choices"] = {};
   const pick = (f: ChoiceField, get: (x: Departement) => string) => {
     if (!fields.includes(f)) return;
@@ -138,6 +153,12 @@ function makeChoices(d: Departement, fields: Field[], others: Departement[], r: 
   // trop petits pour avoir 3 grandes villes, gardent d'autres capitales.
   if (fields.includes("prefecture") && d.villes && d.villes.length >= 3) out.prefecture = shuffle([d.prefecture, ...shuffle(d.villes, r).slice(0, 3)], r);
   else pick("prefecture", (x) => x.prefecture);
+  // Piège : une sous-préfecture du même département parmi les propositions (Reims pour la Marne, Millau pour l'Aveyron).
+  if (trap && out.prefecture && d.sousPrefectures.length && atlasOf(d.code).id === "france") {
+    const accepted = new Set([d.prefecture, ...(PREFECTURE_ALIASES[d.code] ?? [])].map(normalize));
+    const sp = shuffle(d.sousPrefectures.filter((x) => !accepted.has(normalize(x))), r)[0];
+    if (sp) out.prefecture = shuffle([d.prefecture, sp, ...out.prefecture.filter((x) => x !== d.prefecture && x !== sp).slice(0, 2)], r);
+  }
   pick("drapeau", (x) => x.code);
   return out;
 }
@@ -162,8 +183,8 @@ export function makeGame(cfg: GameConfig): Question[] {
       if (it.tag) q.tag = it.tag;
       if (it.recall) q.recall = true;
       if (it.easy) q.easy = true;
-      const others = it.easy ? easyDistractors(d, r) : distractors(d, r);
-      q.choices = makeChoices(d, fields, others, r);
+      const others = it.easy ? easyDistractors(d, r) : it.hard ? trapDistractors(d, r) : distractors(d, r);
+      q.choices = makeChoices(d, fields, others, r, it.hard);
       // Pas de carte à 4 départements surlignés en séance : on y joue région par région, les leurres trahiraient la réponse.
       return q;
     });

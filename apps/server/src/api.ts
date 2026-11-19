@@ -1,6 +1,6 @@
 // API HTTP JSON sous /api. Authentification : cookie HttpOnly (web) ou en-tête Bearer (mobile).
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { DEP, isAtlas, isLevel, mergeProfiles, sanitizeProfile, type Progress } from "@hexa/game";
+import { DEP, ITEM, blendDifficulty, isAtlas, isLevel, mergeProfiles, sanitizeProfile, type Progress } from "@hexa/game";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
 import {
@@ -86,12 +86,12 @@ async function sendVerification(u: { id: number; pseudo: string; email: string }
 
 type Handler = (req: IncomingMessage, res: ServerResponse, user: User | null) => Promise<void> | void;
 /** Totaux par département sur les progressions de tous les comptes, du plus raté au moins raté. */
-export function errorRates(minPlayers = 5): { code: string; seen: number; correct: number; players: number; rate: number }[] {
+export function errorRates(minPlayers = 5, items: ReadonlyMap<string, unknown> = DEP): { code: string; seen: number; correct: number; players: number; rate: number }[] {
   const agg = new Map<string, { seen: number; correct: number; players: number }>();
   for (const { data } of db.prepare("SELECT data FROM progress").all() as { data: string }[]) {
     let p: Progress; try { p = JSON.parse(data); } catch { continue; }
     for (const [code, c] of Object.entries(p)) {
-      if (!DEP.has(code) || !(c?.seen > 0)) continue;
+      if (!items.has(code) || !(c?.seen > 0)) continue;
       const a = agg.get(code) ?? { seen: 0, correct: 0, players: 0 };
       a.seen += c.seen; a.correct += Math.min(c.correct, c.seen); a.players++; agg.set(code, a);
     }
@@ -99,6 +99,17 @@ export function errorRates(minPlayers = 5): { code: string; seen: number; correc
   return [...agg].filter(([, a]) => a.players >= minPlayers)
     .map(([code, a]) => ({ code, ...a, rate: Math.round((1 - a.correct / a.seen) * 1000) / 1000 }))
     .sort((x, y) => y.rate - x.rate);
+}
+
+/** Difficulté de chaque élément (tous atlas), apprise des réponses de tous les joueurs ; recalculée au plus une fois par heure. */
+let difficultyCache = { at: 0, d: {} as Record<string, number> };
+function difficulties(): Record<string, number> {
+  if (Date.now() - difficultyCache.at > 3_600_000) {
+    const d: Record<string, number> = {};
+    for (const x of errorRates(5, ITEM)) { const v = blendDifficulty(x.code, x.seen, x.correct); if (v !== undefined) d[x.code] = v; }
+    difficultyCache = { at: Date.now(), d };
+  }
+  return difficultyCache.d;
 }
 
 /** Lecture des statistiques (Grafana) : jeton STATS_TOKEN. */
@@ -284,7 +295,7 @@ const routes: Record<string, Handler> = {
     const row = db.prepare("SELECT data FROM progress WHERE user_id = ?").get(u.id) as { data: string } | undefined;
     const merged: Progress = row ? JSON.parse(row.data) : {};
     for (const [code, st] of Object.entries(incoming)) {
-      if (!DEP.has(code) || !st || typeof st !== "object") continue;
+      if (!ITEM.has(code) || !st || typeof st !== "object") continue;
       const clean = { box: Math.min(6, Math.max(0, Number(st.box) | 0)), due: Number(st.due) || 0, seen: Math.max(0, Number(st.seen) | 0), correct: Math.max(0, Number(st.correct) | 0) };
       if (!merged[code] || clean.seen > merged[code].seen || (clean.seen === merged[code].seen && clean.due > merged[code].due)) merged[code] = clean;
     }
@@ -396,6 +407,9 @@ const routes: Record<string, Handler> = {
    * Taux d'erreur par département, tous joueurs confondus (reels « les plus ratés », apps/studio) : seulement des
    * totaux anonymes, et seulement pour les départements vus par au moins 5 joueurs.
    */
+  /** Difficulté apprise des joueurs (totaux anonymes, 5 joueurs minimum par élément) : les séances s'y adaptent. */
+  "GET /api/difficulty": (_req, res) => json(res, 200, { d: difficulties() }, { "cache-control": "public, max-age=3600" }),
+
   "GET /api/admin/rates": (req, res) => {
     statsAuth(req);
     json(res, 200, { rates: errorRates() }, { "cache-control": "no-store" });

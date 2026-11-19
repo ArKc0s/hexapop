@@ -481,6 +481,16 @@ test("taux d'erreur par département : totaux anonymes, à partir de 5 joueurs, 
   assert.ok(!rates.some((x: { code: string }) => x.code === "2A"), "moins de 5 joueurs : pas de chiffre");
 });
 
+test("difficulté apprise : publique, tous atlas, 5 joueurs minimum, mêlée à l'a priori", async () => {
+  for (let i = 0; i < 5; i++) {
+    const r = await fetch(BASE + "/api/auth/register", { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": `10.8.0.${i}` }, body: JSON.stringify({ email: `diff${i}@example.com`, pseudo: `Diff${i}`, password: "motdepasse" }) });
+    const { token } = await r.json();
+    await fetch(BASE + "/api/progress", { method: "PUT", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ progress: { WVAT: { box: 0, due: 1, seen: 10, correct: 10 } } }) });
+  }
+  const { d } = await (await fetch(BASE + "/api/difficulty")).json();
+  assert.ok(d.WVAT !== undefined && d.WVAT < 0.5, "le Vatican, réussi par tous, devient plus facile que son a priori");
+});
+
 test("stats en direct : présents par écran et salons en cours", async () => {
   const live = (id: string, sc: string) => fetch(BASE + "/api/stats/live", { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": "10.0.9.1" }, body: JSON.stringify({ id, s: sc }) });
   await live("onglet-aaaaaaaa", "seance"); await live("onglet-bbbbbbbb", "accueil"); await live("onglet-aaaaaaaa", "marathon"); await live("onglet-cccccccc", "pirate");

@@ -5,7 +5,7 @@ import { EXPERT_FACETS, FACETS, baseFacetsOf, expertFacetsOf, medalOf, type Face
 import { OUTRE_MER, TOUR, groupsOf, type TourRegion } from "./meta.ts";
 import { rng, shuffle } from "./random.ts";
 import { INTERVALS } from "./srs.ts";
-import { NEW_SKILL, byFit } from "./skill.ts";
+import { NEW_SKILL, byFit, difficulty, expected } from "./skill.ts";
 import type { Field, Hint, PlanItem } from "./round.ts";
 
 export const SEANCE_SIZE = 12;
@@ -93,7 +93,10 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   const size = o.size ?? SEANCE_SIZE;
   const plan: PlanItem[] = [];
   const used = new Set<string>();
-  const add = (it: PlanItem) => { plan.push(it); used.add(it.code); };
+  // Niveau du joueur (skill.ts) : ce qu'il a toutes les chances de savoir est demandé avec des propositions pièges.
+  const t = o.skill ?? NEW_SKILL.t;
+  const likely = (c: string) => expected(t, difficulty(c) ?? 0.5);
+  const add = (it: PlanItem) => { plan.push(it.tag === "review" && likely(it.code) > 0.75 ? { ...it, hard: true } : it); used.add(it.code); };
   const pick = <T,>(xs: T[]) => xs[Math.floor(r() * xs.length)];
   const atlas = o.atlas ?? "france";
   const A = ATLASES[atlas];
@@ -116,8 +119,11 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     // Les moins solides d'abord ; à égalité, au hasard (sinon l'ordre des numéros : « 89, 90, 91… »), puis mélangés.
     // `rested` : seulement ceux qu'on n'a pas vus depuis 2 heures (sinon, en enchaînant les séances, les quelques
     // pays connus revenaient à chaque fois : « la Belgique ou l'Espagne dans chaque run »).
+    // Ce que le joueur sait trop bien pour son niveau (médaille et réussite attendue > 93 %) passe en dernier : on ne
+    // l'ennuie pas avec en boucle.
+    const bored = (c: string) => medalOf(k, c) >= 2 && likely(c) > 0.93;
     const known = shuffle(codes.filter((c) => inAtlas(atlas, c) && !used.has(c) && A.base.some((f) => starred(k, c, f)) && (!rested || o.now - seenAt(k, c) > 2 * 3_600_000)), r)
-      .sort((a, b) => medalOf(k, a) - medalOf(k, b) || (k[a].carte?.b ?? 0) - (k[b].carte?.b ?? 0));
+      .sort((a, b) => Number(bored(a)) - Number(bored(b)) || medalOf(k, a) - medalOf(k, b) || (k[a].carte?.b ?? 0) - (k[b].carte?.b ?? 0));
     for (const c of shuffle(known.slice(0, Math.max(0, n)), r)) add({ code: c, hint: pick<Hint>(atlas === "france" && starred(k, c, "numero") ? ["nom", "carte", "numero"] : atlas === "monde" && starred(k, c, "drapeau") ? FULL_HINTS : ["nom", "carte"]), ask: [...A.full], tag: "review" });
   };
 
@@ -166,8 +172,8 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     const deps = shuffle(region.deps.filter((c) => unfinished(k, c) && !used.has(c)), r);
     const started = deps.filter((c) => A.base.some((f) => seen(k, c, f)));
     let fresh = deps.filter((c) => !started.includes(c));
-    // Monde : des pays à la hauteur du joueur (réussite visée ≈ 75 %), appris de ses réponses ; au début, les plus connus.
-    if (atlas === "monde") fresh = byFit(fresh, o.skill ?? NEW_SKILL.t, r);
+    // Des découvertes à la hauteur du joueur (réussite visée ≈ 75 %), apprise de ses réponses ; au début, les plus faciles.
+    fresh = byFit(fresh, t, r);
     // Départements commencés : ce qui reste à trouver, ou la fiche complète si tout a été vu.
     const steps: PlanItem[] = [];
     for (const c of started) {
@@ -182,7 +188,9 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     }
     // Découverte : rien n'est montré avant. Une question complète par département (« devine ! ») : si tu sais, c'est fini,
     // 3 étoiles d'un coup. Sinon la correction t'apprend, et il revient une fois en fin de séance (rappel).
-    const nNew = Math.min(fresh.length, reviews ? 3 : 4, Math.floor(room() / 2));
+    // Un joueur fort découvre plus par séance (il ne s'ennuie pas sur ce qu'il sait déjà).
+    const bonus = t >= 0.75 ? 2 : t >= 0.55 ? 1 : 0;
+    const nNew = Math.min(fresh.length, (reviews ? 3 : 4) + bonus, Math.floor(room() / 2));
     const news = fresh.slice(0, nNew);
     for (const c of news) add({ code: c, hint: "nom", ask: [...BASE], tag: "new" });
     discover.push(...news);
@@ -195,12 +203,15 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   consolidate(region.deps, room(), true);
   if (!expert) {
     const more = shuffle(region.deps.filter((c) => unfinished(k, c) && !used.has(c) && !A.base.some((f) => seen(k, c, f))), r);
-    for (const c of atlas === "monde" ? byFit(more, o.skill ?? NEW_SKILL.t, r) : more) {
-      if (room() < 2) break;
+    // Un débutant garde plutôt de quoi consolider (une découverte de plus au plus) ; un joueur fort découvre.
+    let extra = t >= 0.55 ? Infinity : 1;
+    for (const c of byFit(more, t, r)) {
+      if (room() < 2 || extra-- <= 0) break;
       add({ code: c, hint: "nom", ask: [...BASE], tag: "new" }); discover.push(c);
       recall.push({ code: c, hint: "nom", ask: [...BASE], recall: true });
     }
   }
-  consolidate(region.deps, room());
+  // Ce qu'on vient de voir (moins de 2 h) seulement si la séance serait vraiment trop courte : sinon, on s'arrête là.
+  if (plan.length + recall.length < 6) consolidate(region.deps, room());
   return { kind: "region", plan: [...plan.slice(0, size - recall.length), ...recall], region, reviews, discover, elsewhere: elsewhere.length, expert, experts, expertRegion };
 }

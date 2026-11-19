@@ -1,6 +1,6 @@
 <script lang="ts">
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
-  import { ATLASES, TOUR, byFit, combos, difficulty, grade, makeGame, roundXp, updateSkill, type Answer, type Field, type InputMode, type RoundPlay, type RoundResult } from "@hexa/game";
+  import { ATLASES, TOUR, atlasOf, byFit, combos, difficulty, grade, makeGame, roundXp, updateSkill, type Answer, type Field, type InputMode, type RoundPlay, type RoundResult } from "@hexa/game";
   import Round from "../lib/Round.svelte";
   import type { Mark } from "../lib/Map.svelte";
   import Icon from "../lib/ui/Icon.svelte";
@@ -54,11 +54,12 @@
     nav.go({ name: "results", play, questions, results, rewards, input });
   }
   /**
-   * Séance Monde : après chaque découverte, le niveau est réévalué sur les réponses déjà données, et les découvertes
+   * Séance : après chaque découverte, le niveau est réévalué sur les réponses déjà données, et les découvertes
    * à venir trop faciles ou trop dures sont remplacées par des pays mieux ajustés (et leur rappel de fin de séance avec).
    */
   function adapt() {
-    const t = updateSkill(profile.data.skill?.monde, results).t;
+    const atlas = atlasOf(questions[i].code).id;
+    const t = updateSkill(profile.data.skill?.[atlas], results).t;
     const know = profile.data.know ?? {};
     const planned = new Set(questions.map((q) => q.code));
     const upcoming = questions.map((q, k) => ({ q, k })).filter(({ q, k }) => k > i && q.tag === "new");
@@ -71,7 +72,7 @@
       const c = best[0];
       if (!c || gap(q.code) - gap(c) < 0.15) continue; // assez bien ajusté : on garde
       best.shift();
-      const ask = [...ATLASES.monde.base] as Field[];
+      const ask = [...ATLASES[atlas].base] as Field[];
       const [nq] = makeGame({ ...play.config, plan: [{ code: c, hint: "nom", ask, tag: "new" }] });
       const [nr] = makeGame({ ...play.config, plan: [{ code: c, hint: "nom", ask, recall: true }] });
       next = next.map((x, j) => (j === k ? { ...nq, index: k } : x.recall && x.code === q.code ? { ...nr, index: j } : x));

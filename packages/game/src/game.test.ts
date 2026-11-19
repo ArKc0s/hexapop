@@ -264,8 +264,9 @@ test("niveau adaptatif (Monde) : s'ajuste vite aux réponses, et les découverte
   // Plus tard, chaque réponse pèse moins (le niveau se stabilise).
   const before = fort.t; fort = updateSkill({ t: before, n: 200 }, [{ code: easy[0], accuracy: 0 }]);
   assert.ok(before - fort.t < 0.06);
-  // Les départements n'ont pas de difficulté : ils ne changent rien.
-  assert.deepEqual(updateSkill(undefined, [{ code: "48", accuracy: 1 }]), NEW_SKILL);
+  // Les départements et les régions comptent aussi (tous les atlas ont leur niveau).
+  assert.ok(updateSkill(undefined, [{ code: "48", accuracy: 1 }]).t > NEW_SKILL.t);
+  assert.ok(updateSkill(undefined, [{ code: "R53", accuracy: 0 }]).t < NEW_SKILL.t);
   // Séance : un joueur fort découvre des pays plus difficiles qu'un débutant.
   const avg = (skill: number) => {
     const s = composeSeance({}, { now: Date.now(), seed: 4, start: "29", atlas: "monde", skill });
@@ -277,4 +278,24 @@ test("niveau adaptatif (Monde) : s'ajuste vite aux réponses, et les découverte
   assert.deepEqual(p.skill, { monde: { t: 0.7, n: 12 } });
   const m = mergeProfiles({ ...emptyProfile(), skill: { monde: { t: 0.3, n: 3 } } }, p);
   assert.equal(m.skill?.monde?.t, 0.7);
+});
+
+test("joueur fort : plus de découvertes, pas d'ennui sur ce qu'il sait, et des pièges", () => {
+  const now = Date.now();
+  // Toute la Bretagne et la Normandie sues depuis longtemps, révisions dues.
+  const card = { b: 4, d: now - 1000, s: 1 as const, v: 1 as const };
+  const known = ["22", "29", "35", "56", "14", "27", "50", "61", "76"];
+  const know = Object.fromEntries(known.map((c) => [c, { carte: card, numero: card, prefecture: card }]));
+  const fort = composeSeance(know, { now, seed: 2, start: "29", skill: 0.9 });
+  const debutant = composeSeance(know, { now, seed: 2, start: "29", skill: 0.2 });
+  assert.ok(fort.plan.some((p) => p.hard), "des pièges pour le joueur fort");
+  assert.ok(!debutant.plan.some((p) => p.hard), "pas de piège pour un débutant");
+  // Les pièges : noms qui se ressemblent, sous-préfecture parmi les préfectures.
+  const loire = makeGame({ seed: 3, level: "normal", input: "choix", plan: [{ code: "42", hint: "carte", ask: ["nom", "prefecture"], hard: true }] })[0];
+  assert.ok(loire.choices!.nom!.some((n) => n.includes("Loire") && n !== "Loire"), loire.choices!.nom!.join(", "));
+  assert.ok(loire.choices!.prefecture!.some((p) => dep("42").sousPrefectures.includes(p)), loire.choices!.prefecture!.join(", "));
+  assert.ok(loire.choices!.prefecture!.includes("Saint-Étienne"));
+  // Plus de découvertes d'un coup pour un joueur fort.
+  const neuf = (skill: number) => composeSeance({}, { now, seed: 2, start: "84", skill }).discover.length;
+  assert.ok(neuf(0.9) > neuf(0.2), `${neuf(0.2)} → ${neuf(0.9)}`);
 });
