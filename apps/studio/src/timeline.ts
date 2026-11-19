@@ -59,7 +59,8 @@ export function rows(tl: Timeline, said: Said, o: { y: number; size?: number; ma
   const lines: Word[][] = [];
   for (const w of words) {
     const cur = lines[lines.length - 1];
-    if (cur && [...cur, w].map((x) => x.w).join(" ").length <= max) cur.push(w); else lines.push([w]);
+    // Une ponctuation seule (« ? », « ! ») ne part jamais seule à la ligne.
+    if (cur && (/^[?!:;]+$/.test(w.w) || [...cur, w].map((x) => x.w).join(" ").length <= max)) cur.push(w); else lines.push([w]);
   }
   const hot = (o.yellow ?? []).map((s) => s.toLocaleUpperCase("fr-FR"));
   return lines.map((ln, i) => {

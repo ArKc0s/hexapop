@@ -22,10 +22,10 @@ test("les pièges de « préfecture ou pas » sont tous de vraies sous-préfectu
   for (const [c, v] of PIEGES) { assert.ok(dep(c).sousPrefectures.includes(v)); assert.notEqual(dep(c).prefecture, v); }
 });
 
-test("chaque format se construit, dure entre 12 et 45 s, et rien ne déborde", () => {
+test("chaque format se construit, dure entre 12 et 50 s, et rien ne déborde", () => {
   for (const f of ROTATION) for (let i = 0; i < 30; i++) {
     const { tl, said } = build(f, "graine" + i);
-    assert.ok(tl.t > 12 && tl.t < 45, `${f} : ${tl.t} s`);
+    assert.ok(tl.t > 12 && tl.t < 50, `${f} : ${tl.t} s`);
     assert.ok(said.every((s) => s.length < 200), f);
     for (const e of tl.els) assert.ok(e.t1 === undefined || e.t1 >= e.t0, `${f} : ${e.k} ${e.t0}→${e.t1}`);
   }
@@ -34,9 +34,11 @@ test("chaque format se construit, dure entre 12 et 45 s, et rien ne déborde", (
 test("vrai ou faux : chaque affirmation est conforme aux données", () => {
   for (let i = 0; i < 60; i++) {
     const { said } = build("vraifaux", "vf" + i);
-    const qs = said.slice(0, -1); // tout sauf la fin (plus d'intro : on commence par la première question)
+    const qs = said.slice(0, -1).map((x) => x.replace(/^Vrai ou faux \? Tu as 3 secondes\. /, "")); // tout sauf la fin, sans l'intro
+    let vrais = 0, faux = 0;
     for (let k = 0; k < qs.length; k += 2) {
-      const claim = qs[k], verdict = qs[k + 1].startsWith("Vrai");
+      const claim = qs[k], verdict = !/faux/i.test(qs[k + 1]);
+      if (verdict) vrais++; else faux++;
       let m: RegExpMatchArray | null;
       if ((m = claim.match(/^(.+) est la préfecture (?:de la |de l'|du |des |de )(.+)\.$/))) {
         const d = DEPS.find((x) => x.nom === m![2])!; assert.ok(d, claim); assert.equal(d.prefecture === m[1], verdict, claim);
@@ -49,19 +51,19 @@ test("vrai ou faux : chaque affirmation est conforme aux données", () => {
         assert.ok(DEPS.some((x) => le(x).toLowerCase() === m![1].toLowerCase()), claim);
       } else assert.fail("affirmation non reconnue : " + claim);
     }
-    const n = (s: string) => said.filter((x) => x.startsWith(s)).length;
-    assert.ok(n("Vrai !") >= 1 && n("Faux !") >= 1, "au moins un vrai et un faux");
+    assert.ok(vrais >= 1 && faux >= 1, "au moins un vrai et un faux");
   }
 });
 
 test("préfecture ou pas : la bonne réponse est la préfecture, l'autre une sous-préfecture", () => {
   for (let i = 0; i < 40; i++) {
     const { said } = build("prefecture", "p" + i);
-    for (const s of said) {
-      const m = s.match(/^La préfecture (?:de la |de l'|du |des |de )(.+), c'est (.+) ou (.+) \?$/); if (!m) continue;
-      const d = DEPS.find((x) => x.nom === m[1])!; assert.ok(d, s);
-      const [a, b] = [m[2], m[3]]; assert.ok([a, b].includes(d.prefecture), s);
-      assert.ok(d.sousPrefectures.includes(a === d.prefecture ? b : a), s);
+    for (const line of said) {
+      const m = line.match(/c'est (.+) ou (.+) \?$/); if (!m) continue;
+      const head = line.slice(0, line.lastIndexOf(", c'est") >= 0 ? line.lastIndexOf(", c'est") : line.lastIndexOf(" : c'est"));
+      const d = [...DEPS].sort((a, b) => b.nom.length - a.nom.length).find((x) => head.includes(x.nom))!; assert.ok(d, line);
+      const [a, b] = [m[1], m[2]]; assert.ok([a, b].includes(d.prefecture), line);
+      assert.ok(d.sousPrefectures.includes(a === d.prefecture ? b : a), line);
     }
   }
 });
@@ -69,7 +71,7 @@ test("préfecture ou pas : la bonne réponse est la préfecture, l'autre une sou
 test("les plus ratés : désactivé sans statistiques, et on finit par le plus raté", () => {
   assert.equal(plan("rates", { rng: seeded("x"), recent: new Set() }), null);
   const { said } = build("rates", "r");
-  const pcts = said.filter((s) => s.startsWith("Ici !")).map((s) => Number(s.match(/(\d+) %/)![1]));
+  const pcts = said.filter((s) => /\d+ %/.test(s)).map((s) => Number(s.match(/(\d+) %/)![1]));
   assert.deepEqual(pcts, [...pcts].sort((a, b) => a - b));
   assert.equal(pcts.at(-1), 90);
 });

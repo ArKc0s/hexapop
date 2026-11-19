@@ -1,7 +1,7 @@
 // Les formats de reels. Chacun choisit son contenu dans les données du jeu (tiré au sort avec une graine,
 // donc reproductible), puis le met en scène sur une ligne de temps. Tout ce qui est affirmé vient des données.
 import { METRO, PIEGES, REGION_FR, TINY, cap1, de, dep, le, regionName, type Dep } from "./data.ts";
-import { Timeline, at, rows, type El } from "./timeline.ts";
+import { Timeline, at, rows, spokenText, type El } from "./timeline.ts";
 
 export type FormatId = "placer" | "numero" | "prefecture" | "vraifaux" | "rates";
 /** Ordre de rotation, un format par jour. */
@@ -79,21 +79,37 @@ function ramp(c: Ctx, pool: Dep[], n: number, easy: string[]): Dep[] {
   const mid = fresh(c, pool.filter((d) => !first.includes(d) && !last.includes(d) && !easy.includes(d.code)), n - first.length - last.length, (d) => d.code);
   return [...first, ...mid, ...last];
 }
+/**
+ * Formulations variées : chaque liste est battue une fois par reel, et la i-ème question prend la i-ème formulation
+ * (jamais deux fois la même tant qu'il en reste). Tirées dans le plan : identiques aux deux passages de construction.
+ */
+function varied(c: Ctx) {
+  const decks = new Map<string, number[]>();
+  return (key: string, i: number, xs: readonly string[]) => {
+    let d = decks.get(key); if (!d) { d = shuffle(c.rng, [...xs.keys()]); decks.set(key, d); }
+    return xs[d[i % d.length]];
+  };
+}
+/** Nombre de mots lus d'une introduction (les sous-titres de la question commencent après). */
+const wordsOf = (s: string) => (spokenText(s) ? spokenText(s).split(" ").length : 0);
+/** La première question laisse la place au bandeau d'accroche. */
+const FIRST_SHIFT = 80;
+
 /** Départements que presque tout le monde connaît (pour la première question). */
 const EASY_MAP = ["13", "33", "29", "59", "06", "67", "64", "2A", "76", "35", "34", "31", "69", "44"];
 const EASY_NUM = ["13", "33", "69", "59", "31", "44", "67", "29", "34", "35", "38", "76", "57", "64"];
 
 /** Une question « où est … ? » sur la carte : 3 secondes, puis le département saute en rose. */
-function askWhere(tl: Timeline, map: El, d: Dep, header: string, ask: string, reveal: string, under: string) {
+function askWhere(tl: Timeline, map: El, d: Dep, header: string, ask: string, reveal: string, under: string, o: { intro?: string } = {}) {
   tl.beat();
   const t0 = tl.t, hd = tl.add({ k: "label", t0, text: header, y: 230 });
-  const s = tl.say(ask, { pad: 0.1 });
-  const caps = rows(tl, s, { y: 340, size: 100, max: 13, yellow: [UP(d.nom)] });
+  const s = tl.say(o.intro ? `${o.intro} ${ask}` : ask, { pad: 0.1 });
+  const caps = rows(tl, s, { y: 340 + (o.intro !== undefined ? FIRST_SHIFT : 0), size: 100, max: 13, yellow: [UP(d.nom)], from: wordsOf(o.intro ?? "") });
   const c = tl.wait(COUNT); tl.add({ k: "count", t0: c.t0, n: COUNT, y: 1580 });
   const tr = tl.t; tl.dings.push(tr);
   (map.fills as unknown[]).push({ code: d.code, t: tr, color: "pink" }); (map.pops as unknown[]).push({ code: d.code, t: tr });
   const r = tl.say(reveal, { min: 1.6 });
-  const caps2 = rows(tl, r, { y: 1560, size: 96, max: 16, yellow: ["ICI"] });
+  const caps2 = rows(tl, r, { y: 1560, size: 96, max: 16, yellow: ["ICI", "LÀ"] });
   const u = tl.add({ k: "label", t0: tr + 0.4, text: under, y: Math.min(1860, (caps2.at(-1)?.y as number ?? 1560) + 130), size: 56, color: "ink" });
   tl.beat();
   for (const e of [hd, ...caps, ...caps2, u]) e.t1 = tl.t;
@@ -101,15 +117,16 @@ function askWhere(tl: Timeline, map: El, d: Dep, header: string, ask: string, re
 }
 
 /** Une question à deux réponses (préfecture ou pas, vrai ou faux). */
-function askChoice(tl: Timeline, o: { header: string; ask: string; items: string[]; answer: number; showAt: string; reveal: string; note?: string; noteAt?: string; codes: string[]; pop: string; capTo?: string }) {
+function askChoice(tl: Timeline, o: { header: string; ask: string; items: string[]; answer: number; showAt: string; reveal: string; note?: string; noteAt?: string; codes: string[]; pop: string; capTo?: string; intro?: string }) {
   tl.beat();
   const t0 = tl.t, els: El[] = [];
   els.push(tl.add({ k: "label", t0, text: o.header, y: 230 }));
   els.push(tl.add({ k: "map", t0, box: MAP_SMALL, fills: o.codes.map((code) => ({ code, t: t0, color: "pink" })), pops: [] }));
-  const s = tl.say(o.ask, { pad: 0.1 });
-  const to = o.capTo ? s.words.findIndex((w) => w.w.toLowerCase() === o.capTo) : -1; // la question sans les réponses (déjà sur les cartes)
-  els.push(...rows(tl, s, { y: 330, size: 84, max: 18, ...(to > 0 ? { to, end: " ?" } : {}) }));
-  const ch = tl.add({ k: "choice", t0: at(s, o.showAt), y: 690, items: o.items, answer: o.answer, reveal: 1e9 });
+  const s = tl.say(o.intro ? `${o.intro} ${o.ask}` : o.ask, { pad: 0.1 });
+  const from = wordsOf(o.intro ?? "");
+  const to = o.capTo ? s.words.findIndex((w, i) => i >= from && w.w.toLowerCase() === o.capTo) : -1; // la question sans les réponses (déjà sur les cartes)
+  els.push(...rows(tl, s, { y: 330 + (o.intro !== undefined ? FIRST_SHIFT : 0), size: 84, max: 18, from, ...(to > 0 ? { to, end: " ?" } : {}) }));
+  const ch = tl.add({ k: "choice", t0: Math.max(s.t0, at({ ...s, words: s.words.slice(from) }, o.showAt)), y: 690 + (o.intro !== undefined ? FIRST_SHIFT / 2 : 0), items: o.items, answer: o.answer, reveal: 1e9 });
   els.push(ch);
   const c = tl.wait(COUNT); tl.add({ k: "count", t0: c.t0, n: COUNT, y: 1200 });
   const tr = tl.t; tl.dings.push(tr); ch.reveal = tr;
@@ -123,13 +140,17 @@ function askChoice(tl: Timeline, o: { header: string; ask: string; items: string
 // ---------- 1. Tu sais placer ces 5 départements ? ----------
 function placer(c: Ctx): Plan {
   const ds = ramp(c, METRO.filter((d) => !TINY.has(d.code)), NQ, EASY_MAP);
+  const where = (d: Dep) => verb(d, "Où est", "Où sont");
+  const v = varied(c);
+  const asks = ds.map((d, i) => `[curious] ${i === 0 ? `On commence : ${where(d).toLowerCase()} ${le(d)} ?` : i === ds.length - 1 ? `Et pour finir : ${le(d)} ?` : v("ask", i, [`${where(d)} ${le(d)} ?`, `Et ${le(d)}, c'est où ?`, `Maintenant, ${le(d)} ?`, `Tu trouves ${le(d)} ?`])}`);
+  const reveals = ds.map((_, i) => `[excited] ${v("rev", i, ["Ici !", "Juste là !", "C'était ici !", "Là !"])}`);
   return {
     format: "placer", used: ds.map((d) => d.code),
     caption: `Tu sais placer ces ${NQ} départements ? 🗺️\n${ds.map((d) => cap1(le(d))).join(", ")}…\nDis ton score en commentaire 👇\n\nUn défi chaque jour sur hexapop.app\n\n${HASHTAGS}`,
     build(tl) {
-      const bn = opener(tl, `${NQ} DÉPARTEMENTS · TU LES PLACES ?`);
+      const bn = opener(tl, `PLACE CES ${NQ} DÉPARTEMENTS`);
       const map = tl.add({ k: "map", t0: 0, box: MAP_ASK, fills: [], pops: [] });
-      ds.forEach((d, i) => { askWhere(tl, map, d, i ? `DÉPARTEMENT ${i + 1} / ${NQ}` : "", `[curious] ${verb(d, "Où est", "Où sont")} ${le(d)} ?`, "[excited] Ici !", `${d.code} · Préfecture : ${d.prefecture}`); if (!i) bn.t1 = tl.t; });
+      ds.forEach((d, i) => { askWhere(tl, map, d, i ? `DÉPARTEMENT ${i + 1} / ${NQ}` : "", asks[i], reveals[i], `${d.code} · Préfecture : ${d.prefecture}`, i ? {} : { intro: `[enthusiastic] ${NQ} départements à placer sur la carte.` }); if (!i) bn.t1 = tl.t; });
       outro(tl, OUTRO_SCORE);
     },
   };
@@ -138,22 +159,25 @@ function placer(c: Ctx): Plan {
 // ---------- 2. Le numéro mystère ----------
 function numero(c: Ctx): Plan {
   const ds = ramp(c, METRO.filter((d) => !TINY.has(d.code) && /^\d\d$/.test(d.code) && +d.code >= 10), NQ, EASY_NUM);
+  const v = varied(c);
+  const asks = ds.map((d, i) => `[curious] ${i === 0 ? `Chaque département a son numéro. Le ${d.code}, c'est lequel ?` : i === ds.length - 1 ? `Et pour finir : le ${d.code} ?` : v("ask", i, [`Le ${d.code} ?`, `Et le ${d.code}, c'est lequel ?`, `Le ${d.code}, tu sais ?`, `Au tour du ${d.code} !`])}`);
+  const reveals = ds.map((d, i) => `[excited] ${v("rev", i, [`${cap1(le(d))} !`, `C'est ${le(d)} !`, `${cap1(le(d))}, bien sûr !`, `Réponse : ${le(d)} !`])}`);
   return {
     format: "numero", used: ds.map((d) => d.code),
     caption: `Le numéro mystère 🔢 Tu connais ces ${NQ} départements par leur numéro ?\n${ds.map((d) => d.code).join(" · ")}\nDis ton score en commentaire 👇\n\nUn défi chaque jour sur hexapop.app\n\n${HASHTAGS} #numerodepartement`,
     build(tl) {
-      const bn = opener(tl, `${NQ} NUMÉROS · TU LES AS TOUS ?`);
+      const bn = opener(tl, "QUEL DÉPARTEMENT A CE NUMÉRO ?");
       const map = tl.add({ k: "map", t0: 0, box: { x: 60, y: 730, w: 960, h: 740 }, fills: [], pops: [] });
       ds.forEach((d, i) => {
         tl.beat();
         const t0 = tl.t, els: El[] = [];
         els.push(tl.add({ k: "label", t0, text: i ? `NUMÉRO ${i + 1} / ${NQ}` : "", y: 230 }));
-        els.push(tl.add({ k: "cap", t0, text: d.code, y: 500, size: 280, font: "bowlby", color: "yellow" }));
-        tl.say(`[curious] Le ${d.code}, c'est quoi ?`, { pad: 0.1 });
+        els.push(tl.add({ k: "cap", t0, text: d.code, y: 500 + (i ? 0 : 40), size: 280, font: "bowlby", color: "yellow" }));
+        tl.say(asks[i], { pad: 0.1 });
         const w = tl.wait(COUNT); tl.add({ k: "count", t0: w.t0, n: COUNT, y: 1580 });
         const tr = tl.t; tl.dings.push(tr);
         (map.fills as unknown[]).push({ code: d.code, t: tr, color: "pink" }); (map.pops as unknown[]).push({ code: d.code, t: tr });
-        const r = tl.say(`[excited] ${cap1(le(d))} !`, { min: 1.6 });
+        const r = tl.say(reveals[i], { min: 1.6 });
         const rr = rows(tl, r, { y: 1560, size: 96, max: 16, yellow: [UP(d.nom)] }); els.push(...rr);
         els.push(tl.add({ k: "label", t0: tr + 0.4, text: `Préfecture : ${d.prefecture}`, y: Math.min(1860, (rr.at(-1)?.y as number ?? 1560) + 130), size: 56, color: "ink" }));
         tl.beat();
@@ -175,16 +199,19 @@ function prefecture(c: Ctx): Plan {
     if (qs.length >= 4) break; qs.push({ d, trap: pick(c.rng, d.sousPrefectures) });
   }
   const items = qs.map((q) => (c.rng() < 0.5 ? [q.trap, q.d.prefecture] : [q.d.prefecture, q.trap]));
+  const v = varied(c);
+  const asks = qs.map((q, i) => `[curious] ${i === qs.length - 1 ? `Dernier piège : la préfecture ${de(q.d)}, c'est ${items[i][0]} ou ${items[i][1]} ?` : v("ask", i, [`La préfecture ${de(q.d)}, c'est ${items[i][0]} ou ${items[i][1]} ?`, `Et pour ${le(q.d)}, c'est ${items[i][0]} ou ${items[i][1]} ?`, `Préfecture ${de(q.d)} : c'est ${items[i][0]} ou ${items[i][1]} ?`])}`);
+  const reveals = qs.map((q, i) => `[excited] ${v("rev", i, [`C'est ${q.d.prefecture} !`, `Bonne réponse : ${q.d.prefecture} !`, `${q.d.prefecture}, évidemment !`])}`);
   return {
     format: "prefecture", used: qs.map((q) => q.d.code),
     caption: `Préfecture ou pas ? 🏛️ 4 pièges, 3 secondes chacun.\nTu tombes dans combien ? Dis-le en commentaire 👇\n\nUn défi chaque jour sur hexapop.app\n\n${HASHTAGS} #prefecture`,
     build(tl) {
-      const bn = opener(tl, "PRÉFECTURE OU PAS ? 4 PIÈGES");
+      const bn = opener(tl, "PRÉFECTURE OU SOUS-PRÉFECTURE ?");
       qs.forEach((q, i) => { askChoice(tl, {
         header: i ? `PIÈGE ${i + 1} / 4` : "",
-        ask: `[curious] La préfecture ${de(q.d)}, c'est ${items[i][0]} ou ${items[i][1]} ?`,
+        ask: asks[i], intro: i ? undefined : "[enthusiastic] Attention, il y a un piège !",
         items: items[i], answer: items[i].indexOf(q.d.prefecture), showAt: "c'est", capTo: "c'est",
-        reveal: `[excited] C'est ${q.d.prefecture} !`,
+        reveal: reveals[i],
         note: `${q.trap} : sous-préfecture`, codes: [q.d.code], pop: q.d.code,
       }); if (!i) bn.t1 = tl.t; });
       outro(tl, { ...OUTRO_SCORE, ask: "[playful] T'es tombé dans combien de pièges ? Dis-le en commentaire !", yellow: ["PIÈGES"] });
@@ -232,14 +259,18 @@ function vraifaux(c: Ctx): Plan {
   // Ni tout vrai ni tout faux.
   const nOk = qs.filter((q) => q.ok).length;
   if (nOk < 1 || nOk > 3) return vraifaux({ ...c, rng: seeded(String(c.rng())) });
+  const v = varied(c);
+  let nv = 0, nf = 0; // compteurs séparés : deux « vrai » de suite ne se disent pas pareil
+  const reveals = qs.map((q) => `[excited] ${q.ok ? v("vrai", nv++, ["Vrai !", "C'est vrai !", "Eh oui, vrai !"]) : `${v("faux", nf++, ["Faux !", "Raté, c'est faux !", "Non, faux !"])} ${q.fix}`}`);
   return {
     format: "vraifaux", used: qs.map((q) => q.codes[0]),
     caption: `Vrai ou faux ? 🤔 4 affirmations sur les départements.\nT'en as eu combien ? Dis-le en commentaire 👇\n\nUn défi chaque jour sur hexapop.app\n\n${HASHTAGS} #vraioufaux`,
     build(tl) {
-      const bn = opener(tl, "VRAI OU FAUX ? TU FAIS 4 / 4 ?");
+      const bn = opener(tl, "VRAI OU FAUX ? 4 AFFIRMATIONS");
       qs.forEach((q, i) => { askChoice(tl, {
         header: i ? `AFFIRMATION ${i + 1} / 4` : "", ask: `[curious] ${q.text}`, items: ["VRAI", "FAUX"], answer: q.ok ? 0 : 1, showAt: "",
-        reveal: q.ok ? "[excited] Vrai !" : `[excited] Faux ! ${q.fix}`, note: q.note, codes: q.codes, pop: q.pop,
+        intro: i ? undefined : "[enthusiastic] Vrai ou faux ? Tu as 3 secondes.",
+        reveal: reveals[i], note: q.note, codes: q.codes, pop: q.pop,
       }); if (!i) bn.t1 = tl.t; });
       outro(tl, OUTRO_SCORE);
     },
@@ -262,7 +293,7 @@ function rates(c: Ctx): Plan | null {
       const map = tl.add({ k: "map", t0: 0, box: MAP_ASK, fills: [], pops: [] });
       order.forEach((x, i) => {
         const d = dep(x.code), pct = Math.round(x.rate * 100);
-        askWhere(tl, map, d, !i ? "" : firstTime ? `N°${3 - i} DES PLUS RATÉS` : `RATÉ ${i + 1} / 3`, `[curious] ${verb(d, "Où est", "Où sont")} ${le(d)} ?`, `[excited] Ici ! ${pct} % d'erreurs sur Hexa.`, `${d.code} · Préfecture : ${d.prefecture}`);
+        askWhere(tl, map, d, !i ? "" : firstTime ? `N°${3 - i} DES PLUS RATÉS` : `RATÉ ${i + 1} / 3`, `[curious] ${[`${verb(d, "Où est", "Où sont")} ${le(d)} ?`, `Et ${le(d)}, c'est où ?`, `Pour finir : ${le(d)} ?`][i]}`, `[excited] ${[`Ici ! ${pct} % d'erreurs sur Hexa.`, `Juste là ! ${pct} % de mauvaises réponses.`, `Là ! ${pct} % de ratés sur Hexa.`][i]}`, `${d.code} · Préfecture : ${d.prefecture}`, i ? {} : { intro: `[enthusiastic] Les départements que les joueurs d'Hexa ratent ${most}.` });
         if (!i) bn.t1 = tl.t;
       });
       outro(tl, { ...OUTRO_SCORE, ask: "[playful] Ton score sur 3 ? Dis-le en commentaire !", yellow: ["SCORE", "3"] });
