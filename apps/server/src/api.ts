@@ -85,6 +85,22 @@ async function sendVerification(u: { id: number; pseudo: string; email: string }
 }
 
 type Handler = (req: IncomingMessage, res: ServerResponse, user: User | null) => Promise<void> | void;
+/** Totaux par département sur les progressions de tous les comptes, du plus raté au moins raté. */
+export function errorRates(minPlayers = 5): { code: string; seen: number; correct: number; players: number; rate: number }[] {
+  const agg = new Map<string, { seen: number; correct: number; players: number }>();
+  for (const { data } of db.prepare("SELECT data FROM progress").all() as { data: string }[]) {
+    let p: Progress; try { p = JSON.parse(data); } catch { continue; }
+    for (const [code, c] of Object.entries(p)) {
+      if (!DEP.has(code) || !(c?.seen > 0)) continue;
+      const a = agg.get(code) ?? { seen: 0, correct: 0, players: 0 };
+      a.seen += c.seen; a.correct += Math.min(c.correct, c.seen); a.players++; agg.set(code, a);
+    }
+  }
+  return [...agg].filter(([, a]) => a.players >= minPlayers)
+    .map(([code, a]) => ({ code, ...a, rate: Math.round((1 - a.correct / a.seen) * 1000) / 1000 }))
+    .sort((x, y) => y.rate - x.rate);
+}
+
 /** Lecture des statistiques (Grafana) : jeton STATS_TOKEN. */
 function statsAuth(req: IncomingMessage) {
   const given = Buffer.from(String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
@@ -372,6 +388,15 @@ const routes: Record<string, Handler> = {
     statsAuth(req);
     const days = Math.min(365, Math.max(1, Number(new URL(req.url ?? "/", "http://x").searchParams.get("days")) || 30));
     json(res, 200, report(days), { "cache-control": "no-store" });
+  },
+
+  /**
+   * Taux d'erreur par département, tous joueurs confondus (reels « les plus ratés », apps/studio) : seulement des
+   * totaux anonymes, et seulement pour les départements vus par au moins 5 joueurs.
+   */
+  "GET /api/admin/rates": (req, res) => {
+    statsAuth(req);
+    json(res, 200, { rates: errorRates() }, { "cache-control": "no-store" });
   },
 
   /** En direct (Grafana) : présents par écran, salons en cours, et une mesure par minute sur ?hours= (24 h par défaut). */

@@ -1,0 +1,16 @@
+{
+  "name": "@hexa/studio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.ts daemon",
+    "test": "node --test src/*.test.ts",
+    "check": "tsc -p ."
+  },
+  "dependencies": {
+    "playwright-core": "1.65.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2"
+  }
+}
