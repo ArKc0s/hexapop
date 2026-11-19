@@ -1,0 +1,18 @@
+# Service du studio des reels, sur la machine hexa-studio (voir docs/studio.md).
+[Unit]
+Description=Studio Hexa : reel du jour, validation Discord, publication
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=hexa
+WorkingDirectory=/home/hexa/studio/app/apps/studio
+EnvironmentFile=/home/hexa/studio/.env
+ExecStart=/usr/local/bin/node src/index.ts daemon
+Restart=always
+RestartSec=30
+Nice=10
+MemoryMax=1800M
+
+[Install]
+WantedBy=multi-user.target

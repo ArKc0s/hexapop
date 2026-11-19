@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS daily_guest_results (
   finished INTEGER NOT NULL DEFAULT 0, fp TEXT, created_at INTEGER NOT NULL, PRIMARY KEY (day, guest_id)
 );
 CREATE INDEX IF NOT EXISTS daily_guest_rank ON daily_guest_results(day, level, points DESC, elapsed_ms ASC);
+`);
+// Vue recréée à chaque démarrage (sa définition peut changer d'une version à l'autre). Deux instances qui démarrent en
+// même temps (mise à jour sans coupure) peuvent se croiser : si l'autre vient de la recréer, c'est la même, on continue.
+try {
+  db.exec(`
 DROP VIEW IF EXISTS daily_all;
 CREATE VIEW daily_all AS
   SELECT d.day, d.level, d.points, d.accuracy, d.elapsed_ms, d.grid, d.finished, u.pseudo AS name, u.home_dep AS home, 0 AS guest, 'u' || d.user_id AS who
@@ -62,6 +67,10 @@ CREATE VIEW daily_all AS
   UNION ALL
   SELECT g.day, g.level, g.points, g.accuracy, g.elapsed_ms, g.grid, g.finished, g.name, g.home, 1, 'g' || g.guest_id FROM daily_guest_results g;
 `);
+} catch (e) {
+  if (!/already exists/.test((e as Error).message)) throw e;
+}
+
 /** Résultats d'invités d'une même connexion, par jour : au-delà, on ne les classe plus (vider son navigateur pour rejouer). */
 export const GUEST_PER_CONNECTION = 3;
 export const isGuestId = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9_-]{16,40}$/.test(v);

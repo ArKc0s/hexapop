@@ -17,7 +17,12 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 
 /** Une tâche qui plante (Hexa en mise à jour, Discord lent…) ne doit jamais arrêter le bot. */
 const safe = (name: string, f: () => Promise<unknown>) => () => f().catch((e) => console.error(`[${name}]`, e?.message ?? e));
-const every = (ms: number, name: string, f: () => Promise<unknown>) => { const run = safe(name, f); run(); setInterval(run, ms); };
+/** Tâche périodique, jamais deux fois en même temps (une annonce lente ne doit pas partir en double). */
+const every = (ms: number, name: string, f: () => Promise<unknown>) => {
+  let busy = false;
+  const run = async () => { if (busy) return; busy = true; try { await safe(name, f)(); } finally { busy = false; } };
+  run(); setInterval(run, ms);
+};
 
 const COMMANDS: ApplicationCommandDataResolvable[] = [
   { name: "defi", description: "Le défi du jour d'Hexa : lien et nombre de joueurs", name_localizations: { fr: "défi" } },

@@ -466,6 +466,21 @@ test("entre amis sur l'atlas Régions : questions de régions, niveaux par atlas
   a.send({ t: "leave" }); b.send({ t: "leave" }); a.ws.close(); b.ws.close();
 });
 
+test("taux d'erreur par département : totaux anonymes, à partir de 5 joueurs, lecture protégée par jeton", async () => {
+  for (let i = 0; i < 5; i++) {
+    const r = await fetch(BASE + "/api/auth/register", { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": `10.7.0.${i}` }, body: JSON.stringify({ email: `taux${i}@example.com`, pseudo: `Taux${i}`, password: "motdepasse" }) });
+    const { token } = await r.json();
+    const progress: Record<string, unknown> = { "48": { box: 0, due: 1, seen: 4, correct: 1 } };
+    if (i === 0) progress["2A"] = { box: 1, due: 1, seen: 2, correct: 0 }; // un seul joueur : jamais renvoyé
+    await fetch(BASE + "/api/progress", { method: "PUT", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ progress }) });
+  }
+  assert.equal((await fetch(BASE + "/api/admin/rates")).status, 401, "jeton requis");
+  const { rates } = await (await fetch(BASE + "/api/admin/rates", { headers: { authorization: "Bearer jeton-stats" } })).json();
+  const lozere = rates.find((x: { code: string }) => x.code === "48");
+  assert.deepEqual(lozere, { code: "48", seen: 20, correct: 5, players: 5, rate: 0.75 });
+  assert.ok(!rates.some((x: { code: string }) => x.code === "2A"), "moins de 5 joueurs : pas de chiffre");
+});
+
 test("stats en direct : présents par écran et salons en cours", async () => {
   const live = (id: string, sc: string) => fetch(BASE + "/api/stats/live", { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": "10.0.9.1" }, body: JSON.stringify({ id, s: sc }) });
   await live("onglet-aaaaaaaa", "seance"); await live("onglet-bbbbbbbb", "accueil"); await live("onglet-aaaaaaaa", "marathon"); await live("onglet-cccccccc", "pirate");

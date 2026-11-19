@@ -4,6 +4,7 @@
   import { REGIONS, type RoomSettings } from "@hexa/game";
   import { live } from "../lib/socket.svelte.ts";
   import { session } from "../lib/api.svelte.ts";
+  import GameSheet from "../lib/ui/GameSheet.svelte";
   import { nav } from "../lib/nav.svelte.ts";
 
   let { join }: { join?: string } = $props();
@@ -45,6 +46,8 @@
     try { await navigator.clipboard.writeText(link); copied = true; setTimeout(() => (copied = false), 2000); } catch { /* refusé */ }
   }
   function leave() { live.leave(); nav.go({ name: "home" }); }
+  /** Rendre la soirée publique déclenche une annonce sur Discord (avec mention) : on demande confirmation. */
+  let askPublic = $state(false);
 </script>
 
 <main class="lobby page">
@@ -123,7 +126,7 @@
           <button class:on={!room.settings.elimination} disabled={!isHost} onclick={() => set({ elimination: false })}>Non</button></div></div>
         {#if room.kind === "plateau" && isHost && session.me?.admin}
           <div class="rule"><span>Soirée publique (Discord)</span><div class="seg">
-            <button class:on={!!room.settings.public} onclick={() => set({ public: true })}>Oui</button>
+            <button class:on={!!room.settings.public} onclick={() => { if (!room.settings.public) askPublic = true; }}>Oui</button>
             <button class:on={!room.settings.public} onclick={() => set({ public: false })}>Non</button></div></div>
           {#if room.settings.public}<p class="hint">Le bot Hexa annonce le salon sur le Discord, mentionne les joueurs inscrits aux soirées et affiche le lien dans son statut. Relance en boucle : il réannonce à chaque nouvelle partie.</p>{/if}
         {:else if room.settings.public}<p class="hint">Soirée publique : annoncée sur le Discord d'Hexa.</p>{/if}
@@ -147,6 +150,12 @@
     </div>
   {/if}
 </main>
+
+{#if askPublic && room}
+  <GameSheet title="Annoncer la soirée sur Discord ?" mood="wow" seeThrough primary="Garder la soirée privée" onprimary={() => (askPublic = false)} secondary="Oui, l'annoncer" onsecondary={() => { askPublic = false; set({ public: true }); }}>
+    <p>Le bot Hexa va publier le salon <b>{room.code}</b> dans #entre-amis, <b>mentionner les joueurs inscrits aux soirées</b> et afficher le lien dans son statut. N'importe qui pourra rejoindre.</p>
+  </GameSheet>
+{/if}
 
 <style>
   .lobby { --w: 680px; display: flex; flex-direction: column; gap: 16px; }

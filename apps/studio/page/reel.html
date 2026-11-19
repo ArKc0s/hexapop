@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Reel Hexa</title>
+<style>
+@font-face { font-family: "Gabarito"; src: url("../../server/fonts/gabarito-800.ttf"); font-weight: 800 900; }
+@font-face { font-family: "Gabarito"; src: url("../../server/fonts/gabarito-600.ttf"); font-weight: 500 700; }
+@font-face { font-family: "Bowlby One"; src: url("../../server/fonts/bowlby-one.ttf"); }
+html, body { margin: 0; background: #000; }
+canvas { display: block; width: 540px; height: 960px; }
+</style>
+<script src="carte.js"></script>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Moteur de rendu des reels : une image à l'instant t, d'après un script (liste d'éléments datés) fourni par
+// apps/studio/src/formats.ts. Musique synthétisée ici (120 BPM, libre de droits), rendue hors ligne.
+// window.load(script) charge le script ; window.jpeg(t) rend une image ; window.renderAudio() la musique (WAV).
+const W = 1080, H = 1920, BEAT = 0.5;
+const C = { bg: "#f3eee4", ink: "#1c1a37", pink: "#ff4fae", blue: "#1572c4", yellow: "#ffd93d", card: "#fffdf8", line: "#9a907c", green: "#22b07d", soft: "#ffd0e8", grey: "#6b6884" };
+const col = (c) => C[c] ?? c ?? "#fff";
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+let S = { dur: 1, els: [], dings: [] };
+
+// ---------- carte (métropole) ----------
+const P = {}; for (const [c, d] of Object.entries(CARTE.paths)) P[c] = new Path2D(d);
+const R = CARTE.regions.map((d) => new Path2D(d));
+const BOX = {}; // emprise de chaque département (coordonnées de la carte)
+for (const [c, d] of Object.entries(CARTE.paths)) { let a = 1e9, b = 1e9, e = -1e9, f = -1e9; for (const [, x, y] of d.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)) { a = Math.min(a, +x); e = Math.max(e, +x); b = Math.min(b, +y); f = Math.max(f, +y); } BOX[c] = [a, b, e, f]; }
+function bbox(codes) { let a = 1e9, b = 1e9, e = -1e9, f = -1e9; for (const c of codes) { const k = BOX[c]; if (!k) continue; a = Math.min(a, k[0]); b = Math.min(b, k[1]); e = Math.max(e, k[2]); f = Math.max(f, k[3]); } return [a, b, e, f]; }
+const ALL = Object.keys(P);
+function view(el) { // échelle et décalage pour faire tenir la zone voulue dans le cadre
+  const box = el.box ?? { x: 60, y: 560, w: 960, h: 860 };
+  const [a, b, e, f] = bbox(el.focus ?? ALL), m = el.focus ? 0.08 : 0;
+  const w = (e - a) * (1 + 2 * m), h = (f - b) * (1 + 2 * m), s = Math.min(box.w / w, box.h / h);
+  return { box, s, ox: box.x + (box.w - (e - a) * s) / 2 - a * s, oy: box.y + (box.h - (f - b) * s) / 2 - b * s };
+}
+const last = (list, t) => { let v; for (const x of list ?? []) if (x.t <= t) v = x; return v; };
+function drawMap(el, t) {
+  const v = view(el), s = v.s;
+  g.save();
+  if (el.focus) { g.beginPath(); g.rect(v.box.x - 20, v.box.y - 20, v.box.w + 40, v.box.h + 40); g.clip(); }
+  g.translate(v.ox, v.oy); g.scale(s, s); g.lineJoin = "round";
+  g.save(); g.translate(6 / s, 6 / s); g.fillStyle = C.pink; for (const p of Object.values(P)) g.fill(p); g.restore(); // ombre rose
+  const fill = {}; for (const f of el.fills ?? []) if (f.t <= t) fill[f.code] = f.color;
+  for (const [c, p] of Object.entries(P)) { g.fillStyle = col(fill[c] ?? "card"); g.fill(p); }
+  g.strokeStyle = C.line; g.lineWidth = 1.4 / s; for (const p of Object.values(P)) g.stroke(p);
+  g.strokeStyle = C.ink; g.lineWidth = 3.4 / s; for (const r of R) g.stroke(r);
+  g.restore();
+  for (const p of el.pops ?? []) { // le département qui « saute »
+    const k = (t - p.t) / 1.2; if (k < 0 || k > 1) continue;
+    const [a, b, e, f] = BOX[p.code], cx = v.ox + (a + e) / 2 * s, cy = v.oy + (b + f) / 2 * s;
+    const z = 1 + 0.35 * Math.sin(Math.min(1, k) * Math.PI) * (1 - Math.min(1, k) * 0.3);
+    g.save(); g.translate(cx, cy); g.scale(z, z); g.translate(-cx, -cy); g.translate(v.ox, v.oy); g.scale(s, s);
+    g.fillStyle = col(p.color ?? "pink"); g.fill(P[p.code]); g.strokeStyle = C.ink; g.lineWidth = 4.5 / s; g.stroke(P[p.code]);
+    g.restore();
+  }
+  for (const tg of el.tags ?? []) { // numéros posés sur les départements
+    const k = (t - tg.t) / BEAT; if (k < 0) continue;
+    const [a, b, e, f] = BOX[tg.code], cx = v.ox + (a + e) / 2 * s, cy = v.oy + (b + f) / 2 * s, z = 0.5 + 0.5 * easeBack(k * 2);
+    g.save(); g.translate(cx, cy); g.scale(z, z);
+    g.font = '400 40px "Bowlby One"'; const w = g.measureText(tg.text).width + 26;
+    g.fillStyle = C.ink; g.beginPath(); g.roundRect(-w / 2, -30, w, 60, 16); g.fill();
+    g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(tg.text, 0, 3);
+    g.restore();
+  }
+}
+
+// ---------- Hexa ----------
+const HEX = new Path2D("M36 6 L60 19 Q64 21 64 26 L64 50 Q64 55 60 57 L36 70 Q32 72 28 70 L4 57 Q0 55 0 50 L0 26 Q0 21 4 19 L28 6 Q32 4 36 6Z");
+function hexa(x, y, s, mood) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.save(); g.translate(4, 4); g.fillStyle = C.blue; g.fill(HEX); g.restore();
+  g.fillStyle = C.pink; g.fill(HEX);
+  const ell = (cx, cy, rx, ry, c) => { g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fillStyle = c; g.fill(); };
+  ell(22, 34, 7, 8, "#fff"); ell(42, 34, 7, 8, "#fff");
+  if (mood === "wow") { ell(22, 34, 4, 4, C.ink); ell(42, 34, 4, 4, C.ink); ell(32, 50, 5, 6, C.ink); }
+  else { ell(23.5, 35.5, 3.6, 3.6, C.ink); ell(43.5, 35.5, 3.6, 3.6, C.ink); g.beginPath(); g.moveTo(24, 46); g.quadraticCurveTo(32, 55, 40, 46); g.strokeStyle = C.ink; g.lineWidth = 3.2; g.lineCap = "round"; g.stroke(); }
+  g.globalAlpha = .9; ell(14, 46, 3.5, 3.5, C.yellow); ell(50, 46, 3.5, 3.5, C.yellow);
+  g.restore();
+}
+
+// ---------- texte ----------
+const easeBack = (k) => { k = Math.min(1, Math.max(0, k)); const c = 1.7; return 1 + (c + 1) * (k - 1) ** 3 + c * (k - 1) ** 2; };
+function fit(text, size, font, max = W - 100) { g.font = `${font} ${size}px ${font.startsWith("400") ? '"Bowlby One"' : "Gabarito"}`; const w = g.measureText(text).width; return w > max ? size * max / w : size; }
+function caption(el, t) { // sous-titre de reel : gros, blanc, contour noir, qui « pop »
+  const k = (t - el.t0) / BEAT; if (k <= 0) return;
+  const font = el.font === "bowlby" ? "400" : "900", size = fit(el.text, el.size, font);
+  const s = 0.6 + 0.4 * easeBack(k * 4);
+  g.save(); g.translate(W / 2, el.y); g.scale(s, s);
+  g.font = `${font} ${size}px ${font === "400" ? '"Bowlby One"' : "Gabarito"}`; g.textAlign = "center"; g.textBaseline = "middle";
+  g.lineJoin = "round"; g.lineWidth = size * 0.22; g.strokeStyle = C.ink; g.strokeText(el.text, 0, 0);
+  g.fillStyle = col(el.color ?? "#fff"); g.fillText(el.text, 0, 0);
+  g.restore();
+}
+function label(el, t) {
+  g.globalAlpha = Math.min(1, Math.max(0, (t - el.t0) * 4));
+  const size = fit(el.text, el.size ?? 46, "800");
+  g.font = `800 ${size}px Gabarito`; g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillStyle = col(el.color ?? "grey"); g.fillText(el.text, W / 2, el.y);
+  g.globalAlpha = 1;
+}
+function title(el, t) {
+  g.globalAlpha = Math.min(1, Math.max(0, (t - el.t0) * 3));
+  const size = el.size ?? 110;
+  g.font = `400 ${size}px "Bowlby One"`; g.textAlign = "center"; g.textBaseline = "alphabetic";
+  g.fillStyle = C.pink; g.fillText(el.text, W / 2 + size * .06, el.y + size * .06); g.fillStyle = C.blue; g.fillText(el.text, W / 2, el.y);
+  g.globalAlpha = 1;
+}
+function count(el, t) { // compte à rebours, un chiffre par seconde
+  const e = t - el.t0; if (e < 0 || e >= el.n) return;
+  const n = el.n - Math.floor(e), k = e % 1;
+  g.save(); g.translate(W / 2, el.y); const z = 1.25 - 0.25 * Math.min(1, k * 3); g.scale(z, z);
+  g.beginPath(); g.arc(0, 0, 92, 0, Math.PI * 2); g.fillStyle = C.ink; g.fill();
+  g.font = '400 110px "Bowlby One"'; g.fillStyle = C.yellow; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(n), 0, 8);
+  g.restore();
+}
+function choice(el, t) { // deux réponses possibles, la bonne passe au vert à la révélation
+  const shown = t >= el.reveal;
+  el.items.forEach((txt, i) => {
+    const k = (t - el.t0 - i * 0.25) / BEAT; if (k <= 0) return;
+    const y = el.y + i * 190, z = 0.7 + 0.3 * easeBack(k * 3), good = i === el.answer;
+    g.save(); g.translate(W / 2, y + 70); g.scale(z, z);
+    if (shown && !good) g.globalAlpha = 0.35;
+    g.fillStyle = C.ink; g.beginPath(); g.roundRect(-430 + 8, -70 + 8, 860, 140, 34); g.fill();
+    g.fillStyle = shown && good ? C.green : C.card; g.beginPath(); g.roundRect(-430, -70, 860, 140, 34); g.fill();
+    g.lineWidth = 6; g.strokeStyle = C.ink; g.stroke();
+    const size = fit(txt, 70, "900", 760);
+    g.font = `900 ${size}px Gabarito`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = shown && good ? "#fff" : C.ink;
+    g.fillText(shown && good ? "✓ " + txt : txt, 0, 4);
+    g.restore();
+  });
+}
+
+// ---------- une image du reel à l'instant t ----------
+function frame(t) {
+  g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#e6dfd0"; g.fillRect(80, 120, W - 160, 14); g.fillStyle = C.blue; g.fillRect(80, 120, (W - 160) * Math.min(1, t / S.dur), 14);
+  for (const el of S.els) {
+    if (t < el.t0 || (el.t1 !== undefined && t >= el.t1)) continue;
+    if (el.k === "map") drawMap(el, t);
+    else if (el.k === "hexa") hexa(el.x ?? W / 2 - 150, (el.y ?? 420) - (el.bob ? 24 * easeBack((t - el.t0) / BEAT) : 0), el.s ?? 4.6, el.wowAt !== undefined && t >= el.wowAt ? "wow" : el.mood);
+    else if (el.k === "cap") caption(el, t);
+    else if (el.k === "label") label(el, t);
+    else if (el.k === "title") title(el, t);
+    else if (el.k === "count") count(el, t);
+    else if (el.k === "choice") choice(el, t);
+    else if (el.k === "veil") { g.fillStyle = "rgba(243,238,228,.84)"; g.fillRect(0, 0, W, H); }
+  }
+}
+
+// ---------- musique (synthétisée, 120 BPM) ----------
+function music(ac, out, t0) {
+  const noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  const kick = (t) => { const o = ac.createOscillator(), v = ac.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.18); v.gain.setValueAtTime(0.9, t); v.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(v).connect(out); o.start(t); o.stop(t + 0.32); };
+  const hit = (t, freq, q, len, vol, type = "bandpass") => { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), v = ac.createGain(); s.buffer = noise; f.type = type; f.frequency.value = freq; f.Q.value = q; v.gain.setValueAtTime(vol, t); v.gain.exponentialRampToValueAtTime(0.001, t + len); s.connect(f).connect(v).connect(out); s.start(t); s.stop(t + len + 0.02); };
+  const tone = (t, freq, len, vol, type = "sawtooth", cut = 900) => { const o = ac.createOscillator(), f = ac.createBiquadFilter(), v = ac.createGain(); o.type = type; o.frequency.value = freq; f.type = "lowpass"; f.frequency.value = cut; v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(vol, t + 0.01); v.gain.exponentialRampToValueAtTime(0.001, t + len); o.connect(f).connect(v).connect(out); o.start(t); o.stop(t + len + 0.02); };
+  const bass = [55, 55, 65.4, 49];      // la, la, do, sol (une mesure chacun)
+  const chords = [[220, 261.6, 329.6], [220, 261.6, 329.6], [261.6, 329.6, 392], [196, 246.9, 293.7]];
+  const beats = Math.round((S.dur - 0.5) / BEAT);
+  for (let b = 0; b < beats; b++) {
+    const t = t0 + b * BEAT, bar = Math.floor(b / 4) % 4;
+    kick(t);
+    if (b % 2 === 1) hit(t, 1800, 0.8, 0.18, 0.55);
+    hit(t + BEAT / 2, 8000, 1, 0.05, 0.25, "highpass"); hit(t, 8000, 1, 0.04, 0.12, "highpass");
+    tone(t, bass[bar], BEAT * 0.9, 0.35, "sawtooth", 420); tone(t + BEAT / 2, bass[bar] * 2, BEAT * 0.4, 0.18, "square", 600);
+    if (b % 4 === 0) for (const f of chords[bar]) tone(t, f, BEAT * 3.6, 0.07, "triangle", 2200);
+  }
+  for (const d of S.dings) { tone(t0 + d, 1318.5, 0.5, 0.18, "sine", 6000); tone(t0 + d + 0.08, 1760, 0.5, 0.12, "sine", 6000); } // « ding » des réponses
+  kick(t0 + beats * BEAT); tone(t0 + beats * BEAT, 110, 0.8, 0.3, "sawtooth", 500);
+}
+
+window.load = (script) => { S = script; return S.dur; };
+window.jpeg = (t) => { frame(t); return cv.toDataURL("image/jpeg", 0.92).split(",")[1]; };
+window.renderAudio = async () => {
+  const sr = 48000, ctx = new OfflineAudioContext(2, Math.ceil(sr * S.dur), sr);
+  const master = ctx.createGain(); master.gain.value = 0.8; master.connect(ctx.destination);
+  music(ctx, master, 0);
+  const buf = await ctx.startRendering();
+  const n = buf.length, L = buf.getChannelData(0), Rc = buf.getChannelData(1);
+  const out = new DataView(new ArrayBuffer(44 + n * 4)); const w = (o, str) => [...str].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); out.setUint32(4, 36 + n * 4, true); w(8, "WAVE"); w(12, "fmt "); out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 2, true);
+  out.setUint32(24, sr, true); out.setUint32(28, sr * 4, true); out.setUint16(32, 4, true); out.setUint16(34, 16, true); w(36, "data"); out.setUint32(40, n * 4, true);
+  for (let i = 0; i < n; i++) { out.setInt16(44 + i * 4, Math.max(-1, Math.min(1, L[i])) * 32767, true); out.setInt16(46 + i * 4, Math.max(-1, Math.min(1, Rc[i])) * 32767, true); }
+  const u8 = new Uint8Array(out.buffer); let str = ""; for (let i = 0; i < u8.length; i += 0x8000) str += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+  return btoa(str);
+};
+</script>
+</body></html>
