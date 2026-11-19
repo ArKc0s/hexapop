@@ -4,6 +4,7 @@ import { ATLASES, inAtlas, R_METRO, type AtlasId } from "./atlas.ts";
 import { EXPERT_FACETS, FACETS, baseFacetsOf, expertFacetsOf, medalOf, type Facet, type Knowledge } from "./knowledge.ts";
 import { OUTRE_MER, TOUR, groupsOf, type TourRegion } from "./meta.ts";
 import { rng, shuffle } from "./random.ts";
+import { INTERVALS } from "./srs.ts";
 import { ITEM } from "./data.ts";
 import type { Field, Hint, PlanItem } from "./round.ts";
 
@@ -60,6 +61,13 @@ export interface Seance {
 /** Révisions dues ailleurs à partir desquelles « Continuer » propose une séance de révisions plutôt que la région. */
 export const REVISION_MIN = 3;
 
+/** Dernière fois qu'on a joué ce département (d'après ses étoiles : échéance moins intervalle). */
+function seenAt(k: Knowledge, code: string): number {
+  let t = 0;
+  for (const f of FACETS) { const c = k[code]?.[f]; if (c && c.d > 0) t = Math.max(t, c.d - (INTERVALS[c.b] ?? 0)); }
+  return t;
+}
+
 /** Départements dont une étoile est à revoir, les plus en retard d'abord. */
 /**
  * Les plus en retard d'abord, à la journée près ; au sein d'une même journée, au hasard. (Trié à la milliseconde, les
@@ -104,9 +112,11 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     return r() < 0.5 ? { code: x.code, hint: "nom", ask: [f], tag: "review" } : { code: x.code, hint: f, ask: ["nom"], tag: "review" };
   };
   /** Consolidation (fiche complète), les moins solides d'abord. Jamais deux inconnues : le numéro ne sert d'indice que s'il est connu. */
-  const consolidate = (codes: string[], n: number) => {
+  const consolidate = (codes: string[], n: number, rested = false) => {
     // Les moins solides d'abord ; à égalité, au hasard (sinon l'ordre des numéros : « 89, 90, 91… »), puis mélangés.
-    const known = shuffle(codes.filter((c) => inAtlas(atlas, c) && !used.has(c) && A.base.some((f) => starred(k, c, f))), r)
+    // `rested` : seulement ceux qu'on n'a pas vus depuis 2 heures (sinon, en enchaînant les séances, les quelques
+    // pays connus revenaient à chaque fois : « la Belgique ou l'Espagne dans chaque run »).
+    const known = shuffle(codes.filter((c) => inAtlas(atlas, c) && !used.has(c) && A.base.some((f) => starred(k, c, f)) && (!rested || o.now - seenAt(k, c) > 2 * 3_600_000)), r)
       .sort((a, b) => medalOf(k, a) - medalOf(k, b) || (k[a].carte?.b ?? 0) - (k[b].carte?.b ?? 0));
     for (const c of shuffle(known.slice(0, Math.max(0, n)), r)) add({ code: c, hint: pick<Hint>(atlas === "france" && starred(k, c, "numero") ? ["nom", "carte", "numero"] : atlas === "monde" && starred(k, c, "drapeau") ? FULL_HINTS : ["nom", "carte"]), ask: [...A.full], tag: "review" });
   };
@@ -183,7 +193,18 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     for (const it of steps) if (room() > 0 && !used.has(it.code)) add(it);
   }
 
-  // 3. S'il reste de la place : consolidation des départements déjà connus de la région.
+  // 3. S'il reste de la place : consolidation des départements connus de la région qu'on n'a pas vus depuis un moment,
+  // puis d'autres découvertes (plutôt que de resservir ce qu'on vient de voir), et seulement ensuite le reste.
+  consolidate(region.deps, room(), true);
+  if (!expert) {
+    const more = shuffle(region.deps.filter((c) => unfinished(k, c) && !used.has(c) && !A.base.some((f) => seen(k, c, f))), r);
+    if (atlas === "monde") { const key = new Map(more.map((c) => [c, (ITEM.get(c)?.rang ?? 100) + r() * 25])); more.sort((a, b) => key.get(a)! - key.get(b)!); }
+    for (const c of more) {
+      if (room() < 2) break;
+      add({ code: c, hint: "nom", ask: [...BASE], tag: "new" }); discover.push(c);
+      recall.push({ code: c, hint: "nom", ask: [...BASE], recall: true });
+    }
+  }
   consolidate(region.deps, room());
   return { kind: "region", plan: [...plan.slice(0, size - recall.length), ...recall], region, reviews, discover, elsewhere: elsewhere.length, expert, experts, expertRegion };
 }

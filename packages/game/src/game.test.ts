@@ -235,3 +235,18 @@ test("séance de consolidation : pas l'ordre des numéros non plus", () => {
   assert.ok(got.length > 4);
   assert.notEqual(got.join(","), [...got].sort().join(","), got.join(" "));
 });
+
+test("séances enchaînées : les pays vus il y a quelques minutes ne reviennent pas tant qu'il reste à découvrir", () => {
+  const now = Date.now();
+  // Trois pays d'Europe vus il y a 10 minutes (étoiles gagnées, prochaine révision dans un jour).
+  const card = { b: 2, d: now - 10 * 60_000 + 86_400_000, s: 1 as const, v: 1 as const };
+  const know = Object.fromEntries(["WBEL", "WESP", "WGBR"].map((c) => [c, { carte: card, prefecture: card, drapeau: card }]));
+  const s = composeSeance(know, { now, seed: 5, start: "29", atlas: "monde" });
+  assert.equal(s.region?.code, "WEU");
+  const codes = s.plan.map((p) => p.code);
+  assert.ok(!codes.some((c) => ["WBEL", "WESP", "WGBR"].includes(c)), codes.join(" "));
+  assert.ok(s.discover.length >= 4, "on découvre plutôt de nouveaux pays");
+  // Deux heures plus tard, ils peuvent revenir en consolidation.
+  const later = composeSeance(know, { now: now + 3 * 3_600_000, seed: 5, start: "29", atlas: "monde" });
+  assert.ok(later.plan.length > 0);
+});

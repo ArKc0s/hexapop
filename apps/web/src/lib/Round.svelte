@@ -260,7 +260,7 @@
       {/if}
     </div>
     <Map atlas={A.id} {marks} interactive={!result && !!mapTarget} zoomable onpick={pick} {candidates}
-      zoomTo={result && monde ? [q.code, ...(sel && sel !== q.code ? [sel] : []), ...(has("limitrophes") ? d.limitrophes : [])] : undefined} />
+      zoomTo={!monde ? undefined : result ? [q.code, ...(sel && sel !== q.code ? [sel] : []), ...(has("limitrophes") ? d.limitrophes : [])] : q.hint === "carte" ? [q.code] : undefined} />
   </div>
 
   <section class="panel">

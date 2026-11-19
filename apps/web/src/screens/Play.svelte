@@ -57,6 +57,9 @@
     // Rappel de fin de séance inutile pour un département déjà réussi sans faute : on ne redemande pas ce que tu sais.
     const known = new Set(results.filter((r) => r.accuracy >= 0.999).map((r) => r.code));
     if (questions.some((x, k) => k > i && x.recall && known.has(x.code))) questions = questions.filter((x, k) => k <= i || !(x.recall && known.has(x.code)));
+    // Un rappel qui tomberait juste après sa propre question (« Espagne » puis encore « Espagne ») ne rappelle rien :
+    // on le saute, la répétition espacée le redemandera à la prochaine séance.
+    if (questions[i + 1]?.recall && questions[i + 1].code === questions[i].code) questions = questions.filter((_, k) => k !== i + 1);
     if (i + 1 >= questions.length) return finish();
     i += 1;
     result = null;
