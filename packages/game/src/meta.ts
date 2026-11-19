@@ -2,7 +2,8 @@
 // région), album de plaques et badges. Fonctions pures : le client les applique (invité ou compte),
 // le serveur fusionne les profils synchronisés.
 import { CONTINENTS, DEPARTEMENTS, DEP, REGIONS, REGION_ITEMS, WORLD_ITEMS, R_METRO, R_OUTRE_MER } from "./data.ts";
-import { ATLASES, isAtlas, type AtlasId } from "./atlas.ts";
+import { ATLASES, atlasOf, isAtlas, type AtlasId } from "./atlas.ts";
+import { sanitizeSkill, updateSkill, type Skill } from "./skill.ts";
 import { rng, shuffle } from "./random.ts";
 import type { InputMode, Level, RoundResult } from "./round.ts";
 import { learn, medalOf, mergeKnowledge, sanitizeKnowledge, type Knowledge, type KnowledgeGain, type RoundPlay } from "./knowledge.ts";
@@ -50,6 +51,8 @@ export interface Profile {
   atlasAt?: number;
   /** Kilomètres (ex-XP) de la semaine en cours, pour les ligues et entre amis. */
   week?: { id: string; km: number };
+  /** Niveau estimé par atlas (skill.ts) : les découvertes s'y adaptent. */
+  skill?: Partial<Record<AtlasId, Skill>>;
   /** Parties du jour, pour l'objectif personnel facultatif. */
   today?: { day: string; games: number };
   stats: { games: number; rounds: number; perfectRounds: number; bestCombo: number; dailyPlayed: number; duelsWon: number; marathons: number };
@@ -80,6 +83,11 @@ export function mergeProfiles(a: Profile, b: Profile): Profile {
   for (const k of new Set([...Object.keys(a.tiers), ...Object.keys(b.tiers)])) if (DEP.has(k)) p.tiers[k] = Math.max(a.tiers[k] ?? 0, b.tiers[k] ?? 0);
   p.badges = { ...b.badges, ...a.badges };
   if (a.know || b.know) p.know = mergeKnowledge(a.know ?? {}, b.know ?? {});
+  // Niveau : celui qui a vu le plus de réponses.
+  for (const id of new Set([...Object.keys(a.skill ?? {}), ...Object.keys(b.skill ?? {})]) as Set<AtlasId>) {
+    const x = a.skill?.[id], y = b.skill?.[id], best = !x ? y : !y ? x : y.n >= x.n ? y : x;
+    if (best) (p.skill ??= {})[id] = best;
+  }
   p.home = b.home ?? a.home;
   // Choix de région : le plus récent gagne, y compris une annulation (sinon le serveur rétablissait l'ancien choix).
   const f = (b.focusAt ?? 0) >= (a.focusAt ?? 0) ? b : a;
@@ -121,6 +129,7 @@ export function sanitizeProfile(raw: unknown): Profile {
   if (typeof r.focus === "string" && TOUR.has(r.focus)) p.focus = r.focus;
   if (isAtlas(r.atlas)) p.atlas = r.atlas;
   if (r.atlasAt) p.atlasAt = num(r.atlasAt, 8.64e15);
+  if (r.skill && typeof r.skill === "object") for (const [id, v] of Object.entries(r.skill)) { const sk = sanitizeSkill(v); if (isAtlas(id) && sk) (p.skill ??= {})[id] = sk; }
   if (r.focusAt) p.focusAt = num(r.focusAt, 8.64e15);
   if (r.week && day(r.week.id)) p.week = { id: r.week.id, km: num(r.week.km, 1e8) };
   if (r.today && day(r.today.day)) p.today = { day: r.today.day, games: num(r.today.games, 1e4) };
@@ -364,6 +373,12 @@ export function applyGame(prev: Profile, report: GameReport): { profile: Profile
     const { know, gain } = learn(p.know ?? {}, report.results, report.rounds, report.now);
     p.know = know;
     knowledge = gain;
+  }
+  // Niveau par atlas : toutes les parties solo l'informent (seuls les éléments à difficulté connue comptent).
+  for (const id of new Set(report.results.map((x) => atlasOf(x.code).id))) {
+    const answers = report.results.filter((x) => atlasOf(x.code).id === id);
+    const next = updateSkill(p.skill?.[id], answers);
+    if (next.n !== (p.skill?.[id]?.n ?? 0)) p.skill = { ...p.skill, [id]: next };
   }
 
   // Statistiques

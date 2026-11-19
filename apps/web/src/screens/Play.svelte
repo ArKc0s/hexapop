@@ -1,6 +1,6 @@
 <script lang="ts">
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
-  import { combos, grade, makeGame, roundXp, type Answer, type Field, type InputMode, type RoundPlay, type RoundResult } from "@hexa/game";
+  import { ATLASES, TOUR, byFit, combos, difficulty, grade, makeGame, roundXp, updateSkill, type Answer, type Field, type InputMode, type RoundPlay, type RoundResult } from "@hexa/game";
   import Round from "../lib/Round.svelte";
   import type { Mark } from "../lib/Map.svelte";
   import Icon from "../lib/ui/Icon.svelte";
@@ -53,6 +53,32 @@
     fetch("/api/stats/event", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ e }), keepalive: true }).catch(() => {});
     nav.go({ name: "results", play, questions, results, rewards, input });
   }
+  /**
+   * Séance Monde : après chaque découverte, le niveau est réévalué sur les réponses déjà données, et les découvertes
+   * à venir trop faciles ou trop dures sont remplacées par des pays mieux ajustés (et leur rappel de fin de séance avec).
+   */
+  function adapt() {
+    const t = updateSkill(profile.data.skill?.monde, results).t;
+    const know = profile.data.know ?? {};
+    const planned = new Set(questions.map((q) => q.code));
+    const upcoming = questions.map((q, k) => ({ q, k })).filter(({ q, k }) => k > i && q.tag === "new");
+    if (!upcoming.length) return;
+    const pool = (TOUR.get(play.adapt!)?.deps ?? []).filter((c) => !planned.has(c) && !know[c]);
+    const best = byFit(pool, t, Math.random);
+    const target = t - 0.18, gap = (c: string) => Math.abs((difficulty(c) ?? 0.5) - target);
+    let next = [...questions];
+    for (const { q, k } of upcoming) {
+      const c = best[0];
+      if (!c || gap(q.code) - gap(c) < 0.15) continue; // assez bien ajusté : on garde
+      best.shift();
+      const ask = [...ATLASES.monde.base] as Field[];
+      const [nq] = makeGame({ ...play.config, plan: [{ code: c, hint: "nom", ask, tag: "new" }] });
+      const [nr] = makeGame({ ...play.config, plan: [{ code: c, hint: "nom", ask, recall: true }] });
+      next = next.map((x, j) => (j === k ? { ...nq, index: k } : x.recall && x.code === q.code ? { ...nr, index: j } : x));
+    }
+    questions = next;
+  }
+
   function next() {
     // Rappel de fin de séance inutile pour un département déjà réussi sans faute : on ne redemande pas ce que tu sais.
     const known = new Set(results.filter((r) => r.accuracy >= 0.999).map((r) => r.code));
@@ -60,6 +86,7 @@
     // Un rappel qui tomberait juste après sa propre question (« Espagne » puis encore « Espagne ») ne rappelle rien :
     // on le saute, la répétition espacée le redemandera à la prochaine séance.
     if (questions[i + 1]?.recall && questions[i + 1].code === questions[i].code) questions = questions.filter((_, k) => k !== i + 1);
+    if (play.adapt && questions[i].tag === "new") adapt();
     if (i + 1 >= questions.length) return finish();
     i += 1;
     result = null;

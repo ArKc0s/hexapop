@@ -1,7 +1,7 @@
 import type { GameConfig, GameMode, InputMode, RoundResult, Question, Rewards } from "@hexa/game";
 
 export type AlbumTab = "medailles" | "carte" | "succes";
-export interface PlayScreen { name: "play"; config: GameConfig; title: string; learn: boolean; mode: GameMode; region?: string; /** Partie « Rejouer les ratés » : la configuration de départ, que « Rejouer » relance. */ origin?: GameConfig }
+export interface PlayScreen { name: "play"; config: GameConfig; title: string; learn: boolean; mode: GameMode; region?: string; /** Séance Monde : groupe dont les découvertes s'ajustent au niveau du joueur en cours de séance. */ adapt?: string; /** Partie « Rejouer les ratés » : la configuration de départ, que « Rejouer » relance. */ origin?: GameConfig }
 export type Screen =
   | { name: "home" }
   | { name: "training"; /** Raccourci à appliquer (liens des pages de quiz : carte, numeros, prefectures, fiche). */ preset?: string }

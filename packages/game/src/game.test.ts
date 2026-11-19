@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { NEW_SKILL, difficulty, updateSkill } from "./skill.ts";
+import { emptyProfile, mergeProfiles, sanitizeProfile } from "./meta.ts";
 import { sameName, sameCode, matchSet, normalize } from "./answer.ts";
 import { makeGame, grade, fieldsFor } from "./round.ts";
 import { dep, DEPARTEMENTS, REGION_ITEMS, WORLD_ITEMS } from "./data.ts";
@@ -249,4 +251,30 @@ test("séances enchaînées : les pays vus il y a quelques minutes ne reviennent
   // Deux heures plus tard, ils peuvent revenir en consolidation.
   const later = composeSeance(know, { now: now + 3 * 3_600_000, seed: 5, start: "29", atlas: "monde" });
   assert.ok(later.plan.length > 0);
+});
+
+test("niveau adaptatif (Monde) : s'ajuste vite aux réponses, et les découvertes suivent", () => {
+  const easy = WORLD_ITEMS.filter((x) => (difficulty(x.code) ?? 1) < 0.1).map((x) => x.code);
+  // Un joueur qui sait tout : quelques réponses justes suffisent à quitter les pays célèbres.
+  let fort = updateSkill(undefined, easy.slice(0, 8).map((code) => ({ code, accuracy: 1 })));
+  assert.ok(fort.t > 0.5, `après 8 sans-faute : ${fort.t}`);
+  // Un débutant qui rate même les pays célèbres : il reste en bas.
+  const faible = updateSkill(undefined, easy.slice(0, 8).map((code) => ({ code, accuracy: 0 })));
+  assert.ok(faible.t < 0.1, `après 8 ratés : ${faible.t}`);
+  // Plus tard, chaque réponse pèse moins (le niveau se stabilise).
+  const before = fort.t; fort = updateSkill({ t: before, n: 200 }, [{ code: easy[0], accuracy: 0 }]);
+  assert.ok(before - fort.t < 0.06);
+  // Les départements n'ont pas de difficulté : ils ne changent rien.
+  assert.deepEqual(updateSkill(undefined, [{ code: "48", accuracy: 1 }]), NEW_SKILL);
+  // Séance : un joueur fort découvre des pays plus difficiles qu'un débutant.
+  const avg = (skill: number) => {
+    const s = composeSeance({}, { now: Date.now(), seed: 4, start: "29", atlas: "monde", skill });
+    return s.discover.reduce((n, c) => n + difficulty(c)!, 0) / s.discover.length;
+  };
+  assert.ok(avg(0.9) - avg(0.25) > 0.3, `${avg(0.25)} → ${avg(0.9)}`);
+  // Le profil garde le niveau, le fusionne (le plus informé gagne) et le nettoie.
+  const p = sanitizeProfile({ ...emptyProfile(), skill: { monde: { t: 0.7, n: 12 }, france: { t: "x" } } });
+  assert.deepEqual(p.skill, { monde: { t: 0.7, n: 12 } });
+  const m = mergeProfiles({ ...emptyProfile(), skill: { monde: { t: 0.3, n: 3 } } }, p);
+  assert.equal(m.skill?.monde?.t, 0.7);
 });

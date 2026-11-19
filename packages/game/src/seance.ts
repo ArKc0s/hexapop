@@ -5,7 +5,7 @@ import { EXPERT_FACETS, FACETS, baseFacetsOf, expertFacetsOf, medalOf, type Face
 import { OUTRE_MER, TOUR, groupsOf, type TourRegion } from "./meta.ts";
 import { rng, shuffle } from "./random.ts";
 import { INTERVALS } from "./srs.ts";
-import { ITEM } from "./data.ts";
+import { NEW_SKILL, byFit } from "./skill.ts";
 import type { Field, Hint, PlanItem } from "./round.ts";
 
 export const SEANCE_SIZE = 12;
@@ -45,7 +45,7 @@ export function currentRegion(k: Knowledge, start: string, focus?: string | null
   return regionOrder(start, atlas).find((r) => r.deps.some((c) => unfinished(k, c))) ?? null;
 }
 
-export interface SeanceOpts { now: number; seed: number; start: string; /** Atlas joué (défaut : départements). */ atlas?: AtlasId; focus?: string | null; home?: string | null; size?: number; /** Forcer une séance de révisions. */ kind?: SeanceKind }
+export interface SeanceOpts { now: number; seed: number; start: string; /** Atlas joué (défaut : départements). */ atlas?: AtlasId; focus?: string | null; home?: string | null; size?: number; /** Forcer une séance de révisions. */ kind?: SeanceKind; /** Niveau du joueur dans cet atlas (skill.ts) : les découvertes s'y adaptent. */ skill?: number }
 export type SeanceKind = "region" | "revision";
 export interface Seance {
   kind: SeanceKind; plan: PlanItem[]; region: TourRegion | null; reviews: number; discover: string[];
@@ -166,11 +166,8 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
     const deps = shuffle(region.deps.filter((c) => unfinished(k, c) && !used.has(c)), r);
     const started = deps.filter((c) => A.base.some((f) => seen(k, c, f)));
     let fresh = deps.filter((c) => !started.includes(c));
-    // Monde : les pays connus d'abord (la France avant le Vatican), avec un peu de hasard entre voisins de notoriété.
-    if (atlas === "monde") {
-      const key = new Map(fresh.map((c) => [c, (ITEM.get(c)?.rang ?? 100) + r() * 25]));
-      fresh = fresh.sort((a, b) => key.get(a)! - key.get(b)!);
-    }
+    // Monde : des pays à la hauteur du joueur (réussite visée ≈ 75 %), appris de ses réponses ; au début, les plus connus.
+    if (atlas === "monde") fresh = byFit(fresh, o.skill ?? NEW_SKILL.t, r);
     // Départements commencés : ce qui reste à trouver, ou la fiche complète si tout a été vu.
     const steps: PlanItem[] = [];
     for (const c of started) {
@@ -198,8 +195,7 @@ export function composeSeance(k: Knowledge, o: SeanceOpts): Seance {
   consolidate(region.deps, room(), true);
   if (!expert) {
     const more = shuffle(region.deps.filter((c) => unfinished(k, c) && !used.has(c) && !A.base.some((f) => seen(k, c, f))), r);
-    if (atlas === "monde") { const key = new Map(more.map((c) => [c, (ITEM.get(c)?.rang ?? 100) + r() * 25])); more.sort((a, b) => key.get(a)! - key.get(b)!); }
-    for (const c of more) {
+    for (const c of atlas === "monde" ? byFit(more, o.skill ?? NEW_SKILL.t, r) : more) {
       if (room() < 2) break;
       add({ code: c, hint: "nom", ask: [...BASE], tag: "new" }); discover.push(c);
       recall.push({ code: c, hint: "nom", ask: [...BASE], recall: true });
