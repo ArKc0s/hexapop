@@ -56,7 +56,7 @@ export async function make(p: Plan, voice: VoiceName, dir: string, o: { elevenKe
   });
   const nv = tl.voice.length;
   // musique un peu baissée sous la voix (pas trop), puis tout normalisé à -14 LUFS, crêtes sous -1,5 dB
-  fl.push(`${Array.from({ length: nv }, (_, i) => `[v${i}]`).join("")}amix=inputs=${nv}:normalize=0,apad=whole_dur=${dur}[vox]`, "[vox]asplit=2[vox1][vox2]", "[0:a]volume=1.0[mus]",
+  fl.push(`${Array.from({ length: nv }, (_, i) => `[v${i}]`).join("")}amix=inputs=${nv}:normalize=0,apad=whole_dur=${dur}[vox]`, "[vox]asplit=2[vox1][vox2]", "[0:a]volume=0.8[mus]",
     "[mus][vox1]sidechaincompress=threshold=0.05:ratio=2.5:attack=20:release=400[duck]",
     "[duck][vox2]amix=inputs=2:normalize=0:duration=first,loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[a]");
   const son = join(dir, "son.m4a"), mp4 = join(dir, "reel.mp4");
