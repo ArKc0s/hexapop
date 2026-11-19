@@ -1,11 +1,11 @@
 // Les formats de reels. Chacun choisit son contenu dans les données du jeu (tiré au sort avec une graine,
 // donc reproductible), puis le met en scène sur une ligne de temps. Tout ce qui est affirmé vient des données.
-import { DEPS, METRO, PIEGES, REGION_FR, TINY, cap1, de, dep, le, regionName, type Dep } from "./data.ts";
+import { METRO, PIEGES, REGION_FR, TINY, cap1, de, dep, le, regionName, type Dep } from "./data.ts";
 import { Timeline, at, rows, type El, type Said } from "./timeline.ts";
 
-export type FormatId = "placer" | "numero" | "prefecture" | "vraifaux" | "region" | "rates";
+export type FormatId = "placer" | "numero" | "prefecture" | "vraifaux" | "rates";
 /** Ordre de rotation, un format par jour. */
-export const ROTATION: FormatId[] = ["placer", "numero", "prefecture", "vraifaux", "region", "rates"];
+export const ROTATION: FormatId[] = ["placer", "numero", "prefecture", "vraifaux", "rates"];
 
 export interface Ctx {
   rng: () => number;
@@ -232,38 +232,6 @@ function vraifaux(c: Ctx): Plan {
   };
 }
 
-// ---------- 4. Une région en 30 secondes ----------
-function region(c: Ctx): Plan {
-  const regs = Object.keys(REGION_FR).filter((r) => r !== "94");
-  const reg = fresh(c, regs, 1, (r) => r)[0];
-  const ds = DEPS.filter((d) => d.region === reg).sort((a, b) => a.code.localeCompare(b.code));
-  const R = REGION_FR[reg], name = regionName(reg);
-  return {
-    format: "region", used: [reg],
-    caption: `Les ${ds.length} départements ${R.de} 🗺️ Tu les connaissais tous ?\n${ds.map((d) => `${d.code} ${d.nom}`).join(" · ")}\n\nApprends-les en jouant sur hexapop.app\n\n${HASHTAGS} #${name.normalize("NFD").replace(/[^A-Za-z]/g, "").toLowerCase()}`,
-    build(tl) {
-      hook(tl, [`[enthusiastic] Les ${ds.length} départements ${R.de}, tu les connais ?`, "[excited] On les fait tous, top chrono !"], [UP(name).split(/[\s-]/)[0], "CHRONO"]);
-      tl.beat();
-      const t0 = tl.t, map = tl.add({ k: "map", t0, box: { x: 40, y: 300, w: 1000, h: 1120 }, focus: ds.map((d) => d.code), fills: [], pops: [], tags: [] });
-      const hd = tl.add({ k: "label", t0, text: UP(name), y: 230 });
-      const s = tl.say(`[enthusiastic] ${cap1(ds.map((d) => le(d)).join(", "))}.`, { pad: 1.2 });
-      // le premier mot de chaque département dans ce qui a été lu
-      let w = 0; const starts = ds.map((d) => { const t = s.words[w]?.t ?? s.t0; w += le(d).split(" ").length; return t; });
-      const ok = w === s.words.length;
-      ds.forEach((d, i) => {
-        const t = ok ? starts[i] : s.t0 + (i * (s.t1 - s.t0 - 1.2)) / ds.length, next = i + 1 < ds.length ? (ok ? starts[i + 1] : s.t0 + ((i + 1) * (s.t1 - s.t0 - 1.2)) / ds.length) : s.t1;
-        (map.fills as unknown[]).push({ code: d.code, t, color: "pink" }, { code: d.code, t: next, color: "soft" });
-        (map.pops as unknown[]).push({ code: d.code, t });
-        (map.tags as unknown[]).push({ code: d.code, t, text: d.code });
-        tl.add({ k: "cap", t0: t, t1: next, text: UP(d.nom), y: 1580, size: 100, color: "yellow" });
-      });
-      tl.beat(); map.t1 = tl.t; hd.t1 = tl.t;
-      tl.add({ k: "map", t0: tl.t, box: { x: 40, y: 300, w: 1000, h: 1120 }, focus: ds.map((d) => d.code), fills: ds.map((d) => ({ code: d.code, t: 0, color: "pink" })), tags: ds.map((d) => ({ code: d.code, t: 0, text: d.code })) });
-      outro(tl, { ask: "[playful] Tu les connaissais tous ?", yellow: ["TOUS"], cta: "Apprends-les en jouant sur hexapop point app.", tagline: "Apprends-les en jouant" });
-    },
-  };
-}
-
 // ---------- 6. Les départements les plus ratés sur Hexa ----------
 function rates(c: Ctx): Plan | null {
   const top = (c.rates ?? []).filter((x) => !TINY.has(x.code) && !dep(x.code).outreMer && x.seen >= 50).slice(0, 15);
@@ -288,5 +256,5 @@ function rates(c: Ctx): Plan | null {
 }
 
 export function plan(format: FormatId, c: Ctx): Plan | null {
-  return { placer, numero, prefecture, vraifaux, region, rates }[format](c);
+  return { placer, numero, prefecture, vraifaux, rates }[format](c);
 }

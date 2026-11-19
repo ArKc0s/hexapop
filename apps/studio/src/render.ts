@@ -50,12 +50,15 @@ export async function make(p: Plan, voice: VoiceName, dir: string, o: { elevenKe
   const ins = ["-i", join(dir, "musique.wav")], fl: string[] = [];
   tl.voice.forEach(({ line, t }, i) => {
     ins.push("-i", spoken.get(line.text)!.wav);
-    const ms = Math.round(t * 1000);
-    fl.push(`[${i + 1}:a]aresample=48000,aformat=channel_layouts=stereo,adelay=${ms}|${ms},volume=1.4[v${i}]`);
+    const ms = Math.round(t * 1000), d = spoken.get(line.text)!.dur;
+    // fondu de 40 ms en fin de phrase (jamais de clic), voix baissée : ElevenLabs la livre déjà au maximum
+    fl.push(`[${i + 1}:a]aresample=48000,aformat=channel_layouts=stereo,afade=t=out:st=${Math.max(0, d - 0.04).toFixed(3)}:d=0.04,volume=0.6,adelay=${ms}|${ms}[v${i}]`);
   });
   const nv = tl.voice.length;
-  fl.push(`${Array.from({ length: nv }, (_, i) => `[v${i}]`).join("")}amix=inputs=${nv}:normalize=0,apad=whole_dur=${dur}[vox]`, "[vox]asplit=2[vox1][vox2]", "[0:a]volume=0.7[mus]",
-    "[mus][vox1]sidechaincompress=threshold=0.02:ratio=5:attack=15:release=350[duck]", "[duck][vox2]amix=inputs=2:normalize=0:duration=first,alimiter=limit=0.95[a]");
+  // musique un peu baissée sous la voix (pas trop), puis tout normalisé à -14 LUFS, crêtes sous -1,5 dB
+  fl.push(`${Array.from({ length: nv }, (_, i) => `[v${i}]`).join("")}amix=inputs=${nv}:normalize=0,apad=whole_dur=${dur}[vox]`, "[vox]asplit=2[vox1][vox2]", "[0:a]volume=1.0[mus]",
+    "[mus][vox1]sidechaincompress=threshold=0.05:ratio=2.5:attack=20:release=400[duck]",
+    "[duck][vox2]amix=inputs=2:normalize=0:duration=first,loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[a]");
   const son = join(dir, "son.m4a"), mp4 = join(dir, "reel.mp4");
   ff([...ins, "-filter_complex", fl.join(";"), "-map", "[a]", "-t", String(dur), "-c:a", "aac", "-b:a", "192k", son]);
   ff(["-framerate", String(FPS), "-i", join(frames, "%05d.jpg"), "-i", son, "-map", "0:v", "-map", "1:a", "-threads", "2", "-c:v", "libx264", "-preset", "medium", "-crf", "20",

@@ -43,7 +43,7 @@ function shown(words: Word[]): Word[] {
     if (/^hexapop$/i.test(w) && /^point$/i.test(words[i + 1]?.w ?? "") && /^app/i.test(words[i + 2]?.w ?? "")) {
       out.push({ w: "HEXAPOP.APP" + words[i + 2].w.slice(3), t: words[i].t }); i += 2; continue;
     }
-    out.push({ w: w.toLocaleUpperCase("fr-FR").replace(/[.,;:]+$/, ""), t: words[i].t }); // pas de point ni de virgule en fin de sous-titre
+    out.push({ w: w.toLocaleUpperCase("fr-FR").replace(/\.{3}$/, "").replace(/[.,;:]+$/, ""), t: words[i].t }); // pas de point ni de virgule en fin de sous-titre
   }
   return out;
 }

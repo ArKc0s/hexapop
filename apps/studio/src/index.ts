@@ -18,7 +18,7 @@ const CFG = {
   hexa: env("HEXA_URL", "https://hexapop.app"), stats: env("STATS_TOKEN"),
   genHour: Number(env("GEN_HOUR", "3")), slotWeek: env("SLOT_WEEK", "18:30"), slotWeekend: env("SLOT_WEEKEND", "11:00"), maxRedo: 3,
 };
-const NAMES: Record<FormatId, string> = { placer: "Tu sais placer ces départements ?", numero: "Le numéro mystère", prefecture: "Préfecture ou pas ?", vraifaux: "Vrai ou faux ?", region: "Une région en 30 secondes", rates: "Les plus ratés sur Hexa" };
+const NAMES: Record<FormatId, string> = { placer: "Tu sais placer ces départements ?", numero: "Le numéro mystère", prefecture: "Préfecture ou pas ?", vraifaux: "Vrai ou faux ?", rates: "Les plus ratés sur Hexa" };
 
 type Status = "attente" | "valide" | "refuse" | "refait" | "publie" | "echec";
 interface Reel { id: string; day: string; format: FormatId; voice: VoiceName; dir: string; caption: string; status: Status; msg?: string; createdAt: number; validatedAt?: number; publishedAt?: number; igLink?: string }

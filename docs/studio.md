@@ -1,6 +1,6 @@
 # Studio : les reels automatiques
 
-Le studio (`apps/studio`) fabrique chaque nuit un reel vertical (1080 × 1920, 30 images/s, 20 à 60 s) à partir des données du jeu, le soumet à validation sur Discord, puis le publie au bon créneau.
+Le studio (`apps/studio`) fabrique chaque nuit un reel vertical (1080 × 1920, 30 images/s, 45 à 60 s) à partir des données du jeu, le soumet à validation sur Discord, puis le publie au bon créneau.
 
 Il tourne sur la machine **hexa-studio** (conteneur LXC 110 sur pve01, `192.168.1.21`, 2 cœurs à priorité basse, 2 Go de RAM), sous l'utilisateur `hexa`, avec le service systemd `hexa-studio`.
 
@@ -18,7 +18,6 @@ Il tourne sur la machine **hexa-studio** (conteneur LXC 110 sur pve01, `192.168.
 | `numero` | « Le numéro mystère » : un numéro, trouver le département | numéros, préfectures |
 | `prefecture` | « Préfecture ou pas ? » : la préfecture ou une sous-préfecture piège | préfectures, sous-préfectures (pièges revérifiés contre les données) |
 | `vraifaux` | 4 affirmations vraies ou fausses (préfecture, numéro, région, voisins) | toutes les données |
-| `region` | « Les N départements de … », allumés un par un sur la carte | régions |
 | `rates` | Les départements que les joueurs ratent le plus | `GET /api/admin/rates` (totaux anonymes, à partir de 5 joueurs) |
 
 Tout ce qui est dit vient des données du jeu ; les tests (`node --test src/*.test.ts`) revérifient chaque affirmation sur des centaines de tirages.
