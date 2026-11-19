@@ -35,7 +35,10 @@ export async function make(p: Plan, voice: VoiceName, dir: string, o: { elevenKe
   const b = await chromium.launch();
   try {
     const pg = await b.newPage({ viewport: { width: 540, height: 960 } });
-    await pg.goto("file://" + PAGE); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(300);
+    await pg.goto("file://" + PAGE);
+    // Les polices ne se chargent qu'à leur premier usage : on les demande toutes avant la première image.
+    await pg.evaluate(() => Promise.all(['900 60px Gabarito', '800 60px Gabarito', '600 60px Gabarito', '400 60px "Bowlby One"'].map((f) => document.fonts.load(f))));
+    await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(300);
     await pg.evaluate((s) => (window as unknown as { load: (s: unknown) => number }).load(s), script);
     writeFileSync(join(dir, "musique.wav"), Buffer.from(await pg.evaluate(() => (window as unknown as { renderAudio: () => Promise<string> }).renderAudio()), "base64"));
     const n = Math.round(dur * FPS), t0 = Date.now();

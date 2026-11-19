@@ -22,10 +22,10 @@ test("les pièges de « préfecture ou pas » sont tous de vraies sous-préfectu
   for (const [c, v] of PIEGES) { assert.ok(dep(c).sousPrefectures.includes(v)); assert.notEqual(dep(c).prefecture, v); }
 });
 
-test("chaque format se construit, dure entre 20 et 70 s, et rien ne déborde", () => {
+test("chaque format se construit, dure entre 12 et 45 s, et rien ne déborde", () => {
   for (const f of ROTATION) for (let i = 0; i < 30; i++) {
     const { tl, said } = build(f, "graine" + i);
-    assert.ok(tl.t > 20 && tl.t < 70, `${f} : ${tl.t} s`);
+    assert.ok(tl.t > 12 && tl.t < 45, `${f} : ${tl.t} s`);
     assert.ok(said.every((s) => s.length < 200), f);
     for (const e of tl.els) assert.ok(e.t1 === undefined || e.t1 >= e.t0, `${f} : ${e.k} ${e.t0}→${e.t1}`);
   }
@@ -34,7 +34,7 @@ test("chaque format se construit, dure entre 20 et 70 s, et rien ne déborde", (
 test("vrai ou faux : chaque affirmation est conforme aux données", () => {
   for (let i = 0; i < 60; i++) {
     const { said } = build("vraifaux", "vf" + i);
-    const qs = said.slice(2, -3); // après l'accroche, avant la fin
+    const qs = said.slice(0, -1); // tout sauf la fin (plus d'intro : on commence par la première question)
     for (let k = 0; k < qs.length; k += 2) {
       const claim = qs[k], verdict = qs[k + 1].startsWith("Vrai");
       let m: RegExpMatchArray | null;
