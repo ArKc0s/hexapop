@@ -168,3 +168,27 @@ test("séance de consolidation : pas l'ordre des numéros non plus", () => {
   assert.ok(got.length > 4);
   assert.notEqual(got.join(","), [...got].sort().join(","), got.join(" "));
 });
+
+test("tirage : les départements récents reviennent moins vite, mais peuvent revenir", () => {
+  // Comme le défi du jour : 10 sur 101, en se souvenant des 11 jours précédents.
+  const days: string[][] = [];
+  for (let d = 0; d < 400; d++) {
+    const recent: Record<string, number> = {};
+    for (let k = 1; k <= 11 && d - k >= 0; k++) for (const c of days[d - k]) recent[c] ??= k;
+    days.push(makeGame({ seed: 1000 + d * 7919, level: "normal", input: "libre", rounds: 10, recent }).map((q) => q.code));
+  }
+  let common = 0, withCommon = 0, distinct = 0;
+  for (let d = 1; d < days.length; d++) { const n = days[d].filter((c) => days[d - 1].includes(c)).length; common += n; if (n) withCommon++; }
+  for (let d = 0; d + 7 <= days.length; d++) distinct += new Set(days.slice(d, d + 7).flat()).size;
+  const avg = common / (days.length - 1), week = distinct / (days.length - 6);
+  assert.ok(avg < 0.5, `en commun avec la veille : ${avg}`); // au hasard pur : environ 1
+  assert.ok(withCommon > 20, "un département de la veille revient quand même de temps en temps");
+  assert.ok(week > 58, `départements différents sur 7 jours : ${week}`); // au hasard pur : environ 52
+  for (const d of days) assert.equal(new Set(d).size, 10);
+  // Même graine, même mémoire : même tirage (tous les joueurs ont le même défi).
+  const cfg = { seed: 42, level: "normal" as const, input: "libre" as const, rounds: 10, recent: { "48": 1, "23": 2 } };
+  assert.deepEqual(makeGame(cfg).map((q) => q.code), makeGame(cfg).map((q) => q.code));
+  // Sans mémoire : exactement le tirage d'avant (les défis passés ne changent pas).
+  const old = { seed: 7, level: "normal" as const, input: "libre" as const, rounds: 10 };
+  assert.deepEqual(makeGame(old).map((q) => q.code), makeGame({ ...old, recent: {} }).map((q) => q.code));
+});

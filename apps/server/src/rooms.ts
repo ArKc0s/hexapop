@@ -106,6 +106,8 @@ export class Room {
   timer: NodeJS.Timeout | null = null;
   lastActivity = now();
   day: string | null = null;
+  /** Départements des parties précédentes du salon : il y a combien de parties. */
+  recent = new Map<string, number>();
   /** Duel à points de vie : activé quand un duel démarre à exactement deux joueurs. */
   hpMode = false;
   /** Nombre de joueurs au lancement : la fin par élimination n'a de sens qu'à plusieurs. */
@@ -256,16 +258,19 @@ export class Room {
     const codes = this.settings.regions.length ? DEPARTEMENTS.filter((d) => this.settings.regions.includes(d.region)).map((d) => d.code) : undefined;
     const cfg = this.kind === "daily" && this.day
       ? dailyConfig(this.day, this.settings.level)
-      : { seed: randomSeed(), level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes };
+      : { seed: randomSeed(), level: this.settings.level, input: this.settings.input, rounds: this.settings.rounds, codes, recent: Object.fromEntries(this.recent) };
     if (this.kind === "daily") {
       this.questions = makeGame(cfg);
       this.byLevel = {};
     } else {
+      // On rejoue souvent dans le même salon : les départements des parties précédentes reviennent moins vite.
+      for (const [code, ago] of this.recent) if (ago >= 12) this.recent.delete(code); else this.recent.set(code, ago + 1);
       // Même graine pour tous les niveaux : mêmes départements, mêmes indices, mêmes propositions.
       const levels = new Set<Level>([this.settings.level, ...[...this.seats.keys()].map((id) => this.levelOf(id))]);
       const durationMs = Math.max(...[...levels].map((l) => DEFAULT_DURATION[l]));
       this.byLevel = Object.fromEntries([...levels].map((l) => [l, makeGame({ ...cfg, level: l, durationMs })]));
       this.questions = this.byLevel[this.settings.level]!;
+      for (const q of this.questions) this.recent.set(q.code, 1);
     }
     this.team = { lives: TEAM_LIVES, accuracy: 0, score: 0, lostLife: false };
     this.teamAcc = [];

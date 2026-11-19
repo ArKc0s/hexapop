@@ -1,5 +1,5 @@
 import { createHmac, randomBytes } from "node:crypto";
-import { DAILY_EPOCH, DAILY_ROUNDS, DEP, LEVELS, LEVEL_OF, playerLevel, sanitizeProfile, type GameConfig, type Level, type RoundResult } from "@hexa/game";
+import { DAILY_EPOCH, DAILY_ROUNDS, DEP, LEVELS, LEVEL_OF, makeGame, playerLevel, sanitizeProfile, type GameConfig, type Level, type RoundResult } from "@hexa/game";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
 
@@ -10,10 +10,33 @@ export function today(t = now()): string {
 export function dailyNumber(day: string): number {
   return Math.round((Date.parse(day) - Date.parse(DAILY_EPOCH)) / 86_400_000) + 1;
 }
+/**
+ * À partir de ce jour, le défi évite les départements des jours précédents (tirage pondéré : ils peuvent revenir, mais
+ * rarement dès le lendemain). Les défis d'avant ne changent pas.
+ */
+export const FRESH_FROM = "2026-11-20";
+const dayBefore = (day: string, k: number) => new Date(Date.parse(day) - k * 86_400_000).toISOString().slice(0, 10);
+const drawn = new Map<string, string[]>();
+/** Les 10 départements du défi d'un jour (identiques à tous les niveaux). */
+export function dailyCodes(day: string): string[] {
+  let c = drawn.get(day);
+  if (!c) { c = makeGame(dailyConfig(day)).map((q) => q.code); drawn.set(day, c); }
+  return c;
+}
+
 /** Même graine pour tous les niveaux : les mêmes 10 départements, seules les questions changent. */
 export function dailyConfig(day: string, level: Level = "normal"): GameConfig {
   const h = createHmac("sha256", config.dailySecret).update(day).digest();
-  return { seed: h.readUInt32LE(0), level, input: level === "decouverte" ? "choix" : "libre", rounds: DAILY_ROUNDS };
+  const cfg: GameConfig = { seed: h.readUInt32LE(0), level, input: level === "decouverte" ? "choix" : "libre", rounds: DAILY_ROUNDS };
+  if (day >= FRESH_FROM) {
+    const recent: Record<string, number> = {};
+    for (let k = 1; k <= 11; k++) {
+      const d = dayBefore(day, k); if (d < DAILY_EPOCH) break;
+      for (const code of dailyCodes(d)) recent[code] ??= k;
+    }
+    cfg.recent = recent;
+  }
+  return cfg;
 }
 
 export function gridOf(results: (RoundResult | undefined)[]): number[] {

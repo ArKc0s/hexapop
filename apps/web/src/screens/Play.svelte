@@ -6,6 +6,7 @@
   import Icon from "../lib/ui/Icon.svelte";
   import GameSheet from "../lib/ui/GameSheet.svelte";
   import { nav, type PlayScreen } from "../lib/nav.svelte.ts";
+  import { recentAges, remember } from "../lib/recent.ts";
   import { progress } from "../lib/progress.svelte.ts";
   import { profile } from "../lib/profile.svelte.ts";
   import { sound } from "../lib/sound.svelte.ts";
@@ -14,7 +15,10 @@
   // svelte-ignore state_referenced_locally
   const play: PlayScreen = { name: "play", ...props };
 
-  let questions = $state(makeGame(play.config));
+  // Hors séance : les départements des dernières parties reviennent moins vite (sans jamais être exclus).
+  const fresh = !play.config.plan && !play.config.recent;
+  let questions = $state(makeGame(fresh ? { ...play.config, recent: recentAges() } : play.config));
+  if (fresh && questions.length < (play.config.codes?.length ?? 101)) remember(questions.map((q) => q.code)); // pas le marathon (tout y passe)
   let i = $state(0);
   let startedAt = $state(performance.now());
   let result = $state<RoundResult | null>(null);

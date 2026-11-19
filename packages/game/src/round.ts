@@ -1,6 +1,6 @@
 import { DEPARTEMENTS, DEP, dep, type Departement } from "./data.ts";
 import { matchSet, sameCode, sameName } from "./answer.ts";
-import { rng, shuffle, type Rng } from "./random.ts";
+import { freshness, rng, shuffle, weightedSample, type Rng } from "./random.ts";
 
 /**
  * Difficulté d'une partie. « decouverte » : indices nom ou carte seulement (jamais deux inconnues), propositions
@@ -79,6 +79,8 @@ export interface GameConfig {
   switchable?: boolean;
   /** Séance composée : les questions dans cet ordre (remplace codes, rounds, hints, ask). */
   plan?: PlanItem[];
+  /** Départements tirés récemment : il y a combien de tirages (1 = le précédent). Ils reviennent moins souvent (voir freshness). */
+  recent?: Record<string, number>;
 }
 
 export const POINTS_PER_FIELD = 100;
@@ -149,7 +151,10 @@ export function makeGame(cfg: GameConfig): Question[] {
     });
   }
   const pool = cfg.codes ?? DEPARTEMENTS.map((d) => d.code);
-  const codes = shuffle(pool, r).slice(0, cfg.rounds ?? pool.length);
+  const n = cfg.rounds ?? pool.length, recent = cfg.recent;
+  const codes = recent && Object.keys(recent).length && n < pool.length
+    ? weightedSample(pool, n, (c) => freshness(recent[c], Math.max(2, Math.ceil(pool.length / n))), r)
+    : shuffle(pool, r).slice(0, n);
   // Découverte : on donne toujours quelque chose qu'on peut connaître (le nom, ou le département qui clignote).
   const easy = cfg.level === "decouverte";
   const known = (cfg.hints ?? ["nom", "carte"]).filter((h) => h === "nom" || h === "carte");
