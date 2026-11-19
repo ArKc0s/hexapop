@@ -2,7 +2,7 @@
   import FullscreenButton from "../lib/ui/FullscreenButton.svelte";
   import GameSheet from "../lib/ui/GameSheet.svelte";
   import { dailyCardBlob } from "../lib/shareCard.ts";
-  import { onDestroy } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import LiveRound from "../lib/LiveRound.svelte";
   import { live } from "../lib/socket.svelte.ts";
   import { api, session, GUEST_DAILY } from "../lib/api.svelte.ts";
@@ -49,7 +49,9 @@
     boardLevel = level;
     live.connect(session.me?.pseudo ?? "", () => live.create("daily", { level }));
   }
-  $effect(() => { if (live.daily) { boardLevel = live.daily.level ?? level; loadBoard(boardLevel); } });
+  // À la fin du défi : le classement de son niveau, rechargé avec son résultat. Seulement à ce moment-là (untrack) :
+  // sinon chaque clic sur un autre niveau relançait cet effet, qui remettait aussitôt le sien.
+  $effect(() => { const d = live.daily; if (d) untrack(() => { boardLevel = d.level ?? level; loadBoard(boardLevel); }); });
   $effect(() => {
     const o = live.daily;
     if (!o || session.me || (guest && guest.day === o.day)) return;

@@ -8,6 +8,7 @@ export const NEWS: News[] = [
     items: [
       "Le défi du jour évite les départements des jours précédents : ils peuvent revenir, mais rarement dès le lendemain. Tu en verras beaucoup plus de différents chaque semaine.",
       "Même chose à l'entraînement et entre amis : quand tu enchaînes les parties, les départements tournent au lieu de revenir sans cesse.",
+      "Juste après ton défi du jour, tu peux enfin consulter les classements des autres niveaux (il fallait quitter et revenir).",
     ],
   },
   {
